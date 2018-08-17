@@ -17,7 +17,3 @@ let package = Package(
     	])
     ]
 )
-
-#if os(Linux)
-   package.exclude.append("Sources/OpenCloudKit/CLLocation+OpenCloudKit.swift")
-#endif

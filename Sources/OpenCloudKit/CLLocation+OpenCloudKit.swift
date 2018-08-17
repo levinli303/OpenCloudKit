@@ -5,7 +5,7 @@
 //  Created by Benjamin Johnson on 20/07/2016.
 //
 //
-
+#if os(Linux)
 import CoreLocation
 
 extension CLLocationCoordinate2D: CKLocationCoordinate2DType {}
@@ -15,6 +15,4 @@ extension CLLocation: CKLocationType {
         return coordinate
     }
 }
-    
-
-
+#endif
