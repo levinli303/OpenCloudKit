@@ -30,7 +30,7 @@ public struct CKConfig {
             return nil
         }
         
-        let containers = containerDictionaries.flatMap { (containerDictionary) -> CKContainerConfig? in
+        let containers = containerDictionaries.compactMap { (containerDictionary) -> CKContainerConfig? in
             var containerConfig = CKContainerConfig(dictionary: containerDictionary)
             if let workingDirectory = workingDirectory, let privateKeyFile = containerConfig?.serverToServerKeyAuth?.privateKeyFile {
                 containerConfig?.serverToServerKeyAuth?.privateKeyFile = "\(workingDirectory)/\(privateKeyFile)"
