@@ -3,11 +3,11 @@
     "pins": [
       {
         "package": "CLibreSSL",
-        "repositoryURL": "https://github.com/vapor/clibressl.git",
+        "repositoryURL": "https://github.com/jsorge/clibressl.git",
         "state": {
           "branch": null,
-          "revision": "23ddb296981d17a8ee6c7418742a40cad5d2f9d0",
-          "version": "1.0.0"
+          "revision": "fa31b6f69feb20c0b1a18177afe56886b0ec38c7",
+          "version": "1.0.1"
         }
       },
       {
@@ -17,15 +17,6 @@
           "branch": null,
           "revision": "3f6869c469abf3e2ebefe3b6baef4bfac3aac305",
           "version": "0.11.0"
-        }
-      },
-      {
-        "package": "Jay",
-        "repositoryURL": "https://github.com/DanToml/Jay.git",
-        "state": {
-          "branch": null,
-          "revision": "833125251b2d026bee6afa0aff2967a90eb63cd0",
-          "version": "1.0.1"
         }
       }
     ]

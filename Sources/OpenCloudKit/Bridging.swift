@@ -78,7 +78,7 @@ extension Dictionary {
 
 #if !os(Linux)
     
-    typealias NSErrorUserInfoType = [AnyHashable: Any]
+    typealias NSErrorUserInfoType = [String: Any]
 
     public extension NSString {
         func bridge() -> String {
