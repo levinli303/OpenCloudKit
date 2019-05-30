@@ -20,6 +20,9 @@ public final class MessageDigest {
 
     public init(_ messageDigest: String) throws {
         if !MessageDigest.addedAllDigests {
+            #if os(macOS)
+            OpenSSL_add_all_digests()
+            #endif
             MessageDigest.addedAllDigests = true
         }
         
@@ -85,12 +88,19 @@ public final class MessageVerifyContext {
     let context: UnsafeMutablePointer<EVP_MD_CTX>
 
     deinit {
+        #if os(macOS)
+        EVP_MD_CTX_destroy(context)
+        #else
         EVP_MD_CTX_free(context)
+        #endif
     }
     
     public init(_ messageDigest: MessageDigest, withKey key: EVPKey) throws {
-        
+        #if os(macOS)
+        let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_create()
+        #else
         let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_new()
+        #endif
         
         if EVP_DigestVerifyInit(context, nil, messageDigest.messageDigest, nil, key.pkey) == 0 {
             throw MessageDigestContextError.initializationFailed
@@ -126,12 +136,20 @@ public final class MessageDigestContext {
     let context: UnsafeMutablePointer<EVP_MD_CTX>
     
     deinit {
+        #if os(macOS)
+        EVP_MD_CTX_destroy(context)
+        #else
         EVP_MD_CTX_free(context)
+        #endif
     }
     
     
     public init(_ messageDigest: MessageDigest) throws {
+        #if os(macOS)
+        let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_create()
+        #else
         let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_new()
+        #endif
         
         if EVP_DigestInit(context, messageDigest.messageDigest) == 0 {
             throw MessageDigestContextError.initializationFailed
