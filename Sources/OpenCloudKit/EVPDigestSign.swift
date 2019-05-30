@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import CLibreSSL
+import COpenSSL
 
 public enum MessageDigestError: Error {
     case unknownDigest
