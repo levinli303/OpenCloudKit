@@ -20,7 +20,6 @@ public final class MessageDigest {
 
     public init(_ messageDigest: String) throws {
         if !MessageDigest.addedAllDigests {
-            OpenSSL_add_all_digests()
             MessageDigest.addedAllDigests = true
         }
         
@@ -86,12 +85,12 @@ public final class MessageVerifyContext {
     let context: UnsafeMutablePointer<EVP_MD_CTX>
 
     deinit {
-        EVP_MD_CTX_destroy(context)
+        EVP_MD_CTX_free(context)
     }
     
     public init(_ messageDigest: MessageDigest, withKey key: EVPKey) throws {
         
-        let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_create()
+        let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_new()
         
         if EVP_DigestVerifyInit(context, nil, messageDigest.messageDigest, nil, key.pkey) == 0 {
             throw MessageDigestContextError.initializationFailed
@@ -127,12 +126,12 @@ public final class MessageDigestContext {
     let context: UnsafeMutablePointer<EVP_MD_CTX>
     
     deinit {
-        EVP_MD_CTX_destroy(context)
+        EVP_MD_CTX_free(context)
     }
     
     
     public init(_ messageDigest: MessageDigest) throws {
-        let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_create()
+        let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_new()
         
         if EVP_DigestInit(context, messageDigest.messageDigest) == 0 {
             throw MessageDigestContextError.initializationFailed
