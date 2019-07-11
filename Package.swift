@@ -7,8 +7,8 @@ let package = Package(
     	.library(name: "OpenCloudKit", targets: ["OpenCloudKit"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/jsorge/clibressl.git", from: "1.0.1"),
-        .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "0.11.0"),
+        .package(url: "https://github.com/HeartedApp/clibressl.git", from: "1.0.2"),
+        .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.0.0"),
     ],
     targets: [
     	.target(name: "OpenCloudKit", dependencies: [

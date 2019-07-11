@@ -3,11 +3,11 @@
     "pins": [
       {
         "package": "CLibreSSL",
-        "repositoryURL": "https://github.com/jsorge/clibressl.git",
+        "repositoryURL": "https://github.com/HeartedApp/clibressl.git",
         "state": {
           "branch": null,
-          "revision": "fa31b6f69feb20c0b1a18177afe56886b0ec38c7",
-          "version": "1.0.1"
+          "revision": "093ae5e2d919939bb9f4f6b1a46bd5be0b8b9090",
+          "version": "1.0.2"
         }
       },
       {
@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/krzyzanowskim/CryptoSwift.git",
         "state": {
           "branch": null,
-          "revision": "3f6869c469abf3e2ebefe3b6baef4bfac3aac305",
-          "version": "0.11.0"
+          "revision": "3a2acbb32ab68215ee1596ee6004da8e90c3721b",
+          "version": "1.0.0"
         }
       }
     ]
