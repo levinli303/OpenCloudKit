@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import FoundationNetworking
 import Dispatch
 
 public class CKOperation: Operation {

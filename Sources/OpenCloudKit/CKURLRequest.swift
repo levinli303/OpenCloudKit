@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import FoundationNetworking
 
 enum CKOperationRequestType: String {
     case records

@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import FoundationNetworking
 import CryptoSwift
 
 struct CKServerRequestAuth {
