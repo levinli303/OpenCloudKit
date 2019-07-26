@@ -8,6 +8,9 @@
 
 import Foundation
 
+public var CKCurrentUserDefaultName: String {
+    return "__defaultOwner__"
+}
 
 public class CKContainer {
     

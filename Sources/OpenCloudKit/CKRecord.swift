@@ -27,8 +27,8 @@ extension CKRecordFieldProvider where Self: CustomDictionaryConvertible {
 public protocol CKRecordValue : CKRecordFieldProvider {}
 
 
-public class CKRecord: NSObject {
-    
+public class CKRecord: NSObject, NSCoding {
+
     var values: [String: CKRecordValue] = [:]
     
     public let recordType: String
@@ -40,12 +40,12 @@ public class CKRecord: NSObject {
     /* This is a User Record recordID, identifying the user that created this record. */
     public var creatorUserRecordID: CKRecordID?
     
-    public var creationDate = NSDate()
+    public var creationDate = Date()
     
     /* This is a User Record recordID, identifying the user that last modified this record. */
     public var lastModifiedUserRecordID: CKRecordID?
     
-    public var modificationDate: NSDate?
+    public var modificationDate: Date?
     
     private var changedKeysSet = NSMutableSet()
     
@@ -159,13 +159,13 @@ public class CKRecord: NSObject {
         // Parse Created Dictionary
         if let createdDictionary = recordDictionary[CKRecordDictionary.created] as? [String: Any], let created = CKRecordLog(dictionary: createdDictionary) {
             self.creatorUserRecordID = CKRecordID(recordName: created.userRecordName)
-            self.creationDate = NSDate(timeIntervalSince1970: Double(created.timestamp) / 1000)
+            self.creationDate = Date(timeIntervalSince1970: Double(created.timestamp) / 1000)
         }
         
         // Parse Modified Dictionary
         if let modifiedDictionary = recordDictionary[CKRecordDictionary.modified] as? [String: Any], let modified = CKRecordLog(dictionary: modifiedDictionary) {
             self.lastModifiedUserRecordID = CKRecordID(recordName: modified.userRecordName)
-            self.modificationDate = NSDate(timeIntervalSince1970: Double(modified.timestamp) / 1000)
+            self.modificationDate = Date(timeIntervalSince1970: Double(modified.timestamp) / 1000)
         }
         
         // Enumerate Fields
@@ -182,6 +182,35 @@ public class CKRecord: NSObject {
             let reference = CKReference(recordID: recordID, action: .none)
             parent = reference
         }
+    }
+
+    public required init?(coder: NSCoder) {
+        recordType = coder.decodeObject(of: NSString.self, forKey: "RecordType")! as String
+        recordID = coder.decodeObject(of: CKRecordID.self, forKey: "RecordID")!
+        recordChangeTag = coder.decodeObject(of: NSString.self, forKey: "ETag") as String?
+        creatorUserRecordID = coder.decodeObject(of: CKRecordID.self, forKey: "CreatorUserRecordID")
+        creationDate = coder.decodeObject(of: NSDate.self, forKey: "RecordCtime")! as Date
+        lastModifiedUserRecordID = coder.decodeObject(of: CKRecordID.self, forKey: "LastModifiedUserRecordID")
+        modificationDate = coder.decodeObject(of: NSDate.self, forKey: "RecordMtime") as Date?
+        parent = coder.decodeObject(of: CKReference.self, forKey: "ParentReference")
+        // TODO: changed keys set
+    }
+
+    public func encode(with coder: NSCoder) {
+        coder.encode(recordType, forKey: "RecordType")
+        coder.encode("RecordID", forKey: "RecordID")
+        coder.encode(recordChangeTag, forKey: "ETag")
+        coder.encode(creatorUserRecordID, forKey: "CreatorUserRecordID")
+        coder.encode(creationDate, forKey: "RecordCtime")
+        coder.encode(lastModifiedUserRecordID, forKey: "LastModifiedUserRecordID")
+        coder.encode(modificationDate, forKey: "LastModifiedUserRecordID")
+        coder.encode(lastModifiedUserRecordID, forKey: "RecordMtime")
+        coder.encode(parent, forKey: "ParentReference")
+        // TODO: changed keys set
+    }
+
+    public func encodeSystemFields(with coder: NSCoder) {
+        encode(with: coder)
     }
 }
 
@@ -220,7 +249,6 @@ struct CKRecordLog {
         self.deviceID = deviceID
     }
 }
-
 
 extension CKRecord {
     

@@ -35,7 +35,7 @@ extension CKReferenceAction: CustomStringConvertible {
     }
 }
 
-open class CKReference: NSObject {
+open class CKReference: NSObject, NSCoding {
     
     
     /* It is acceptable to relate two records that have not yet been uploaded to the server, but those records must be uploaded to the server in the same operation.
@@ -52,6 +52,17 @@ open class CKReference: NSObject {
     public let referenceAction: CKReferenceAction
     
     public let recordID: CKRecordID
+
+    public required convenience init?(coder: NSCoder) {
+        let recordID = coder.decodeObject(of: CKRecordID.self, forKey: "recordID")
+        let referenceAction = coder.decodeInt64(forKey: "referenceAction")
+        self.init(recordID: recordID!, action: CKReferenceAction(rawValue: UInt(referenceAction))!)
+    }
+
+    public func encode(with coder: NSCoder) {
+        coder.encode(recordID, forKey: "recordID")
+        coder.encode(referenceAction.rawValue, forKey: "referenceAction")
+    }
 }
 
 extension CKReference {

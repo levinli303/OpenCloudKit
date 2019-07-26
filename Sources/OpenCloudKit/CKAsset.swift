@@ -10,7 +10,7 @@ import Foundation
 
 public class CKAsset: NSObject {
     
-    public var fileURL : NSURL
+    public var fileURL : URL
     
     var recordKey: String?
     
@@ -40,7 +40,7 @@ public class CKAsset: NSObject {
     
     var uploadReceipt: String?
     
-    public init(fileURL: NSURL) {
+    public init(fileURL: URL) {
         self.fileURL = fileURL
     }
     
@@ -55,7 +55,7 @@ public class CKAsset: NSObject {
        
         let downloadURLString = downloadURL.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!
 
-        fileURL = NSURL(string: downloadURLString)!
+        fileURL = URL(string: downloadURLString)!
         self.downloadBaseURL = downloadURL
         self.size = size.uintValue
         downloaded = false

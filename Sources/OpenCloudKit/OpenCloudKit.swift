@@ -130,7 +130,7 @@ extension CKRecordID {
 }
 
 
-public class CKRecordZoneID: NSObject {
+public class CKRecordZoneID: NSObject, NSCoding {
     
     public init(zoneName: String, ownerName: String) {
         self.zoneName = zoneName
@@ -155,8 +155,19 @@ public class CKRecordZoneID: NSObject {
         guard let other = object as? CKRecordZoneID else { return false }
         return self.zoneName == other.zoneName && self.ownerName == other.ownerName
     }
-}
 
+
+    public required convenience init?(coder: NSCoder) {
+        let zoneName = coder.decodeObject(of: NSString.self, forKey: "ZoneName")
+        let ownerName = coder.decodeObject(of: NSString.self, forKey: "ownerName")
+        self.init(zoneName: zoneName! as String, ownerName: ownerName! as String)
+    }
+
+    public func encode(with coder: NSCoder) {
+        coder.encode(zoneName, forKey: "ZoneName")
+        coder.encode(ownerName, forKey: "ownerName")
+    }
+}
 
 extension CKRecordZoneID: CKCodable {
     

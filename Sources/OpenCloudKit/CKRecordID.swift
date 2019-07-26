@@ -8,7 +8,7 @@
 
 import Foundation
 
-public class CKRecordID: NSObject  {
+public class CKRecordID: NSObject, NSCoding {
     
     public convenience init(recordName: String) {
         let defaultZone = CKRecordZoneID(zoneName: "_defaultZone", ownerName: "_defaultOwner")
@@ -29,6 +29,17 @@ public class CKRecordID: NSObject  {
     public override func isEqual(_ object: Any?) -> Bool {
         guard let other = object as? CKRecordID else { return false }
         return self.recordName == other.recordName && self.zoneID == other.zoneID
+    }
+
+    public required convenience init?(coder: NSCoder) {
+        let recordName = coder.decodeObject(of: NSString.self, forKey: "RecordName")
+        let zoneID = coder.decodeObject(of: CKRecordZoneID.self, forKey: "ZoneID")
+        self.init(recordName: recordName! as String, zoneID: zoneID!)
+    }
+
+    public func encode(with coder: NSCoder) {
+        coder.encode(recordName, forKey: "RecordName")
+        coder.encode(zoneID, forKey: "ZoneID")
     }
 }
 

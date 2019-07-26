@@ -183,7 +183,7 @@ extension CKDownloadAssetsOperation: URLSessionDownloadDelegate {
             }
             
             // Modifiy the CKAsset file URL
-            currentAsset.fileURL = destinationURL as NSURL
+            currentAsset.fileURL = destinationURL
             
             // Call perAssetCompleteBlock
             completed(asset: currentAsset, error: nil)
