@@ -203,8 +203,7 @@ public class CKRecord: NSObject, NSSecureCoding {
         coder.encode(creatorUserRecordID, forKey: "CreatorUserRecordID")
         coder.encode(creationDate, forKey: "RecordCtime")
         coder.encode(lastModifiedUserRecordID, forKey: "LastModifiedUserRecordID")
-        coder.encode(modificationDate, forKey: "LastModifiedUserRecordID")
-        coder.encode(lastModifiedUserRecordID, forKey: "RecordMtime")
+        coder.encode(modificationDate, forKey: "RecordMtime")
         coder.encode(parent, forKey: "ParentReference")
         // TODO: changed keys set
     }
