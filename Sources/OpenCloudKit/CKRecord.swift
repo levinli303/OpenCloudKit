@@ -198,7 +198,7 @@ public class CKRecord: NSObject, NSSecureCoding {
 
     public func encode(with coder: NSCoder) {
         coder.encode(recordType, forKey: "RecordType")
-        coder.encode("RecordID", forKey: "RecordID")
+        coder.encode(recordID, forKey: "RecordID")
         coder.encode(recordChangeTag, forKey: "ETag")
         coder.encode(creatorUserRecordID, forKey: "CreatorUserRecordID")
         coder.encode(creationDate, forKey: "RecordCtime")
