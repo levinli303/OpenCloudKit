@@ -115,4 +115,14 @@ public class CKShare : CKRecord {
     public func removeParticipant(_ participant: CKShareParticipant) {
         
     }
+
+    public required init?(coder: NSCoder) {
+        // TODO: participants
+        shortGUID = nil
+        super.init(coder: coder)
+    }
+
+    public override func encode(with coder: NSCoder) {
+
+    }
 }

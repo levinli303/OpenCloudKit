@@ -1,6 +1,12 @@
 // swift-tools-version:4.1
 import PackageDescription
 
+#if os(Linux)
+    let cOpenSSLRepo = "https://github.com/PerfectlySoft/Perfect-COpenSSL-Linux.git"
+#else
+    let cOpenSSLRepo = "https://github.com/PerfectlySoft/Perfect-COpenSSL.git"
+#endif
+
 let package = Package(
     name: "OpenCloudKit",
     products: [
@@ -8,11 +14,12 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/HeartedApp/clibressl.git", from: "1.0.2"),
-        .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.0.0"),
+        .package(url: cOpenSSLRepo, from: "4.0.0"),
+        .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "0.11.0"),
     ],
     targets: [
     	.target(name: "OpenCloudKit", dependencies: [
-    		"CLibreSSL",
+    		"COpenSSL",
     		"CryptoSwift",
     	])
     ]
