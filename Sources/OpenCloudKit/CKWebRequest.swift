@@ -119,11 +119,7 @@ class CKWebRequest {
             }
             
         }
-        #if os(Linux)
-            let task = session.dataTask(with: request)
-        #else
-            let task = session.dataTask(with: request, completionHandler: requestCompletionHandler)
-        #endif
+        let task = session.dataTask(with: request, completionHandler: requestCompletionHandler)
         
         task.resume()
         
