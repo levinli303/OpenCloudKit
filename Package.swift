@@ -13,7 +13,6 @@ let package = Package(
     	.library(name: "OpenCloudKit", targets: ["OpenCloudKit"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/HeartedApp/clibressl.git", from: "1.0.2"),
         .package(url: cOpenSSLRepo, from: "4.0.0"),
         .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "0.11.0"),
     ],
