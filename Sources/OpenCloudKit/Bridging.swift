@@ -8,6 +8,10 @@
 
 import Foundation
 
+#if os(Linux)
+import FoundationNetworking
+#endif
+
 public protocol _OCKBridgable {
     associatedtype ObjectType
     func bridge() -> ObjectType

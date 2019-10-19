@@ -8,6 +8,10 @@
 
 import Foundation
 
+#if os(Linux)
+import FoundationNetworking
+#endif
+
 enum CKOperationRequestType: String {
     case records
     case assets

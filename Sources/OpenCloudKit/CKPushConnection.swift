@@ -8,6 +8,10 @@
 
 import Foundation
 
+#if os(Linux)
+import FoundationNetworking
+#endif
+
 class CKPushConnection: NSObject, URLSessionDataDelegate {
 
     var longPollingTask: URLSessionDataTask?

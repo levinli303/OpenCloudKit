@@ -8,6 +8,10 @@
 
 import Foundation
 
+#if os(Linux)
+import FoundationNetworking
+#endif
+
 public class CKDownloadAssetsOperation: CKDatabaseOperation {
     
     let assetsToDownload: [CKAsset]

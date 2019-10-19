@@ -9,6 +9,10 @@
 import Foundation
 import Dispatch
 
+#if os(Linux)
+import FoundationNetworking
+#endif
+
 public class CKOperation: Operation {
     
     public var container: CKContainer?

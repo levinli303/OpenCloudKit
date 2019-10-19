@@ -9,6 +9,10 @@
 import Foundation
 import CryptoSwift
 
+#if os(Linux)
+import FoundationNetworking
+#endif
+
 struct CKServerRequestAuth {
     
     static let ISO8601DateFormatter: DateFormatter = {
