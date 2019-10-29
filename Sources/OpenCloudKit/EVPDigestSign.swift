@@ -20,7 +20,7 @@ public final class MessageDigest {
 
     public init(_ messageDigest: String) throws {
         if !MessageDigest.addedAllDigests {
-            #if os(macOS)
+            #if !os(Linux)
             OpenSSL_add_all_digests()
             #endif
             MessageDigest.addedAllDigests = true
@@ -88,7 +88,7 @@ public final class MessageVerifyContext {
     let context: UnsafeMutablePointer<EVP_MD_CTX>
 
     deinit {
-        #if os(macOS)
+        #if !os(Linux)
         EVP_MD_CTX_destroy(context)
         #else
         EVP_MD_CTX_free(context)
@@ -96,7 +96,7 @@ public final class MessageVerifyContext {
     }
     
     public init(_ messageDigest: MessageDigest, withKey key: EVPKey) throws {
-        #if os(macOS)
+        #if !os(Linux)
         let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_create()
         #else
         let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_new()
@@ -136,7 +136,7 @@ public final class MessageDigestContext {
     let context: UnsafeMutablePointer<EVP_MD_CTX>
     
     deinit {
-        #if os(macOS)
+        #if !os(Linux)
         EVP_MD_CTX_destroy(context)
         #else
         EVP_MD_CTX_free(context)
@@ -145,7 +145,7 @@ public final class MessageDigestContext {
     
     
     public init(_ messageDigest: MessageDigest) throws {
-        #if os(macOS)
+        #if !os(Linux)
         let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_create()
         #else
         let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_new()
