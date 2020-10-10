@@ -413,13 +413,23 @@ extension NSNumber : CKRecordValue {}
 
 extension NSArray : CKRecordValue {}
 
+extension Int64 : CKNumberValueType {}
+extension Int32 : CKNumberValueType {}
+extension Int16 : CKNumberValueType {}
+extension Int8 : CKNumberValueType {}
 extension Int : CKNumberValueType {}
+
+extension UInt64 : CKNumberValueType {}
+extension UInt32 : CKNumberValueType {}
+extension UInt16 : CKNumberValueType {}
+extension UInt8 : CKNumberValueType {}
+extension UInt: CKNumberValueType {}
 
 extension Double: CKNumberValueType {}
 
 extension Float: CKNumberValueType {}
 
-extension UInt: CKNumberValueType {}
+extension Bool: CKNumberValueType {}
 
 extension NSDate : CKRecordValue {
     public var recordFieldDictionary: [String : Any] {

@@ -32,9 +32,73 @@ extension String: _OCKBridgable {
     }
 }
 
+extension Int64: _OCKBridgable {
+    public typealias ObjectType = NSNumber
+
+    public func bridge() -> NSNumber {
+        return NSNumber(value: self)
+    }
+}
+
+extension Int32: _OCKBridgable {
+    public typealias ObjectType = NSNumber
+
+    public func bridge() -> NSNumber {
+        return NSNumber(value: self)
+    }
+}
+
+extension Int16: _OCKBridgable {
+    public typealias ObjectType = NSNumber
+
+    public func bridge() -> NSNumber {
+        return NSNumber(value: self)
+    }
+}
+
+extension Int8: _OCKBridgable {
+    public typealias ObjectType = NSNumber
+
+    public func bridge() -> NSNumber {
+        return NSNumber(value: self)
+    }
+}
+
 extension Int: _OCKBridgable {
     public typealias ObjectType = NSNumber
     
+    public func bridge() -> NSNumber {
+        return NSNumber(value: self)
+    }
+}
+
+extension UInt64: _OCKBridgable {
+    public typealias ObjectType = NSNumber
+
+    public func bridge() -> NSNumber {
+        return NSNumber(value: self)
+    }
+}
+
+extension UInt32: _OCKBridgable {
+    public typealias ObjectType = NSNumber
+
+    public func bridge() -> NSNumber {
+        return NSNumber(value: self)
+    }
+}
+
+extension UInt16: _OCKBridgable {
+    public typealias ObjectType = NSNumber
+
+    public func bridge() -> NSNumber {
+        return NSNumber(value: self)
+    }
+}
+
+extension UInt8: _OCKBridgable {
+    public typealias ObjectType = NSNumber
+
     public func bridge() -> NSNumber {
         return NSNumber(value: self)
     }
@@ -59,6 +123,14 @@ extension Float: _OCKBridgable {
 extension Double: _OCKBridgable {
     public typealias ObjectType = NSNumber
     
+    public func bridge() -> NSNumber {
+        return NSNumber(value: self)
+    }
+}
+
+extension Bool: _OCKBridgable {
+    public typealias ObjectType = NSNumber
+
     public func bridge() -> NSNumber {
         return NSNumber(value: self)
     }
