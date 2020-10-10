@@ -1,4 +1,4 @@
-// swift-tools-version:5.1
+// swift-tools-version:5.3
 import PackageDescription
 
 #if os(Linux)
@@ -9,14 +9,18 @@ import PackageDescription
 
 let package = Package(
     name: "OpenCloudKit",
+    platforms: [
+        .macOS(.v10_15),
+    ],
     products: [
         .library(name: "OpenCloudKit", targets: ["OpenCloudKit"]),
     ],
     dependencies: [
-        .package(url: cOpenSSLRepo, from: "4.0.1"),
-        .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.1.3"),
+        .package(name: "COpenSSL", url: cOpenSSLRepo, from: "4.0.2")
     ],
     targets: [
-        .target(name: "OpenCloudKit", dependencies: ["COpenSSL", "CryptoSwift",])
+        .target(name: "OpenCloudKit", dependencies: [
+            .product(name: "COpenSSL", package: "COpenSSL")
+        ])
     ]
 )
