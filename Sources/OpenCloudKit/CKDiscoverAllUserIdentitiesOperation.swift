@@ -38,7 +38,7 @@ public class CKDiscoverAllUserIdentitiesOperation : CKOperation {
         
         let url = "\(databaseURL)/public/users/discover"
       
-        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url) { [weak self] (dictionary, error) in
+        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: nil) { [weak self] (dictionary, error) in
             
             guard let strongSelf = self, !strongSelf.isCancelled else {
                 return

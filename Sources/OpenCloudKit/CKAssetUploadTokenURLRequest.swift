@@ -1,0 +1,52 @@
+//
+//  CKAssetUploadTokenURLRequest.swift
+//  
+//
+//  Created by Levin Li on 2020/10/13.
+//
+
+import Foundation
+
+struct CKAssetUploadToken: Encodable {
+    let recordType: String
+    let fieldName: String
+    let recordName: String?
+
+    var dictionary: [String: Any] {
+        var dictionary: [String: Any] = [
+            "recordType": recordType.bridge(),
+            "fieldName": fieldName.bridge()
+        ]
+        if let recordName = recordName {
+            dictionary["recordName"] = recordName.bridge()
+        }
+        return dictionary
+    }
+}
+
+class CKAssetUploadTokenURLRequest: CKURLRequest {
+
+    var assetsToUpload: [(asset: CKAsset, uploadToken: CKAssetUploadToken)]
+
+    var zoneID: CKRecordZoneID?
+
+    func operationsDictionary() -> [[String: Any]] {
+        return assetsToUpload.map({ $0.uploadToken.dictionary })
+    }
+
+    init(assetsToUpload: [(asset: CKAsset, uploadToken: CKAssetUploadToken)]) {
+
+        self.assetsToUpload = assetsToUpload
+
+        super.init()
+
+        var properties: [String: Any] = [:]
+        if let zoneID = zoneID {
+            properties["zoneID"] = zoneID.dictionary.bridge()
+        }
+        properties["tokens"] = operationsDictionary()
+        self.operationType = .assets
+        self.path = "upload"
+        self.requestProperties = properties
+    }
+}

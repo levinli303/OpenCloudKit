@@ -39,6 +39,8 @@ public class CKAsset: NSObject {
     }
     
     var uploadReceipt: String?
+
+    var uploadInfo: [String: Any]?
     
     public init(fileURL: URL) {
         self.fileURL = fileURL
@@ -65,13 +67,6 @@ public class CKAsset: NSObject {
 
 extension CKAsset: CustomDictionaryConvertible {
     public var dictionary: [String: Any] {
-        var fieldDictionary: [String: Any] = [:]
-        if let recordID = recordID, let recordKey = recordKey {
-            fieldDictionary["recordName"] = recordID.recordName.bridge()
-        //    fieldDictionary["recordType"] = "Items".bridge()
-            fieldDictionary["fieldName"] = recordKey.bridge()
-        }
-        
-        return fieldDictionary
+        return uploadInfo ?? [:]
     }
 }

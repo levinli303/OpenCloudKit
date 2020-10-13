@@ -13,6 +13,7 @@ import FoundationNetworking
 #endif
 
 class CKWebRequest {
+    private static let jsonContentType = "application/json; charset=UTF-8"
 
     var currentWebAuthToken: String?
     
@@ -129,102 +130,77 @@ class CKWebRequest {
         return task
     }
     
-    func urlRequest(with url: URL, parameters: [String: Any]? = nil) -> URLRequest? {
+    func urlRequest(with url: URL, data: Data? = nil, contentType: String) -> URLRequest? {
         // Build URL
         var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-       
+
         components?.queryItems = authQueryItems
         CloudKit.debugPrint(components?.path as Any)
         guard let requestURL = components?.url else {
             return nil
         }
-        
+
         var urlRequest = URLRequest(url: requestURL)
-        if let parameters = parameters {
-            
-            #if os(Linux)
-                let jsonData: Data = try! JSONSerialization.data(withJSONObject: parameters.bridge(), options: [])
-            #else
-                let jsonData: Data = try! JSONSerialization.data(withJSONObject: parameters, options: [])
-            #endif
-            
-            urlRequest.httpBody = jsonData
+        if let data = data {
+            urlRequest.httpBody = data
             urlRequest.httpMethod = "POST"
         } else {
             let jsonData: Data = try! JSONSerialization.data(withJSONObject: NSDictionary(), options: [])
             urlRequest.httpBody = jsonData
             urlRequest.httpMethod = "GET"
         }
-        
+
         if let serverToServerKeyAuth = serverToServerKeyAuth {
             if let signedRequest  = CKServerRequestAuth.authenicateServer(forRequest: urlRequest, withServerToServerKeyAuth: serverToServerKeyAuth) {
                 urlRequest = signedRequest
             }
         }
-        
+
+        urlRequest.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue("\(urlRequest.httpBody?.count ?? 0)", forHTTPHeaderField: "Content-Length")
         return urlRequest
     }
 
-    
-    func request(withURL url: String, completetion: @escaping ([String: Any]?, Error?) -> Void) -> URLSessionTask? {
-       
-        // Build URL
-        var components = URLComponents(string: url)
-        components?.queryItems = authQueryItems
-        CloudKit.debugPrint(components?.path as Any)
-        guard let requestURL = components?.url else {
-            return nil
-        }
-        
-        let jsonData: Data = try! JSONSerialization.data(withJSONObject: NSDictionary(), options: [])
-        var urlRequest = URLRequest(url: requestURL)
-        
-        urlRequest.httpMethod = "GET"
-        urlRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
-        urlRequest.httpBody = jsonData
-        
-        return perform(request: urlRequest, completionHandler: completetion)
-    }
-    
-    
-    func request(withURL url: String, parameters: [String: Any]?, completetion: @escaping ([String: Any]?, Error?) -> Void) -> URLSessionTask? {
-        
-        // Build URL
-        var components = URLComponents(string: url)
-        components?.queryItems = authQueryItems
-        CloudKit.debugPrint(components?.path as Any)
-        guard let requestURL = components?.url else {
-            return nil
-        }
-        
-        var urlRequest = URLRequest(url: requestURL)
+    func urlRequest(with url: URL, parameters: [String: Any]? = nil) -> URLRequest? {
         if let parameters = parameters {
-            
             #if os(Linux)
             let jsonData: Data = try! JSONSerialization.data(withJSONObject: parameters.bridge(), options: [])
             #else
             let jsonData: Data = try! JSONSerialization.data(withJSONObject: parameters, options: [])
             #endif
-            
-            urlRequest.httpBody = jsonData
-            urlRequest.httpMethod = "POST"
-        } else {
-            let jsonData: Data = try! JSONSerialization.data(withJSONObject: NSDictionary(), options: [])
-            urlRequest.httpBody = jsonData
-            urlRequest.httpMethod = "GET"
+            return urlRequest(with: url, data: jsonData, contentType: CKWebRequest.jsonContentType)
         }
-        
-        urlRequest.setValue("application/json; charset=UTF-8", forHTTPHeaderField: "Content-Type")
-        
-        if let serverToServerKeyAuth = serverToServerKeyAuth {
-            if let signedRequest  = CKServerRequestAuth.authenicateServer(forRequest: urlRequest, withServerToServerKeyAuth: serverToServerKeyAuth) {
-                urlRequest = signedRequest
-            }
-        }
-        
-        return perform(request: urlRequest, completionHandler: completetion)
+        return urlRequest(with: url, data: nil, contentType: CKWebRequest.jsonContentType)
     }
-    
-    
-    
+
+    func request(withURL url: String, parameters: [String: Any]?, completion: @escaping ([String: Any]?, Error?) -> Void) -> URLSessionTask? {
+        // Build URL
+        var components = URLComponents(string: url)
+        components?.queryItems = authQueryItems
+        CloudKit.debugPrint(components?.path as Any)
+        guard let requestURL = components?.url else {
+            return nil
+        }
+
+        guard let req = urlRequest(with: requestURL, parameters: parameters) else {
+            return nil
+        }
+        return perform(request: req, completionHandler: completion)
+    }
+
+    func request(withURL url: String, data: Data?, contentType: String, completion: @escaping ([String: Any]?, Error?) -> Void) -> URLSessionTask? {
+        // Build URL
+        var components = URLComponents(string: url)
+        components?.queryItems = authQueryItems
+        CloudKit.debugPrint(components?.path as Any)
+        guard let requestURL = components?.url else {
+            return nil
+        }
+
+        guard let req = urlRequest(with: requestURL, data: data, contentType: contentType) else {
+            return nil
+        }
+
+        return perform(request: req, completionHandler: completion)
+    }
 }

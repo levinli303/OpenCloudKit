@@ -187,7 +187,14 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
     }
     
     override func performCKOperation() {
+        trackAssetsToUpload { [weak self] in
+            guard let strongSelf = self, !strongSelf.isCancelled else { return }
 
+            strongSelf.modifyRecord()
+        }
+    }
+
+    private func modifyRecord() {
         // Generate the CKOperation Web Service URL
         let request = CKModifyRecordsURLRequest(recordsToSave: recordsToSave, recordIDsToDelete: recordIDsToDelete, isAtomic: isAtomic, database: database!, savePolicy: savePolicy, zoneID: zoneID)
         request.accountInfoProvider = CloudKit.shared.defaultAccount
@@ -316,5 +323,121 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
     }
     */
 
+    }
+
+    private func trackAssetsToUpload(_ completion: @escaping () -> Void) {
+        guard let records = recordsToSave else {
+            completion()
+            return
+        }
+
+        var assets = [(asset: CKAsset, uploadToken: CKAssetUploadToken)]()
+        for record in records {
+            for key in record.allKeys() {
+                if let asset = record[key] as? CKAsset {
+                    assets.append((asset, CKAssetUploadToken(recordType: record.recordType, fieldName: key, recordName: record.recordID.recordName)))
+                }
+            }
+        }
+
+        let assetsToUpload = assets.filter { $0.asset.fileURL.isFileURL }
+        guard assetsToUpload.count > 0 else {
+            completion()
+            return
+        }
+
+        // Request asset upload tokens...
+        let request = CKAssetUploadTokenURLRequest(assetsToUpload: assetsToUpload)
+        request.accountInfoProvider = CloudKit.shared.defaultAccount
+        request.zoneID = zoneID
+
+        self.request = request
+        request.completionBlock = { [weak self] (result) in
+            guard let strongSelf = self, !strongSelf.isCancelled else { return }
+
+            switch result {
+            case .success(let dictionary):
+                var assets = [(url: String, asset: CKAsset)]()
+                let tokens = dictionary["tokens"] as! [[String: Any]]
+                for (index, token) in tokens.enumerated() {
+                    assets.append((token["url"] as! String, assetsToUpload[index].asset))
+                }
+                strongSelf.uploadAssets(assets, completion: completion)
+            case .error(let error):
+                strongSelf.finish(error: error.error)
+            }
+        }
+        request.performRequest()
+    }
+
+    private func uploadAssets(_ assets: [(url: String, asset: CKAsset)], completion: @escaping () -> Void) {
+        var currentAssetIndex = 0
+
+        // Create payload for uploading
+        func createUploaHTTPBody(_ data: Data) -> (Data, String) {
+            let boundary = "----\(UUID().uuidString)"
+            let mimeType = "application/octet-stream"
+
+            var body = Data()
+            let boundaryPrefix = "--\(boundary)\r\n"
+
+            body.appendString(boundaryPrefix)
+            body.appendString("Content-Disposition: form-data; name=\"files\"; filename=\"file.file\"\r\n")
+            body.appendString("Content-Type: \(mimeType)\r\n\r\n")
+            /* File data */
+            body.append(data)
+            body.appendString("\r\n")
+            body.appendString("--".appending(boundary.appending("--\r\n")))
+            return (body, "multipart/form-data; boundary=\(boundary)")
+        }
+
+        func uploadCurrentAsset() {
+            // Check if all asset are uploaded
+            guard currentAssetIndex < assets.count else {
+                completion()
+                return
+            }
+
+            // Upload asset one by one
+            let asset = assets[currentAssetIndex]
+            let data = try! Data(contentsOf: asset.asset.fileURL)
+            let (body, contentType) = createUploaHTTPBody(data)
+            var request = URLRequest(url: URL(string: asset.url)!)
+            request.httpMethod = "POST"
+            request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+            request.httpBody = body
+            urlSessionTask = CKWebRequest(container: operationContainer).perform(request: request, completionHandler: { [weak self] result, error in
+                guard let strongSelf = self, !strongSelf.isCancelled else { return }
+
+                if error != nil {
+                    strongSelf.finish(error: error)
+                    return
+                }
+
+                guard let info = result?["singleFile"] as? [String: Any] else {
+                    // TODO: throw error
+                    return
+                }
+
+                assets[currentAssetIndex].asset.uploadInfo = info
+                currentAssetIndex += 1
+                uploadCurrentAsset()
+            })
+        }
+
+        uploadCurrentAsset()
+    }
+}
+
+private extension Data {
+    mutating func appendString(_ string: String) {
+        let data = string.data(using: String.Encoding.utf8, allowLossyConversion: false)
+        append(data!)
+    }
+}
+
+private extension CharacterSet {
+    static var allowedURLCharacterSet: CharacterSet {
+        return .urlQueryAllowed
     }
 }

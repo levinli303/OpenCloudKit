@@ -21,6 +21,10 @@ let package = Package(
     targets: [
         .target(name: "OpenCloudKit", dependencies: [
             .product(name: "COpenSSL", package: "COpenSSL")
-        ])
+        ]),
+        .testTarget(
+            name: "OpenCloudKitTests",
+            dependencies: ["OpenCloudKit"]
+        ),
     ]
 )

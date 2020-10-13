@@ -445,7 +445,11 @@ extension Date : CKRecordValue {
 
 extension NSData : CKRecordValue {}
 
-extension CKAsset: CKRecordValue {}
+extension CKAsset: CKRecordValue {
+    public var recordFieldDictionary: [String: Any] {
+        return ["value": self.dictionary.bridge() as Any]
+    }
+}
 
 extension CKReference: CKRecordValue {
     public var recordFieldDictionary: [String: Any] {
@@ -455,7 +459,6 @@ extension CKReference: CKRecordValue {
 
 extension CKLocation: CKRecordValue {
     public var recordFieldDictionary: [String: Any] {
-
         return ["value": self.dictionary.bridge() as Any, "type": "LOCATION".bridge()]
     }
 }
