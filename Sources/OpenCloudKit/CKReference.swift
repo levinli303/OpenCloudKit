@@ -93,7 +93,7 @@ extension CKReference {
     }
 
     var dictionary: [String: Any] {
-        let dict: [String: Any] = ["recordName": recordID.recordName.bridge(), "zoneID": recordID.zoneID.dictionary.bridge(), "action": referenceAction.description.bridge()]
+        let dict: [String: Any] = ["recordName": recordID.recordName, "zoneID": recordID.zoneID.dictionary, "action": referenceAction.description]
 
         return dict
     }

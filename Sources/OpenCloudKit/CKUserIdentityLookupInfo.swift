@@ -72,11 +72,10 @@ extension CKUserIdentityLookupInfo: CKCodable {
     }
     
     var dictionary: [String: Any] {
-        
         var lookupInfo: [String: Any] = [:]
-        lookupInfo["emailAddress"] = emailAddress?.bridge()
-        lookupInfo["phoneNumber"] = phoneNumber?.bridge()
-        lookupInfo["userRecordName"] = userRecordID?.recordName.bridge()
+        lookupInfo["emailAddress"] = emailAddress
+        lookupInfo["phoneNumber"] = phoneNumber
+        lookupInfo["userRecordName"] = userRecordID?.recordName
         
         return lookupInfo
     }

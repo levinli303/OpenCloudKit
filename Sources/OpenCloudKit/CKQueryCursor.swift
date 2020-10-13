@@ -9,12 +9,11 @@
 import Foundation
 
 public class CKQueryCursor: NSObject {
-    
-    var data: NSData
-    
+    var data: Data
+
     var zoneID: CKRecordZoneID
-    
-    init(data: NSData, zoneID: CKRecordZoneID) {
+
+    init(data: Data, zoneID: CKRecordZoneID) {
         
         self.data = data
         self.zoneID = zoneID

@@ -8,6 +8,45 @@
 
 import Foundation
 
+typealias NSErrorUserInfoType = [String: Any]
+
+extension NSError {
+    public convenience init(error: Error) {
+        var userInfo: [String : Any] = [:]
+        var code: Int = 0
+
+        // Retrieve custom userInfo information.
+        if let customUserInfoError = error as? CustomNSError {
+            userInfo = customUserInfoError.errorUserInfo
+            code = customUserInfoError.errorCode
+        }
+
+        if let localizedError = error as? LocalizedError {
+            if let description = localizedError.errorDescription {
+                userInfo[NSLocalizedDescriptionKey] = description
+            }
+
+            if let reason = localizedError.failureReason {
+                userInfo[NSLocalizedFailureReasonErrorKey] = reason
+            }
+
+            if let suggestion = localizedError.recoverySuggestion {
+                userInfo[NSLocalizedRecoverySuggestionErrorKey] = suggestion
+            }
+
+            if let helpAnchor = localizedError.helpAnchor {
+                userInfo[NSHelpAnchorErrorKey] = helpAnchor
+            }
+        }
+
+        if let recoverableError = error as? RecoverableError {
+            userInfo[NSLocalizedRecoveryOptionsErrorKey] = recoverableError.recoveryOptions
+            //   userInfo[NSRecoveryAttempterErrorKey] = recoverableError
+        }
+        self.init(domain: "OpenCloudKit", code: code, userInfo: userInfo)
+    }
+}
+
 enum CKError {
     case network(Error)
     case server([String: Any])

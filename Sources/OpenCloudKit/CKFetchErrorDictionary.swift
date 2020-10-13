@@ -47,9 +47,9 @@ struct CKErrorDictionary {
     func error() -> NSError {
         let errorCode = CKErrorCode.errorCode(serverError: serverErrorCode)!
 
-        var userInfo: NSErrorUserInfoType = [NSLocalizedDescriptionKey: reason.bridge() as Any, "serverErrorCode": serverErrorCode.bridge() as Any]
+        var userInfo: NSErrorUserInfoType = [NSLocalizedDescriptionKey: reason as Any, "serverErrorCode": serverErrorCode as Any]
         if let redirectURL = redirectURL {
-            userInfo[CKErrorRedirectURLKey] = redirectURL.bridge()
+            userInfo[CKErrorRedirectURLKey] = redirectURL
         }
         if let retryAfter = retryAfter {
             userInfo[CKErrorRetryAfterKey] = retryAfter as NSNumber
@@ -87,9 +87,9 @@ struct CKFetchErrorDictionary<T: CKFetchErrorDictionaryIdentifier> {
     func error() -> NSError {
         let errorCode = CKErrorCode.errorCode(serverError: serverErrorCode)!
 
-        var userInfo: NSErrorUserInfoType = [NSLocalizedDescriptionKey: reason.bridge() as Any, "serverErrorCode": serverErrorCode.bridge() as Any]
+        var userInfo: NSErrorUserInfoType = [NSLocalizedDescriptionKey: reason as Any, "serverErrorCode": serverErrorCode as Any]
         if let redirectURL = redirectURL {
-            userInfo[CKErrorRedirectURLKey] = redirectURL.bridge()
+            userInfo[CKErrorRedirectURLKey] = redirectURL
         }
         if let retryAfter = retryAfter {
             userInfo[CKErrorRetryAfterKey] = retryAfter as NSNumber

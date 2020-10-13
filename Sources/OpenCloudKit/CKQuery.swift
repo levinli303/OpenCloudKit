@@ -45,22 +45,22 @@ public class CKQuery: CKCodable {
     // Returns a Dictionary Representation of a Query Dictionary
     var dictionary: [String: Any] {
         
-        var queryDictionary: [String: Any] = ["recordType": recordType.bridge()]
+        var queryDictionary: [String: Any] = ["recordType": recordType]
         
         queryDictionary["filterBy"] = filters.map({ (filter) -> [String: Any] in
             return filter.dictionary
-        }).bridge()
+        })
         
         // Create Sort Descriptor Dictionaries
         queryDictionary["sortBy"] = sortDescriptors.compactMap { (sortDescriptor) -> [String: Any]? in
             
             if let fieldName = sortDescriptor.key {
                 var sortDescriptionDictionary: [String: Any] =  [:]
-                sortDescriptionDictionary[CKSortDescriptorDictionary.fieldName] = fieldName.bridge()
+                sortDescriptionDictionary[CKSortDescriptorDictionary.fieldName] = fieldName
                 sortDescriptionDictionary[CKSortDescriptorDictionary.ascending] = NSNumber(value: sortDescriptor.ascending)
 
                 if let locationSortDescriptor = sortDescriptor as? CKLocationSortDescriptor {
-                    sortDescriptionDictionary[CKSortDescriptorDictionary.relativeLocation] = locationSortDescriptor.relativeLocation.recordFieldDictionary.bridge()
+                    sortDescriptionDictionary[CKSortDescriptorDictionary.relativeLocation] = locationSortDescriptor.relativeLocation.recordFieldDictionary
                 }
                 
                 return sortDescriptionDictionary
@@ -68,7 +68,7 @@ public class CKQuery: CKCodable {
             } else {
                 return nil
             }
-        }.bridge()
+        }
         
         return queryDictionary
     }

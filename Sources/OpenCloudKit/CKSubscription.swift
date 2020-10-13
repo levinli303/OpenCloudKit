@@ -155,17 +155,16 @@ extension CKQuerySubscription {
         
         let query = CKQuery(recordType: recordType, predicate: predicate)
        
-        var subscription: [String: Any] =  ["subscriptionID": subscriptionID.bridge(),
-                "subscriptionType": subscriptionType.description.bridge(),
-                "query": query.dictionary.bridge() as Any,
-                "firesOn": querySubscriptionOptions.firesOnArray.bridge()]
+        var subscription: [String: Any] =  ["subscriptionID": subscriptionID,
+                "subscriptionType": subscriptionType.description,
+                "query": query.dictionary as Any,
+                "firesOn": querySubscriptionOptions.firesOnArray]
         if querySubscriptionOptions.contains(CKQuerySubscriptionOptions.firesOnce) {
             subscription["firesOnce"] = NSNumber(value: true)
         }
         
         if let notificationInfo = notificationInfo {
-            subscription["notificationInfo"] = notificationInfo.dictionary.bridge()
-
+            subscription["notificationInfo"] = notificationInfo.dictionary
         }
     
         return subscription
@@ -195,14 +194,14 @@ extension CKRecordZoneSubscription {
     
     public var dictionary: [String: Any] {
         
-        var subscription: [String: Any] =  ["subscriptionID": subscriptionID.bridge(),
-                                                  "subscriptionType": subscriptionType.description.bridge(),
-                                                  "zoneID": zoneID.dictionary.bridge() as Any
+        var subscription: [String: Any] =  ["subscriptionID": subscriptionID,
+                                                  "subscriptionType": subscriptionType.description,
+                                                  "zoneID": zoneID.dictionary as Any
                                                 ]
        
 
         if let notificationInfo = notificationInfo {
-            subscription["notificationInfo"] = notificationInfo.dictionary.bridge() as NSDictionary
+            subscription["notificationInfo"] = notificationInfo.dictionary as NSDictionary
         }
         
         return subscription
@@ -250,26 +249,14 @@ extension CKNotificationInfo {
         
         var notificationInfo: [String: Any] = [:]
         
-        notificationInfo[CKNotificationInfoDictionary.alertBodyKey] = alertBody?.bridge()
-        
-        notificationInfo[CKNotificationInfoDictionary.alertLocalizationKey] = alertLocalizationKey?.bridge()
-        
-        #if os(Linux)
-        notificationInfo[CKNotificationInfoDictionary.alertLocalizationArgsKey] = alertLocalizationArgs?.bridge()
-        #else
+        notificationInfo[CKNotificationInfoDictionary.alertBodyKey] = alertBody
+        notificationInfo[CKNotificationInfoDictionary.alertLocalizationKey] = alertLocalizationKey
         notificationInfo[CKNotificationInfoDictionary.alertLocalizationArgsKey] = alertLocalizationArgs
-        #endif
-
-        notificationInfo[CKNotificationInfoDictionary.alertActionLocalizationKeyKey] = alertActionLocalizationKey?.bridge()
-        
-        notificationInfo[CKNotificationInfoDictionary.alertLaunchImageKey] = alertLaunchImage?.bridge()
-        
-        notificationInfo[CKNotificationInfoDictionary.soundName] = soundName?.bridge()
-        
+        notificationInfo[CKNotificationInfoDictionary.alertActionLocalizationKeyKey] = alertActionLocalizationKey
+        notificationInfo[CKNotificationInfoDictionary.alertLaunchImageKey] = alertLaunchImage
+        notificationInfo[CKNotificationInfoDictionary.soundName] = soundName
         notificationInfo[CKNotificationInfoDictionary.shouldBadge] = NSNumber(value: shouldBadge)
-        
         notificationInfo[CKNotificationInfoDictionary.shouldSendContentAvailable] = NSNumber(value: shouldSendContentAvailable)
-        
         
         return notificationInfo
         

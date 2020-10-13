@@ -28,8 +28,7 @@ public struct CKShortGUID {
     public  let rootRecordDesiredKeys: [String]?
     
     public var dictionary: [String: Any] {
-        let dict:[String: Any] = ["value": value.bridge(),
-                                        "shouldFetchRootRecord": shouldFetchRootRecord.number]
+        let dict:[String: Any] = ["value": value, "shouldFetchRootRecord": shouldFetchRootRecord.number]
         return dict
     }
     

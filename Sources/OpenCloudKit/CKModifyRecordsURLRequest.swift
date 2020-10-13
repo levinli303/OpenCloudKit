@@ -42,14 +42,10 @@ class CKModifyRecordsURLRequest: CKURLRequest {
             parameters["atomic"] = NSNumber(value: isAtomic)
         }
 
-        #if os(Linux)
-        parameters["operations"] = operationsDictionary().bridge()
-        #else
-        parameters["operations"] = operationsDictionary() as NSArray
-        #endif
+        parameters["operations"] = operationsDictionary()
 
         if let zoneID = zoneID {
-            parameters["zoneID"] = zoneID.dictionary.bridge()
+            parameters["zoneID"] = zoneID.dictionary
         }
         requestProperties = parameters
     }
@@ -60,8 +56,8 @@ class CKModifyRecordsURLRequest: CKURLRequest {
         if let recordIDsToDelete = recordIDsToDelete {
             let deleteOperations = recordIDsToDelete.map({ (recordID) -> [String: Any] in
                 let operationDictionary: [String: Any] = [
-                    "operationType": "forceDelete".bridge(),
-                    "record":(["recordName":recordID.recordName.bridge()] as [String: Any]).bridge() as Any
+                    "operationType": "forceDelete",
+                    "record":(["recordName":recordID.recordName] as [String: Any]) as Any
                 ]
 
                 return operationDictionary
@@ -75,7 +71,7 @@ class CKModifyRecordsURLRequest: CKURLRequest {
                 let fieldsDictionary: [String: Any]
 
                 //record.dictionary
-                var recordDictionary: [String: Any] = ["recordType": record.recordType.bridge(), "recordName": record.recordID.recordName.bridge()]
+                var recordDictionary: [String: Any] = ["recordType": record.recordType, "recordName": record.recordID.recordName]
                 if let recordChangeTag = record.recordChangeTag {
 
                     if savePolicy == .IfServerRecordUnchanged {
@@ -91,20 +87,20 @@ class CKModifyRecordsURLRequest: CKURLRequest {
                         fieldsDictionary = record.fieldsDictionary(forKeys: record.changedKeys())
                     }
 
-                    recordDictionary["recordChangeTag"] = recordChangeTag.bridge()
+                    recordDictionary["recordChangeTag"] = recordChangeTag
                 } else {
                     // Create new record
                     fieldsDictionary = record.fieldsDictionary(forKeys: record.allKeys())
                     operationType = "create"
                 }
 
-                recordDictionary["fields"] = fieldsDictionary.bridge() as NSDictionary
+                recordDictionary["fields"] = fieldsDictionary as NSDictionary
                 if let parent = record.parent {
                     recordDictionary["createShortGUID"] = NSNumber(value: 1)
-                    recordDictionary["parent"] = ["recordName": parent.recordID.recordName.bridge()].bridge()
+                    recordDictionary["parent"] = ["recordName": parent.recordID.recordName]
                 }
 
-                let operationDictionary: [String: Any] = ["operationType": operationType.bridge(), "record": recordDictionary.bridge() as NSDictionary]
+                let operationDictionary: [String: Any] = ["operationType": operationType, "record": recordDictionary as NSDictionary]
                 return operationDictionary
             })
 
