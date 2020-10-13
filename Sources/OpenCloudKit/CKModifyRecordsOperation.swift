@@ -8,6 +8,10 @@
 
 import Foundation
 
+#if os(Linux)
+import FoundationNetworking
+#endif
+
 public enum CKRecordSavePolicy : Int {
     case IfServerRecordUnchanged
     case ChangedKeys

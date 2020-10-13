@@ -16,5 +16,4 @@ enum Constant {
     static let containerID = "iCloud.com.meowssage.Astroweather"
     static let keyFilePath = "eckey.pem"
     static let environment = CKEnvironment.production
-    static let launchDirectory = "/Users/linfel/Developer/Personal/Astroweather/tlecreator"
 }

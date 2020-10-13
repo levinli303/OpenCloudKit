@@ -6,7 +6,6 @@ class CKAssetTests: XCTestCase {
     override class func setUp() {
         super.setUp()
 
-        FileManager.default.changeCurrentDirectoryPath(Constant.launchDirectory)
         CloudKitHelper.configure(containerID: Constant.containerID, keyID: Constant.serverKeyID, privateKeyFile: Constant.keyFilePath, environment: Constant.environment)
     }
 
@@ -18,7 +17,7 @@ class CKAssetTests: XCTestCase {
         record["id"] = id as CKRecordValue
         record["type"] = 1 as CKRecordValue
         record["editor"] = "Developer" as CKRecordValue
-        record["image"] = CKAsset(fileURL: URL(fileURLWithPath: "splash.png"))
+        record["image"] = CKAsset(fileURL: URL(fileURLWithPath: "temp.jpg"))
 
         let expectation = XCTestExpectation(description: "Wait for finish")
         db.save(record: record) { record, error in
@@ -53,4 +52,9 @@ class CKAssetTests: XCTestCase {
         XCTAssertNil(error)
         XCTAssertEqual(records.count, 1)
     }
+
+    static var allTests = [
+        ("testCreateRecordWithAsset", testCreateRecordWithAsset),
+        ("testFetchRecordWithAsset", testFetchRecordWithAsset),
+    ]
 }
