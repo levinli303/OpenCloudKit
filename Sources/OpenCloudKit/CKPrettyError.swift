@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 enum CKError {
     case network(Error)
     case server([String: Any])
@@ -22,7 +21,7 @@ enum CKError {
             return ckError(forServerResponseDictionary: dictionary)
         case .parse(let parseError):
             let error = NSError(error: parseError)
-            return NSError(domain: CKErrorDomain, code: CKErrorCode.InternalError.rawValue, userInfo: error.userInfo )
+            return NSError(domain: CKErrorDomain, code: CKErrorCode.internalError.rawValue, userInfo: error.userInfo )
         }
     }
     
@@ -32,11 +31,11 @@ enum CKError {
         
         switch networkError.code {
         case NSURLErrorNotConnectedToInternet:
-            errorCode = .NetworkUnavailable
+            errorCode = .networkUnavailable
         case NSURLErrorCannotFindHost, NSURLErrorCannotConnectToHost:
-            errorCode = .ServiceUnavailable
+            errorCode = .serviceUnavailable
         default:
-            errorCode = .NetworkFailure
+            errorCode = .networkFailure
         }
         
         let error = NSError(domain: CKErrorDomain, code: errorCode.rawValue, userInfo: userInfo)
@@ -60,7 +59,7 @@ enum CKError {
         } else {
             
             let userInfo = [:] as NSErrorUserInfoType
-            return NSError(domain: CKErrorDomain, code: CKErrorCode.InternalError.rawValue, userInfo: userInfo)
+            return NSError(domain: CKErrorDomain, code: CKErrorCode.internalError.rawValue, userInfo: userInfo)
         }
     }
 }

@@ -18,25 +18,25 @@ public class CKOperation: Operation {
     public var container: CKContainer?
 
     public var requestUUIDs: [String] = []
-    
+
     private var _finished: Bool = false
-    
+
     private var _executing: Bool = false
-    
+
     var urlSessionTask: URLSessionTask?
-    
+
     var request: CKURLRequest?
     
     var childOperations: [CKOperation] = []
-    
+
     var operationID: String
-    
+
     var cloudKitMetrics: CKOperationMetrics?
-    
+
     weak var parentOperation: CKOperation?
-    
+
     private var error: Error?
-    
+
     override init() {
         if type(of: self) == CKOperation.self {
             fatalError("You must use a concrete subclass of CKOperation")
@@ -45,7 +45,7 @@ public class CKOperation: Operation {
         operationID = NSUUID().uuidString
         super.init()
     }
-    
+
     // using dispatch queue rather than operation queue because don't need cancellation for the callbacks.
     lazy var callbackQueue: DispatchQueue = {
         return DispatchQueue(label: "opencloudkit.operation-\(self.operationID).callback")
@@ -62,7 +62,7 @@ public class CKOperation: Operation {
             CloudKit.debugPrint("Not starting already cancelled operation \(self)")
             return
         }
- 
+
         if(isExecuting || isFinished){
             // NSException not available on Linux, fatalError is the alternative.
             // NSException.raise(NSExceptionName.invalidArgumentException, format: "You can't restart an executing or finished CKOperation: %@", arguments:getVaList([self]))
@@ -73,31 +73,31 @@ public class CKOperation: Operation {
         isExecuting = true
 
         if(isCancelled){
-            
+
             // Must move the operation to the finished state if it is cancelled before it started.
-            let error = CKPrettyError(code: CKErrorCode.OperationCancelled, description: "Operation \(self) was cancelled before it started")
-            
+            let error = CKPrettyError(code: CKErrorCode.operationCancelled, description: "Operation \(self) was cancelled before it started")
+
             finish(error: error)
-            
+
             return;
         }
-        
+
         callbackQueue.async {
             self.main()
         }
     }
-    
+
     func addAndRun(childOperation: CKOperation) {
         childOperations.append(childOperation)
         childOperation.start()
     }
-    
+
     func configure(request: CKURLRequest) {
         // Configure Request
     }
     
     open override func main() {
-
+        
         if !isCancelled {
             do {
                 try CKOperationShouldRun()
@@ -116,18 +116,18 @@ public class CKOperation: Operation {
     open override func cancel() {
         // Calling Super will update the isCancelled and send KVO notifications
         super.cancel()
-        
-        let error = CKPrettyError(code: CKErrorCode.OperationCancelled, description: "Operation \(self) was cancelled")
-        
+
+        let error = CKPrettyError(code: CKErrorCode.operationCancelled, description: "Operation \(self) was cancelled")
+
         finish(error: error)
-        
+
         urlSessionTask?.cancel()
     }
 
     func processOperationResult() {
-        
+
     }
-    
+
     func finishInternalOnCallbackQueue(error: Error?){
         var error = error
         if(!isExecuting){
@@ -135,7 +135,7 @@ public class CKOperation: Operation {
         }
         if(error == nil){
             if(isCancelled){
-                error = CKPrettyError(code: CKErrorCode.OperationCancelled, description: "Operation \(self) was cancelled")
+                error = CKPrettyError(code: CKErrorCode.operationCancelled, description: "Operation \(self) was cancelled")
             }
         }
         // not sure why this is retained yet
@@ -143,73 +143,73 @@ public class CKOperation: Operation {
             self.error = error;
         }
         if(!isFinished){
-            // subclasses will 
+            // subclasses will
             finishOnCallbackQueue(error: error)
             return
         }
-        
+
         CloudKit.debugPrint("The operation operation \(self) didn't start or is already finished")
     }
-    
 
+    
     // overrides require super
     func finishOnCallbackQueue(error: Error?) {
         assert(!isFinished, "Operation was already marked as finished")
         isExecuting = false
         isFinished = true
     }
-    
+
     func performCKOperation() {
         fatalError("performCKOperation should be override by \(self)")
     }
-
+    
     func finish(error: Error?) {
         callbackQueue.async {
             self.finishInternalOnCallbackQueue(error: error)
         }
     }
-    
+
     override public var isFinished : Bool {
         get { return _finished }
         set {
             guard _finished != newValue else { return }
             // Linux doesn't support KVO
             #if os(Linux)
-                _finished = newValue
+            _finished = newValue
             #else
-                willChangeValue(forKey: "isFinished")
-                _finished = newValue
-                didChangeValue(forKey: "isFinished")
+            willChangeValue(forKey: "isFinished")
+            _finished = newValue
+            didChangeValue(forKey: "isFinished")
             #endif
 
         }
     }
-    
+
     override public var isExecuting : Bool {
         get { return _executing }
         set {
             guard _executing != newValue else { return }
-            
+
             // Linux doesn't support KVO
             #if os(Linux)
-                _executing = newValue
+            _executing = newValue
             #else
-                willChangeValue(forKey: "isExecuting")
-                _executing = newValue
-                didChangeValue(forKey: "isExecuting")
+            willChangeValue(forKey: "isExecuting")
+            _executing = newValue
+            didChangeValue(forKey: "isExecuting")
             #endif
         }
     }
-    
+
     override public var isAsynchronous: Bool {
         get { return true }
     }
 }
 
 public class CKDatabaseOperation : CKOperation {
-    
+
     public var database: CKDatabase?
-    
+
 }
 
 extension CKOperation {
@@ -221,15 +221,11 @@ extension CKOperation {
 
 extension CKDatabaseOperation {
     var operationURL: String {
-        
+
         // Create URL
         let operationDatabase = database?.scope ?? CKDatabaseScope.public
         let urlForDatabaseOperation = "\(databaseURL)\(operationDatabase)"
-        
+
         return urlForDatabaseOperation
     }
 }
-
-
-
-

@@ -18,7 +18,7 @@ public protocol _OCKBridgable {
 }
 
 public protocol CKNumberValueType: CKRecordValue {}
- extension CKNumberValueType where Self: _OCKBridgable, Self.ObjectType == NSNumber {
+extension CKNumberValueType where Self: _OCKBridgable, Self.ObjectType == NSNumber {
     public var recordFieldDictionary: [String: Any] {
         return ["value": self.bridge()]
     }
@@ -139,7 +139,7 @@ extension Bool: _OCKBridgable {
 extension Dictionary {
     func bridge() -> NSDictionary {
         var newDictionary: [NSString: Any] = [:]
-       
+
         for (key,value) in self {
             if let stringKey = key as? String {
                 newDictionary[stringKey.bridge()] = value
@@ -153,100 +153,100 @@ extension Dictionary {
 
 
 #if !os(Linux)
-    
-    typealias NSErrorUserInfoType = [String: Any]
 
-    public extension NSString {
-        func bridge() -> String {
-            return self as String
-        }
+typealias NSErrorUserInfoType = [String: Any]
+
+public extension NSString {
+    func bridge() -> String {
+        return self as String
     }
-    
-    extension NSArray {
-         func bridge() -> Array<Any> {
-            return self as! Array<Any>
-        }
+}
+
+extension NSArray {
+    func bridge() -> Array<Any> {
+        return self as! Array<Any>
     }
-    
-    extension NSDictionary {
-        public func bridge() -> [NSObject: Any] {
-            return self as [NSObject: AnyObject]
-        }
+}
+
+extension NSDictionary {
+    public func bridge() -> [NSObject: Any] {
+        return self as [NSObject: AnyObject]
     }
-    
-    extension Array {
-        func bridge() -> NSArray {
-            return self as NSArray
-        }
+}
+
+extension Array {
+    func bridge() -> NSArray {
+        return self as NSArray
     }
-    
-    extension Date {
-        func bridge() -> NSDate {
-            return self as NSDate
-        }
+}
+
+extension Date {
+    func bridge() -> NSDate {
+        return self as NSDate
     }
-    
-    extension NSDate {
-        func bridge() -> Date {
-            return self as Date
-        }
+}
+
+extension NSDate {
+    func bridge() -> Date {
+        return self as Date
     }
-    
-    extension NSData {
-        func bridge() -> Data {
-            return self as Data
-        }
+}
+
+extension NSData {
+    func bridge() -> Data {
+        return self as Data
     }
-    
-    
-    
+}
+
+
+
 #elseif os(Linux)
-    
-    typealias NSErrorUserInfoType = [String: Any]
 
-    public extension NSString {
-        func bridge() -> String {
-            return self._bridgeToSwift()
-        }
-    }
-    
-    extension NSArray {
-        public func bridge() -> Array<Any> {
-            return self._bridgeToSwift()
-        }
-    }
-    
-    extension NSDictionary {
-        public func bridge() -> [AnyHashable: Any] {
-            return self._bridgeToSwift()
-        }
-    }
-    
+typealias NSErrorUserInfoType = [String: Any]
 
-    extension Array {
-        public func bridge() -> NSArray {
-            return self._bridgeToObjectiveC()
-        }
+public extension NSString {
+    func bridge() -> String {
+        return self._bridgeToSwift()
     }
-    
-    extension NSData {
-        public func bridge() -> Data {
-            return self._bridgeToSwift()
-        }
+}
+
+extension NSArray {
+    public func bridge() -> Array<Any> {
+        return self._bridgeToSwift()
     }
-    
-    extension Date {
-        public func bridge() -> NSDate {
-            return self._bridgeToObjectiveC()
-        }
+}
+
+extension NSDictionary {
+    public func bridge() -> [AnyHashable: Any] {
+        return self._bridgeToSwift()
     }
-    
-    extension NSDate {
-        public func bridge() -> Date {
-            return self._bridgeToSwift()
-        }
+}
+
+
+extension Array {
+    public func bridge() -> NSArray {
+        return self._bridgeToObjectiveC()
     }
-    
+}
+
+extension NSData {
+    public func bridge() -> Data {
+        return self._bridgeToSwift()
+    }
+}
+
+extension Date {
+    public func bridge() -> NSDate {
+        return self._bridgeToObjectiveC()
+    }
+}
+
+extension NSDate {
+    public func bridge() -> Date {
+        return self._bridgeToSwift()
+    }
+}
+
 #endif
 
 extension NSError {
@@ -254,13 +254,13 @@ extension NSError {
         
         var userInfo: [String : Any] = [:]
         var code: Int = 0
-        
+
         // Retrieve custom userInfo information.
         if let customUserInfoError = error as? CustomNSError {
             userInfo = customUserInfoError.errorUserInfo
             code = customUserInfoError.errorCode
         }
-        
+
         if let localizedError = error as? LocalizedError {
             if let description = localizedError.errorDescription {
                 userInfo[NSLocalizedDescriptionKey] = description
@@ -269,29 +269,23 @@ extension NSError {
             if let reason = localizedError.failureReason {
                 userInfo[NSLocalizedFailureReasonErrorKey] = reason
             }
-            
+
             if let suggestion = localizedError.recoverySuggestion {
                 userInfo[NSLocalizedRecoverySuggestionErrorKey] = suggestion
             }
-            
+
             if let helpAnchor = localizedError.helpAnchor {
                 userInfo[NSHelpAnchorErrorKey] = helpAnchor
             }
-          
         }
-        
+
         if let recoverableError = error as? RecoverableError {
             userInfo[NSLocalizedRecoveryOptionsErrorKey] = recoverableError.recoveryOptions
-         //   userInfo[NSRecoveryAttempterErrorKey] = recoverableError
-       
+            //   userInfo[NSRecoveryAttempterErrorKey] = recoverableError
+
         }
-        
         self.init(domain: "OpenCloudKit", code: code, userInfo: userInfo)
-        
     }
-    
-    
-    
 }
 
 

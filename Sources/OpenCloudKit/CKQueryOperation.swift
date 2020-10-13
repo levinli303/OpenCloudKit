@@ -51,7 +51,7 @@ public class CKQueryOperation: CKDatabaseOperation {
         // "Warn: There's no point in running a query if there are no progress or completion blocks set. Bailing early."
         
         if(query == nil && cursor == nil){
-            throw CKPrettyError(code: CKErrorCode.InvalidArguments, description: "either a query or query cursor must be provided for \(self)")
+            throw CKPrettyError(code: CKErrorCode.invalidArguments, description: "either a query or query cursor must be provided for \(self)")
         }
     }
     
@@ -107,7 +107,7 @@ public class CKQueryOperation: CKDatabaseOperation {
                         } else {
                             // Create Error
                             // Invalid state to be in, this operation normally doesnt provide partial errors
-                            let error = NSError(domain: CKErrorDomain, code: CKErrorCode.PartialFailure.rawValue, userInfo: [NSLocalizedDescriptionKey: "Failed to parse record from server"])
+                            let error = NSError(domain: CKErrorDomain, code: CKErrorCode.partialFailure.rawValue, userInfo: [NSLocalizedDescriptionKey: "Failed to parse record from server"])
                             strongSelf.finish(error: error)
                             return
                         }

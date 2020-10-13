@@ -9,17 +9,17 @@
 import Foundation
 
 class CKOperationInfo {
-    
+
 }
 
 class CKDatabaseOperationInfo: CKOperationInfo {
     let databaseScope: CKDatabaseScope
-    
+
     init(databaseScope: CKDatabaseScope) {
         self.databaseScope = databaseScope
         super.init()
     }
-    
+
 }
 
 extension CKOperationInfo: CKCodable {

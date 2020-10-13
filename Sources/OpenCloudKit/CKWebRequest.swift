@@ -59,11 +59,11 @@ class CKWebRequest {
         
         switch networkError.code {
         case NSURLErrorNotConnectedToInternet:
-            errorCode = .NetworkUnavailable
+            errorCode = .networkUnavailable
         case NSURLErrorCannotFindHost, NSURLErrorCannotConnectToHost:
             errorCode = .ServiceUnavailable
         default:
-            errorCode = .NetworkFailure
+            errorCode = .networkFailure
         }
         
         let error = NSError(domain: CKErrorDomain, code: errorCode.rawValue, userInfo: userInfo)
@@ -88,7 +88,7 @@ class CKWebRequest {
         } else {
             
            
-            return NSError(domain: CKErrorDomain, code: CKErrorCode.InternalError.rawValue, userInfo: NSErrorUserInfoType())
+            return NSError(domain: CKErrorDomain, code: CKErrorCode.internalError.rawValue, userInfo: NSErrorUserInfoType())
         }
     }
 

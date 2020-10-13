@@ -1,6 +1,6 @@
 //
 //  CKAssetUploadTokenURLRequest.swift
-//  
+//
 //
 //  Created by Levin Li on 2020/10/13.
 //
@@ -25,7 +25,6 @@ struct CKAssetUploadToken: Encodable {
 }
 
 class CKAssetUploadTokenURLRequest: CKURLRequest {
-
     var assetsToUpload: [(asset: CKAsset, uploadToken: CKAssetUploadToken)]
 
     var zoneID: CKRecordZoneID?

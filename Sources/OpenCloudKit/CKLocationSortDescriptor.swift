@@ -9,16 +9,15 @@
 import Foundation
 
 public class CKLocationSortDescriptor: NSSortDescriptor {
-    
     public init(key: String, relativeLocation: CKLocationType) {
         self.relativeLocation = relativeLocation
         super.init(key: key, ascending: true)
     }
-    
+
     required public init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
     public var relativeLocation: CKLocationType
-    
+
 }

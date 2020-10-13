@@ -9,27 +9,26 @@
 import Foundation
 
 enum CKConfigError: Error {
-    case FailedInit
-    case InvalidJSON
+    case failedInit
+    case invalidJSON
 }
 
 public struct CKConfig {
-    
     let containers: [CKContainerConfig]
-    
+
     public init(containers: [CKContainerConfig]) {
         self.containers = containers
     }
-    
+
     public init(container: CKContainerConfig) {
         self.containers = [container]
     }
-    
+
     init?(dictionary: [String: Any], workingDirectory: String?) {
         guard let containerDictionaries = dictionary["containers"] as? [[String: Any]] else {
             return nil
         }
-        
+
         let containers = containerDictionaries.compactMap { (containerDictionary) -> CKContainerConfig? in
             var containerConfig = CKContainerConfig(dictionary: containerDictionary)
             if let workingDirectory = workingDirectory, let privateKeyFile = containerConfig?.serverToServerKeyAuth?.privateKeyFile {
@@ -37,28 +36,27 @@ public struct CKConfig {
             }
             return containerConfig
         }
-        
+
         if containers.count > 0 {
             self.containers = containers
         } else {
             return nil
         }
     }
-    
+
     public init(contentsOfFile path: String) throws {
-       
-            let url = URL(fileURLWithPath: path)
-         
-            let directory = url.deletingLastPathComponent()
-            
-            let jsonData = try NSData(contentsOfFile: path, options: [])
-            
-            if let dictionary = try JSONSerialization.jsonObject(with: jsonData.bridge(), options: []) as? [String: Any] {
-                self.init(dictionary: dictionary, workingDirectory: directory.path)!
-            } else {
-                throw CKConfigError.InvalidJSON
-            }
-        
+
+        let url = URL(fileURLWithPath: path)
+
+        let directory = url.deletingLastPathComponent()
+
+        let jsonData = try NSData(contentsOfFile: path, options: [])
+
+        if let dictionary = try JSONSerialization.jsonObject(with: jsonData.bridge(), options: []) as? [String: Any] {
+            self.init(dictionary: dictionary, workingDirectory: directory.path)!
+        } else {
+            throw CKConfigError.invalidJSON
+        }
     }
 }
 
@@ -68,7 +66,7 @@ public struct CKContainerConfig {
     public let apnsEnvironment: CKEnvironment
     public let apiTokenAuth: String?
     public var serverToServerKeyAuth: CKServerToServerKeyAuth?
-    
+
     public init(containerIdentifier: String, environment: CKEnvironment,apiTokenAuth: String, apnsEnvironment: CKEnvironment? = nil) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
@@ -77,11 +75,11 @@ public struct CKContainerConfig {
         } else {
             self.apnsEnvironment = environment
         }
-        
+
         self.apiTokenAuth = apiTokenAuth
         self.serverToServerKeyAuth = nil
     }
-    
+
     public init(containerIdentifier: String, environment: CKEnvironment, serverToServerKeyAuth: CKServerToServerKeyAuth, apnsEnvironment: CKEnvironment? = nil) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
@@ -93,31 +91,31 @@ public struct CKContainerConfig {
         self.apiTokenAuth = nil
         self.serverToServerKeyAuth = serverToServerKeyAuth
     }
-    
+
     init?(dictionary: [String: Any]) {
         guard let containerIdentifier = dictionary["containerIdentifier"] as? String, let environmentValue = dictionary["environment"] as? String,
-            let environment = CKEnvironment(rawValue: environmentValue)  else {
+              let environment = CKEnvironment(rawValue: environmentValue)  else {
             return nil
         }
-        
+
         let apnsEnvironment = CKEnvironment(rawValue: dictionary["apnsEnvironment"] as? String ?? "")
-        
+
         if let apiTokenAuthDictionary = dictionary["apiTokenAuth"] as? [String: Any] {
-            
+
             if let apiToken = apiTokenAuthDictionary["apiToken"] as? String {
                 self.init(containerIdentifier: containerIdentifier, environment: environment, apiTokenAuth: apiToken, apnsEnvironment: apnsEnvironment)
             } else {
                 return nil
             }
-            
+
         } else if let serverToServerKeyAuthDictionary = dictionary["serverToServerKeyAuth"] as? [String: Any] {
             guard let keyID = serverToServerKeyAuthDictionary["keyID"] as? String, let privateKeyFile = serverToServerKeyAuthDictionary["privateKeyFile"] as? String else {
                 return nil
             }
-            
+
             let privateKeyPassPhrase = serverToServerKeyAuthDictionary["privateKeyPassPhrase"] as? String
             let auth = CKServerToServerKeyAuth(keyID: keyID, privateKeyFile: privateKeyFile, privateKeyPassPhrase: privateKeyPassPhrase)
-            
+
             self.init(containerIdentifier: containerIdentifier, environment: environment, serverToServerKeyAuth: auth, apnsEnvironment: apnsEnvironment)
 
         } else {
@@ -137,10 +135,10 @@ public struct CKServerToServerKeyAuth {
     public let keyID: String
     // The path to the PEM encoded key file.
     public var privateKeyFile: String
-    
+
     //The pass phrase for the key.
     public let privateKeyPassPhrase: String?
-    
+
     public init(keyID: String, privateKeyFile: String, privateKeyPassPhrase: String? = nil) {
         self.keyID = keyID
         self.privateKeyFile = privateKeyFile

@@ -13,13 +13,13 @@ protocol CKURLRequestMetricsDelegate {
 }
 
 struct CKOperationMetrics {
-    
+
     var bytesDownloaded: UInt = 0
-    
+
     var bytesUploaded: UInt = 0
-    
+
     var duration: TimeInterval = 0
-    
+
     var startDate: Date
-    
+
 }

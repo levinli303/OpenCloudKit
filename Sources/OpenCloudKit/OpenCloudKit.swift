@@ -174,12 +174,9 @@ public class CKRecordZoneID: NSObject, NSSecureCoding {
 }
 
 extension CKRecordZoneID: CKCodable {
-
-
     var dictionary: [String: Any] {
-
         var zoneIDDictionary: [String: Any] = [
-        "zoneName": zoneName.bridge()
+            "zoneName": zoneName.bridge()
         ]
 
         if ownerName != CKRecordZoneIDDefaultOwnerName {

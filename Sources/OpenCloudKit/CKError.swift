@@ -11,74 +11,72 @@ import Foundation
 let CKErrorDomain: String = "CKErrorDomain"
 
 enum CKErrorCode : Int {
-    case InternalError
-    case PartialFailure
-    case NetworkUnavailable
-    case NetworkFailure
-    case BadContainer
-    case ServiceUnavailable
-    case RequestRateLimited
-    case MissingEntitlement
-    case NotAuthenticated
-    case PermissionFailure
-    case UnknownItem
-    case InvalidArguments
-    case ResultsTruncated
-    case ServerRecordChanged
-    case ServerRejectedRequest
-    case AssetFileNotFound
-    case AssetFileModified
-    case IncompatibleVersion
-    case ConstraintViolation
-    case OperationCancelled
-    case ChangeTokenExpired
-    case BatchRequestFailed
-    case ZoneBusy
-    case BadDatabase
-    case QuotaExceeded
-    case ZoneNotFound
-    case LimitExceeded
-    case UserDeletedZone
-    case TooManyParticipants
-    case AlreadyShared
-    case ReferenceViolation
-    case ManagedAccountRestricted
-    case ParticipantMayNeedVerification
-    
+    case internalError
+    case partialFailure
+    case networkUnavailable
+    case networkFailure
+    case badContainer
+    case serviceUnavailable
+    case requestRateLimited
+    case missingEntitlement
+    case notAuthenticated
+    case permissionFailure
+    case unknownItem
+    case invalidArguments
+    case resultsTruncated
+    case serverRecordChanged
+    case serverRejectedRequest
+    case assetFileNotFound
+    case assetFileModified
+    case incompatibleVersion
+    case constraintViolation
+    case operationCancelled
+    case changeTokenExpired
+    case batchRequestFailed
+    case zoneBusy
+    case badDatabase
+    case quotaExceeded
+    case zoneNotFound
+    case limitExceeded
+    case userDeletedZone
+    case tooManyParticipants
+    case alreadyShared
+    case referenceViolation
+    case managedAccountRestricted
+    case participantMayNeedVerification
 }
 
 extension CKErrorCode {
     static func errorCode(serverError: String) -> CKErrorCode? {
-        
         switch(serverError) {
         case "ACCESS_DENIED":
-            return CKErrorCode.NotAuthenticated
+            return .notAuthenticated
         case "ATOMIC_ERROR":
-            return CKErrorCode.BatchRequestFailed
+            return CKErrorCode.batchRequestFailed
         case "AUTHENTICATION_FAILED":
-            return CKErrorCode.NotAuthenticated
+            return CKErrorCode.notAuthenticated
         case "AUTHENTICATION_REQUIRED":
-            return CKErrorCode.PermissionFailure
+            return CKErrorCode.permissionFailure
         case "BAD_REQUEST":
-            return CKErrorCode.ServerRejectedRequest
+            return CKErrorCode.serverRejectedRequest
         case "CONFLICT":
-            return CKErrorCode.ChangeTokenExpired
+            return CKErrorCode.changeTokenExpired
         case "EXISTS":
-            return CKErrorCode.ConstraintViolation
+            return CKErrorCode.constraintViolation
         case "INTERNAL_ERROR":
-            return CKErrorCode.InternalError
+            return CKErrorCode.internalError
         case "NOT_FOUND":
-            return CKErrorCode.UnknownItem
+            return CKErrorCode.unknownItem
         case "QUOTA_EXCEEDED":
-            return CKErrorCode.QuotaExceeded
+            return CKErrorCode.quotaExceeded
         case "THROTTLED":
-            return CKErrorCode.RequestRateLimited
+            return CKErrorCode.requestRateLimited
         case "TRY_AGAIN_LATER":
-            return CKErrorCode.InternalError
+            return CKErrorCode.internalError
         case "VALIDATING_REFERENCE_ERROR":
-            return CKErrorCode.ConstraintViolation
+            return CKErrorCode.constraintViolation
         case "ZONE_NOT_FOUND":
-            return CKErrorCode.ZoneNotFound
+            return CKErrorCode.zoneNotFound
         default:
             fatalError("Unknown  Server Error: \(serverError)")
         }
@@ -88,73 +86,72 @@ extension CKErrorCode {
 extension CKErrorCode: CustomStringConvertible {
     var description: String {
         switch self {
-        case .InternalError:
+        case .internalError:
             return "Internal Error"
-        case .PartialFailure:
+        case .partialFailure:
             return "Partial Failure"
-        case .NetworkUnavailable:
+        case .networkUnavailable:
             return "Network Unavailable"
-        case .NetworkFailure:
+        case .networkFailure:
             return "Network Failure"
-        case .BadContainer:
+        case .badContainer:
             return "Bad Container"
-        case .ServiceUnavailable:
+        case .serviceUnavailable:
             return "Service Unavailable"
-        case .RequestRateLimited:
+        case .requestRateLimited:
             return "Request Rate Limited"
-        case .MissingEntitlement:
+        case .missingEntitlement:
             return "Missing Entitlement"
-        case .NotAuthenticated:
+        case .notAuthenticated:
             return "Not Authenticated"
-        case .PermissionFailure:
+        case .permissionFailure:
             return "Permission Failure"
-        case .UnknownItem:
+        case .unknownItem:
             return "Unknown Item"
-        case .InvalidArguments:
+        case .invalidArguments:
             return "Invalid Arguments"
-        case .ResultsTruncated:
+        case .resultsTruncated:
             return "Results Truncated"
-        case .ServerRecordChanged:
+        case .serverRecordChanged:
             return "Server Record Changed"
-        case .ServerRejectedRequest:
+        case .serverRejectedRequest:
             return "Server Rejected Request"
-        case .AssetFileNotFound:
+        case .assetFileNotFound:
             return "Asset File Not Found"
-        case .AssetFileModified:
+        case .assetFileModified:
             return "Asset File Modified"
-        case .IncompatibleVersion:
+        case .incompatibleVersion:
             return "Incompatible Version"
-        case .ConstraintViolation:
+        case .constraintViolation:
             return "Constraint Violation"
-        case .OperationCancelled:
+        case .operationCancelled:
             return "Operation Cancelled"
-        case .ChangeTokenExpired:
+        case .changeTokenExpired:
             return "Change Token Expired"
-        case .BatchRequestFailed:
+        case .batchRequestFailed:
             return "Batch Request Failed"
-        case .ZoneBusy:
+        case .zoneBusy:
             return "Zone Busy"
-        case .BadDatabase:
+        case .badDatabase:
             return "Invalid Database For Operation"
-        case .QuotaExceeded:
+        case .quotaExceeded:
             return "Quota Exceeded"
-        case .ZoneNotFound:
+        case .zoneNotFound:
             return "Zone Not Found"
-        case .LimitExceeded:
+        case .limitExceeded:
             return "Limit Exceeded"
-        case .UserDeletedZone:
+        case .userDeletedZone:
             return "User Deleted Zone"
-        case .TooManyParticipants:
+        case .tooManyParticipants:
             return "Too Many Participants"
-        case .AlreadyShared:
+        case .alreadyShared:
             return "Already Shared"
-        case .ReferenceViolation:
+        case .referenceViolation:
             return "Reference Violation"
-        case .ManagedAccountRestricted:
+        case .managedAccountRestricted:
             return "Managed Account Restricted"
-        case .ParticipantMayNeedVerification:
+        case .participantMayNeedVerification:
             return "Participant May Need Verification"
         }
     }
 }
-
