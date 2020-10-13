@@ -12,11 +12,6 @@ public let CKRecordTypeUserRecord: String = "Users"
 public protocol CKRecordFieldProvider {
     var recordFieldDictionary: [String: Any] { get }
 }
-extension CKRecordFieldProvider where Self: Any {
-    public var recordFieldDictionary: [String: Any] {
-        return ["value": self]
-    }
-}
 /*
 extension CKRecordFieldProvider where Self: CustomDictionaryConvertible {
     public var recordFieldDictionary: [String: Any] {
@@ -24,8 +19,6 @@ extension CKRecordFieldProvider where Self: CustomDictionaryConvertible {
     }
 }
 */
-public protocol CKRecordValue : CKRecordFieldProvider {}
-
 
 public class CKRecord: NSObject, NSSecureCoding {
 
@@ -82,15 +75,6 @@ public class CKRecord: NSObject, NSSecureCoding {
         }
 
         values[key] = object
-    }
-
-    public func setObject(_ array: [CKRecordValue]?, forKey key: String) {
-        if let arrayValue = array {
-            let foundationArray = NSArray(array: arrayValue)
-            setObject(foundationArray, forKey: key)
-        } else {
-            setObject(array, forKey: key)
-        }
     }
 
     public func allKeys() -> [String] {
@@ -326,8 +310,8 @@ extension CKRecord {
                 switch type {
 
                 case "LOCATION":
-                    let latitude = (dictionary["latitude"] as! NSNumber).doubleValue
-                    let longitude = (dictionary["longitude"] as! NSNumber).doubleValue
+                    let latitude = dictionary["latitude"] as! Double
+                    let longitude = dictionary["longitude"] as! Double
 
                     return CKLocation(latitude: latitude, longitude: longitude)
                 case "ASSETID":
@@ -357,16 +341,29 @@ extension CKRecord {
             case let array as [Any]:
                 switch type {
                 case "INT64_LIST":
-                    let numberArray =  array as! [NSNumber]
-                   return NSArray(array: numberArray)
+                    return array as! [Int64]
+                case "DOUBLE_LIST":
+                    return array as! [Double]
                 case "STRING_LIST":
-                    return NSArray(array: array)
+                    return array as! [String]
                 case "TIMESTAMP_LIST":
-                    let dateArray = (array as! [NSNumber]).map({ (timestamp) -> NSDate in
-                        return  NSDate(timeIntervalSince1970: timestamp.doubleValue / 1000)
-                    })
-                    return NSArray(array: dateArray)
-
+                    return (array as! [Double]).map { item -> Date in
+                        return Date(timeIntervalSince1970: item / 1000)
+                    }
+                case "LOCATION_LIST":
+                    return (array as! [[String: Any]]).map { item -> CKLocation in
+                        let latitude = item["latitude"] as! Double
+                        let longitude = item["longitude"] as! Double
+                        return CKLocation(latitude: latitude, longitude: longitude)
+                    }
+                case "REFERENCE_LIST":
+                    return (array as! [[String: Any]]).map { item -> CKReference in
+                        return CKReference(dictionary: item)!
+                    }
+                case "ASSETID_LIST":
+                    return (array as! [[String: Any]]).map { item -> CKAsset in
+                        return CKAsset(dictionary: item)!
+                    }
                 default:
                     fatalError("List type of \(type) not supported")
                 }
@@ -378,80 +375,223 @@ extension CKRecord {
             return nil
         }
     }
-
-
-
 }
 
-extension NSString : CKRecordValue {
+public protocol CKRecordValue : CKRecordFieldProvider {
+    static var typeName: String? { get }
+    var dictionaryValue: Any { get }
+}
+
+extension CKRecordValue {
     public var recordFieldDictionary: [String : Any] {
-        return ["value": self, "type":"STRING"]
+        if let type = Self.typeName {
+            return ["value": dictionaryValue, "type": type]
+        }
+        return ["value": dictionaryValue]
     }
 }
 
-extension String : CKRecordValue {
-    public var recordFieldDictionary: [String : Any] {
-        return ["value": self, "type":"STRING"]
+public protocol CKRecordValueType: CKRecordValue {
+    associatedtype MappedType
+    associatedtype TransformedType
+
+    var valueProvider: MappedType { get }
+    func transform(_ value: MappedType) -> TransformedType
+}
+
+extension CKRecordValueType {
+    public var dictionaryValue: Any {
+        return transform(valueProvider)
     }
 }
 
+public protocol CKRecordValueString: CKRecordValueType where MappedType == String, TransformedType == String {}
 
-extension NSNumber : CKRecordValue {}
+extension CKRecordValueString {
+    public static var typeName: String? { return "STRING" }
 
-extension NSArray : CKRecordValue {}
-
-extension Int64 : CKRecordValue {}
-extension Int32 : CKRecordValue {}
-extension Int16 : CKRecordValue {}
-extension Int8 : CKRecordValue {}
-extension Int : CKRecordValue {}
-
-extension UInt64 : CKRecordValue {}
-extension UInt32 : CKRecordValue {}
-extension UInt16 : CKRecordValue {}
-extension UInt8 : CKRecordValue {}
-extension UInt: CKRecordValue {}
-
-extension Double: CKRecordValue {}
-
-extension Float: CKRecordValue {}
-
-extension Bool: CKRecordValue {}
-
-extension NSDate : CKRecordValue {
-    public var recordFieldDictionary: [String : Any] {
-        return ["value": NSNumber(value: UInt64(self.timeIntervalSince1970 * 1000)), "type":"TIMESTAMP"]
+    public func transform(_ value: MappedType) -> TransformedType {
+        return value
     }
 }
 
-extension Date : CKRecordValue {
-    public var recordFieldDictionary: [String : Any] {
-        return ["value": NSNumber(value: UInt64(self.timeIntervalSince1970 * 1000)), "type":"TIMESTAMP"]
+public protocol CKRecordValueInt64: CKRecordValueType where MappedType == Int64, TransformedType == Int64 {}
+
+extension CKRecordValueInt64 {
+    public static var typeName: String? { return "INT64" }
+
+    public func transform(_ value: MappedType) -> TransformedType {
+        return value
     }
 }
 
-extension NSData : CKRecordValue {}
+public protocol CKRecordValueDouble: CKRecordValueType where MappedType == Double, TransformedType == Double {}
 
-extension CKAsset: CKRecordValue {
-    public var recordFieldDictionary: [String: Any] {
-        return ["value": self.dictionary as Any]
+extension CKRecordValueDouble {
+    public static var typeName: String? { return "DOUBLE" }
+
+    public func transform(_ value: MappedType) -> TransformedType {
+        return value
     }
 }
 
-extension CKReference: CKRecordValue {
-    public var recordFieldDictionary: [String: Any] {
-        return ["value": self.dictionary as Any, "type": "REFERENCE"]
+public protocol CKRecordValueDate: CKRecordValueType where MappedType == Date, TransformedType == Int64 {}
+
+extension CKRecordValueDate {
+    public static var typeName: String? { return "TIMESTAMP" }
+
+    public func transform(_ value: MappedType) -> TransformedType {
+        return Int64(value.timeIntervalSince1970 * 1000)
     }
 }
 
-extension CKLocation: CKRecordValue {
-    public var recordFieldDictionary: [String: Any] {
-        return ["value": self.dictionary as Any, "type": "LOCATION"]
+public protocol CKRecordValueData: CKRecordValueType where MappedType == Data, TransformedType == String {}
+
+extension CKRecordValueData {
+    public static var typeName: String? { return "BYTES" }
+
+    public func transform(_ value: MappedType) -> TransformedType {
+        return value.base64EncodedString()
     }
 }
 
-extension CKLocationType {
-    public var recordFieldDictionary: [String: Any] {
-        return ["value": self.dictionary as Any, "type": "LOCATION"]
+public protocol CKRecordValueAsset: CKRecordValueType where MappedType == [String: Any], TransformedType == [String: Any] {}
+
+extension CKRecordValueAsset {
+    public static var typeName: String? { return "ASSETID" }
+
+    public func transform(_ value: MappedType) -> TransformedType {
+        return value
+    }
+}
+
+public protocol CKRecordValueReference: CKRecordValueType where MappedType == [String: Any], TransformedType == [String: Any] {}
+
+extension CKRecordValueReference {
+    public static var typeName: String? { return "REFERENCE" }
+
+    public func transform(_ value: MappedType) -> TransformedType {
+        return value
+    }
+}
+
+public protocol CKRecordValueLocation: CKRecordValueType where MappedType == CKLocation, TransformedType == [String: Any] {}
+
+extension CKRecordValueLocation {
+    public static var typeName: String? { return "LOCATION" }
+
+    public func transform(_ value: MappedType) -> TransformedType {
+        return value.dictionary
+    }
+}
+
+extension NSString: CKRecordValueString {
+    public var valueProvider: String { return self as String }
+}
+
+extension String: CKRecordValueString {
+    public var valueProvider: String { self }
+}
+
+extension Int64: CKRecordValueInt64 {
+    public var valueProvider: Int64 { return Int64(self) }
+}
+extension Int32: CKRecordValueInt64 {
+    public var valueProvider: Int64 { return Int64(self) }
+}
+
+extension Int16: CKRecordValueInt64 {
+    public var valueProvider: Int64 { return Int64(self) }
+}
+
+extension Int8: CKRecordValueInt64 {
+    public var valueProvider: Int64 { return Int64(self) }
+}
+
+extension Int: CKRecordValueInt64 {
+    public var valueProvider: Int64 { return Int64(self) }
+}
+
+extension UInt64: CKRecordValueInt64 {
+    public var valueProvider: Int64 { return Int64(self) }
+}
+
+extension UInt32: CKRecordValueInt64 {
+    public var valueProvider: Int64 { return Int64(self) }
+}
+
+extension UInt16: CKRecordValueInt64 {
+    public var valueProvider: Int64 { return Int64(self) }
+}
+
+extension UInt8: CKRecordValueInt64 {
+    public var valueProvider: Int64 { return Int64(self) }
+}
+
+extension UInt: CKRecordValueInt64 {
+    public var valueProvider: Int64 { return Int64(self) }
+}
+
+extension Bool: CKRecordValueInt64 {
+    public var valueProvider: Int64 { return self ? 1 : 0 }
+}
+
+extension Double: CKRecordValueDouble {
+    public var valueProvider: Double { return Double(self) }
+}
+
+extension Float: CKRecordValueDouble {
+    public var valueProvider: Double { return Double(self) }
+}
+
+extension NSDate: CKRecordValueDate {
+    public var valueProvider: Date { return self as Date }
+}
+
+extension Date: CKRecordValueDate {
+    public var valueProvider: Date { return self }
+}
+
+extension NSData : CKRecordValueData {
+    public var valueProvider: Data { return self as Data }
+}
+
+extension Data : CKRecordValueData {
+    public var valueProvider: Data { return self }
+}
+
+extension CKAsset: CKRecordValueAsset {
+    public var valueProvider: [String : Any] {
+        return dictionary
+    }
+}
+
+extension CKReference: CKRecordValueReference {
+    public var valueProvider: [String : Any] {
+        return dictionary
+    }
+}
+
+extension CKLocation: CKRecordValueLocation {
+    public var valueProvider: CKLocation {
+        return self
+    }
+}
+
+extension NSNumber: CKRecordValue {
+    public static var typeName: String? { return nil }
+    public var dictionaryValue: Any { return self }
+}
+
+extension Array: CKRecordFieldProvider, CKRecordValue where Element: CKRecordValue {
+    public static var typeName: String? {
+        if let firstItemTypeName = Element.typeName {
+            return "\(firstItemTypeName)_LIST"
+        }
+        return nil
+    }
+
+    public var dictionaryValue: Any {
+        return map { $0.dictionaryValue }
     }
 }

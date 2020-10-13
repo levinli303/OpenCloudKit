@@ -24,7 +24,8 @@ let package = Package(
         ]),
         .testTarget(
             name: "OpenCloudKitTests",
-            dependencies: ["OpenCloudKit"]
+            dependencies: ["OpenCloudKit"],
+            resources: [.copy("eckey.pem"), .copy("asset1.txt"), .copy("asset2.txt")]
         ),
     ]
 )

@@ -161,8 +161,6 @@ struct CKPredicate {
     }
 
     func value(forString string: String) -> CKRecordValue {
-
-
         let numberFromString = numberFormatter.number(from: string)
 
         if let number = numberFromString {

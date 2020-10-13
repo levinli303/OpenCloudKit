@@ -8,25 +8,18 @@
 
 import Foundation
 
-public protocol CKLocationType: CustomDictionaryConvertible, CKRecordFieldProvider {
+public protocol CKLocationType: CustomDictionaryConvertible, CKRecordValueLocation {
     var coordinateType: CKLocationCoordinate2DType { get }
-
     var altitude: CKLocationDistance { get }
-
     var horizontalAccuracy: CKLocationAccuracy { get }
-
     var verticalAccuracy: CKLocationAccuracy { get }
-
     var course: CKLocationDirection { get }
-
     var speed: CKLocationSpeed { get }
-
     var timestamp: Date { get }
 }
 
 public protocol CKLocationCoordinate2DType {
     var latitude: CKLocationDegrees { get }
-
     var longitude: CKLocationDegrees { get }
 }
 

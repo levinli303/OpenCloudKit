@@ -9,7 +9,7 @@
 import Foundation
 
 public class CKLocationSortDescriptor: NSSortDescriptor {
-    public init(key: String, relativeLocation: CKLocationType) {
+    public init(key: String, relativeLocation: CKLocation) {
         self.relativeLocation = relativeLocation
         super.init(key: key, ascending: true)
     }
@@ -18,6 +18,6 @@ public class CKLocationSortDescriptor: NSSortDescriptor {
         fatalError("init(coder:) has not been implemented")
     }
 
-    public var relativeLocation: CKLocationType
+    public var relativeLocation: CKLocation
 
 }

@@ -278,6 +278,10 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
             for key in record.allKeys() {
                 if let asset = record[key] as? CKAsset {
                     assets.append((asset, CKAssetUploadToken(recordType: record.recordType, fieldName: key, recordName: record.recordID.recordName)))
+                } else if let assetArray = record[key] as? [CKAsset] {
+                    for asset in assetArray {
+                        assets.append((asset, CKAssetUploadToken(recordType: record.recordType, fieldName: key, recordName: record.recordID.recordName)))
+                    }
                 }
             }
         }

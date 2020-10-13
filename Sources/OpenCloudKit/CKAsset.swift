@@ -23,13 +23,10 @@ public class CKAsset: NSObject {
     var downloadBaseURL: String?
 
     var downloadURL: URL? {
-        get {
-            if let downloadBaseURL = downloadBaseURL {
-                return URL(string: downloadBaseURL)!
-            } else {
-                return nil
-            }
+        if let downloadBaseURL = downloadBaseURL {
+            return URL(string: downloadBaseURL)
         }
+        return nil
     }
 
     var size: UInt?
@@ -58,7 +55,7 @@ public class CKAsset: NSObject {
         let downloadURLString = downloadURL.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!
 
         fileURL = URL(string: downloadURLString)!
-        self.downloadBaseURL = downloadURL
+        self.downloadBaseURL = downloadURLString
         self.size = size.uintValue
         downloaded = false
     }

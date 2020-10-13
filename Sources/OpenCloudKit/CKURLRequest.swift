@@ -67,7 +67,7 @@ class CKURLRequest: NSObject {
         get {
             var urlRequest = URLRequest(url: url)
             if let properties = requestProperties {
-                let jsonData: Data = try! JSONSerialization.data(withJSONObject: properties, options: [])
+                let jsonData = try! JSONSerialization.data(withJSONObject: properties, options: [])
 
                 urlRequest.httpBody = jsonData
                 urlRequest.httpMethod = httpMethod
