@@ -34,9 +34,9 @@ extension CKQueryFilter: CKCodable {
     
     public var dictionary: [String: Any] {
         var filterDictionary: [String: Any] = [
-            "comparator": type.rawValue.bridge(),
-            "fieldName": fieldName.bridge(),
-            "fieldValue": fieldValue.recordFieldDictionary.bridge()
+            "comparator": type.rawValue,
+            "fieldName": fieldName,
+            "fieldValue": fieldValue.recordFieldDictionary
         ]
         
         if let bounds = bounds {

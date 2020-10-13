@@ -34,7 +34,7 @@ struct CKServerRequestAuth {
     
     let signature: String
     
-    init?(requestBody: NSData, urlPath: String, privateKeyPath: String) {
+    init?(requestBody: Data, urlPath: String, privateKeyPath: String) {
         
         self.requestDate = CKServerRequestAuth.ISO8601DateFormatter.string(from: Date())
         
@@ -73,13 +73,13 @@ struct CKServerRequestAuth {
         }
     }
     
-    static func rawPayload(withRequestDate requestDate: String, requestBody: NSData, urlSubpath: String) -> String {
-        let bodyHash = requestBody.bridge().sha256
+    static func rawPayload(withRequestDate requestDate: String, requestBody: Data, urlSubpath: String) -> String {
+        let bodyHash = requestBody.sha256
         let hashedBody = bodyHash.base64EncodedString(options: [])
         return "\(requestDate):\(hashedBody):\(urlSubpath)"
     }
     
-    static func signature(requestDate: String, requestBody: NSData, urlSubpath: String, privateKeyPath: String) -> String? {
+    static func signature(requestDate: String, requestBody: Data, urlSubpath: String, privateKeyPath: String) -> String? {
         
         let rawPayloadString = rawPayload(withRequestDate: requestDate, requestBody: requestBody, urlSubpath: urlSubpath)
       
@@ -97,7 +97,7 @@ struct CKServerRequestAuth {
     
     static func authenticateServer(forRequest request: URLRequest, serverKeyID: String, privateKeyPath: String) -> URLRequest? {
         var request = request
-        guard let requestBody = request.httpBody, let path = request.url?.path, let auth = CKServerRequestAuth(requestBody: NSData(data: requestBody), urlPath: path, privateKeyPath: privateKeyPath) else {
+        guard let requestBody = request.httpBody, let path = request.url?.path, let auth = CKServerRequestAuth(requestBody: requestBody, urlPath: path, privateKeyPath: privateKeyPath) else {
             return nil
         }
         

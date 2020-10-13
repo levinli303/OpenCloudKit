@@ -47,24 +47,6 @@ class CKWebRequest {
         return containerConfig.serverToServerKeyAuth
     }
 
-    func ckError(forNetworkError networkError: Error) -> NSError {
-        let networkError = networkError as NSError
-        let userInfo = networkError.userInfo
-        let errorCode: CKErrorCode
-
-        switch networkError.code {
-        case NSURLErrorNotConnectedToInternet:
-            errorCode = .networkUnavailable
-        case NSURLErrorCannotFindHost, NSURLErrorCannotConnectToHost:
-            errorCode = .serviceUnavailable
-        default:
-            errorCode = .networkFailure
-        }
-
-        let error = NSError(domain: CKErrorDomain, code: errorCode.rawValue, userInfo: userInfo)
-        return error
-    }
-
     func ckError(forServerResponseDictionary dictionary: [String: Any]) -> NSError {
         if let recordFetchError = CKRecordFetchErrorDictionary(dictionary: dictionary) {
             let errorCode = CKErrorCode.errorCode(serverError: recordFetchError.serverErrorCode)!
@@ -83,8 +65,7 @@ class CKWebRequest {
         let session = URLSession.shared
         let requestCompletionHandler: (Data?, URLResponse?, Error?) -> Void = { data, response, networkError in
             if let networkError = networkError {
-                let error = self.ckError(forNetworkError: networkError)
-                completionHandler(nil, error)
+                completionHandler(nil, networkError)
             } else if let data = data {
                 do {
                     let dataString = String(data: data, encoding: .utf8)

@@ -300,9 +300,29 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
             switch result {
             case .success(let dictionary):
                 var assets = [(url: String, asset: CKAsset)]()
-                let tokens = dictionary["tokens"] as! [[String: Any]]
+
+                guard let tokens = dictionary["tokens"] as? [[String: Any]] else {
+                    strongSelf.finish(
+                        error: NSError(
+                            domain: CKErrorDomain,
+                            code: CKErrorCode.internalError.rawValue,
+                            userInfo: [NSLocalizedDescriptionKey: "Failed to parse response from server"]
+                        )
+                    )
+                    return
+                }
                 for (index, token) in tokens.enumerated() {
-                    assets.append((token["url"] as! String, assetsToUpload[index].asset))
+                    guard let url = token["url"] as? String else {
+                        strongSelf.finish(
+                            error: NSError(
+                                domain: CKErrorDomain,
+                                code: CKErrorCode.internalError.rawValue,
+                                userInfo: [NSLocalizedDescriptionKey: "Failed to parse response from server"]
+                            )
+                        )
+                        return
+                    }
+                    assets.append((url, assetsToUpload[index].asset))
                 }
                 strongSelf.uploadAssets(assets, completion: completion)
             case .error(let error):
@@ -357,7 +377,7 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
                 }
 
                 guard let info = result?["singleFile"] as? [String: Any] else {
-                    // TODO: throw error
+                    strongSelf.finish(error: NSError(domain: CKErrorDomain, code: CKErrorCode.internalError.rawValue, userInfo: [NSLocalizedDescriptionKey: "Cannot fetch token to upload asset"]))
                     return
                 }
 

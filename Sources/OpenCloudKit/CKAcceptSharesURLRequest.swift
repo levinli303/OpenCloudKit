@@ -21,8 +21,8 @@ class CKAcceptSharesURLRequest: CKURLRequest {
         var parameters: [String: Any] = [:]
 
         parameters["shortGUIDs"] = shortGUIDs.map({ (guid) -> NSDictionary in
-            return guid.dictionary.bridge()
-        }).bridge()
+            return guid.dictionary as NSDictionary
+        })
 
         requestProperties = parameters
         accountInfoProvider = CloudKit.shared.defaultAccount

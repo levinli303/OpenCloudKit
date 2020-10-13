@@ -14,11 +14,11 @@ struct CKAssetUploadToken: Encodable {
 
     var dictionary: [String: Any] {
         var dictionary: [String: Any] = [
-            "recordType": recordType.bridge(),
-            "fieldName": fieldName.bridge()
+            "recordType": recordType,
+            "fieldName": fieldName
         ]
         if let recordName = recordName {
-            dictionary["recordName"] = recordName.bridge()
+            dictionary["recordName"] = recordName
         }
         return dictionary
     }
@@ -41,7 +41,7 @@ class CKAssetUploadTokenURLRequest: CKURLRequest {
 
         var properties: [String: Any] = [:]
         if let zoneID = zoneID {
-            properties["zoneID"] = zoneID.dictionary.bridge()
+            properties["zoneID"] = zoneID.dictionary
         }
         properties["tokens"] = operationsDictionary()
         self.operationType = .assets

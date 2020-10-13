@@ -77,10 +77,10 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
 
         var request: [String: Any] = [:]
         let lookupRecords = recordIDs?.map { (recordID) -> [String: Any] in
-            return ["recordName": recordID.recordName.bridge()]
+            return ["recordName": recordID.recordName]
         }
 
-        request["records"] = lookupRecords?.bridge()
+        request["records"] = lookupRecords
 
         urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: request) { [weak self] (dictionary, error) in
 
@@ -116,7 +116,7 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
                 } else {
 
                     // Create Error
-                    let error = NSError(domain: CKErrorDomain, code: CKErrorCode.partialFailure.rawValue, userInfo: [NSLocalizedDescriptionKey: "Failed to parse record from server".bridge()])
+                    let error = NSError(domain: CKErrorDomain, code: CKErrorCode.partialFailure.rawValue, userInfo: [NSLocalizedDescriptionKey: "Failed to parse record from server"])
 
                     // Call per record callback, not to be confused with finished
                     strongSelf.completed(record: nil, recordID: nil, error: error)

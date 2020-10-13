@@ -69,8 +69,7 @@ public class CKQueryOperation: CKDatabaseOperation {
     }
     
     override func performCKOperation() {
-        
-        let queryOperationURLRequest = CKQueryURLRequest(query: query!, cursor: cursor?.data.bridge(), limit: resultsLimit, requestedFields: desiredKeys, zoneID: zoneID)
+        let queryOperationURLRequest = CKQueryURLRequest(query: query!, cursor: cursor?.data, limit: resultsLimit, requestedFields: desiredKeys, zoneID: zoneID)
         queryOperationURLRequest.accountInfoProvider = CloudKit.shared.defaultAccount
         queryOperationURLRequest.databaseScope = database?.scope ?? .public
         
@@ -83,13 +82,7 @@ public class CKQueryOperation: CKDatabaseOperation {
                 
                 // Process cursor
                 if let continuationMarker = dictionary["continuationMarker"] as? String {
-                    
-                    #if os(Linux)
-                        let data = NSData(base64Encoded: continuationMarker, options: [])
-                    #else
-                        let data = NSData(base64Encoded: continuationMarker)
-                    #endif
-                    
+                    let data = Data(base64Encoded: continuationMarker, options: [])
                     if let data = data {
                         strongSelf.resultsCursor = CKQueryCursor(data: data, zoneID: CKRecordZoneID(zoneName: "_defaultZone", ownerName: ""))
                     }

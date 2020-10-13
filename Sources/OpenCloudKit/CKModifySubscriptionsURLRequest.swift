@@ -24,8 +24,8 @@ class CKModifySubscriptionsURLRequest: CKURLRequest {
             for subscription in subscriptionsToSave {
 
                 let operation: [String: Any] = [
-                    "operationType": "create".bridge(),
-                    "subscription": subscription.subscriptionDictionary.bridge() as Any
+                    "operationType": "create",
+                    "subscription": subscription.subscriptionDictionary as Any
                 ]
 
                 operations.append(operation)
@@ -36,8 +36,8 @@ class CKModifySubscriptionsURLRequest: CKURLRequest {
             for subscriptionID in subscriptionIDsToDelete {
 
                 let operation: [String: Any] = [
-                    "operationType": "create".bridge(),
-                    "subscription": (["subscriptionID": subscriptionID.bridge()] as [String: Any]).bridge() as Any
+                    "operationType": "create",
+                    "subscription": (["subscriptionID": subscriptionID] as [String: Any]) as Any
                 ]
 
                 operations.append(operation)
@@ -53,7 +53,7 @@ class CKModifySubscriptionsURLRequest: CKURLRequest {
 
         super.init()
 
-        let properties: [String: Any] = ["operations": operationsDictionary().bridge() as Any]
+        let properties: [String: Any] = ["operations": operationsDictionary() as Any]
         self.operationType = .subscriptions
         self.path = "modify"
         self.requestProperties = properties

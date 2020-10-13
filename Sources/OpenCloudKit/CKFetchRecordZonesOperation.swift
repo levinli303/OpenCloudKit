@@ -61,7 +61,7 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
                 return zoneID.dictionary
             })
 
-            request = ["zones": zones.bridge()]
+            request = ["zones": zones]
         } else {
             url = "\(databaseURL)/zones/list"
             request = nil
