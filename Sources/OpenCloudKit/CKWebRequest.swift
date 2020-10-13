@@ -14,122 +14,100 @@ import FoundationNetworking
 
 class CKWebRequest {
     private static let jsonContentType = "application/json; charset=UTF-8"
-
     var currentWebAuthToken: String?
-    
+
     let containerConfig: CKContainerConfig
-    
+
     init(containerConfig: CKContainerConfig) {
         self.containerConfig = containerConfig
     }
-    
+
     convenience init(container: CKContainer) {
         self.init(containerConfig: CloudKit.shared.containerConfig(forContainer: container)!)
     }
-    
+
     var authQueryItems: [URLQueryItem]? {
-        
         if let apiTokenAuth = containerConfig.apiTokenAuth {
             var queryItems: [URLQueryItem] = []
 
             let apiTokenQueryItem = URLQueryItem(name: "ckAPIToken", value: apiTokenAuth)
             queryItems.append(apiTokenQueryItem)
-            
-            
+
             if let currentWebAuthToken = currentWebAuthToken {
                 let webAuthTokenQueryItem = URLQueryItem(name: "ckWebAuthToken", value: currentWebAuthToken)
                 queryItems.append(webAuthTokenQueryItem)
             }
-            
             return queryItems
         } else {
             return nil
         }
     }
-    
+
     var serverToServerKeyAuth: CKServerToServerKeyAuth? {
         return containerConfig.serverToServerKeyAuth
     }
-    /*
+
     func ckError(forNetworkError networkError: Error) -> NSError {
-        
         let networkError = networkError as NSError
         let userInfo = networkError.userInfo
         let errorCode: CKErrorCode
-        
+
         switch networkError.code {
         case NSURLErrorNotConnectedToInternet:
             errorCode = .networkUnavailable
         case NSURLErrorCannotFindHost, NSURLErrorCannotConnectToHost:
-            errorCode = .ServiceUnavailable
+            errorCode = .serviceUnavailable
         default:
             errorCode = .networkFailure
         }
-        
+
         let error = NSError(domain: CKErrorDomain, code: errorCode.rawValue, userInfo: userInfo)
         return error
     }
-    */
+
     func ckError(forServerResponseDictionary dictionary: [String: Any]) -> NSError {
         if let recordFetchError = CKRecordFetchErrorDictionary(dictionary: dictionary) {
-            
             let errorCode = CKErrorCode.errorCode(serverError: recordFetchError.serverErrorCode)!
-            
+
             var userInfo: NSErrorUserInfoType  = [:]
-         
             userInfo["redirectURL"] = recordFetchError.redirectURL
             userInfo[NSLocalizedDescriptionKey] = recordFetchError.reason
-            
             userInfo[CKErrorRetryAfterKey] = recordFetchError.retryAfter
             userInfo["uuid"] = recordFetchError.uuid
-
             return NSError(domain: CKErrorDomain, code: errorCode.rawValue, userInfo: userInfo)
-            
-        } else {
-            
-           
-            return NSError(domain: CKErrorDomain, code: CKErrorCode.internalError.rawValue, userInfo: NSErrorUserInfoType())
         }
+        return NSError(domain: CKErrorDomain, code: CKErrorCode.internalError.rawValue, userInfo: NSErrorUserInfoType())
     }
 
     func perform(request: URLRequest, completionHandler: @escaping ([String: Any]?, Error?) -> Void) -> URLSessionTask? {
-        
         let session = URLSession.shared
-       
-        let requestCompletionHandler:  (Data?, URLResponse?, Error?) -> Swift.Void = { (data, response, networkError) in
+        let requestCompletionHandler: (Data?, URLResponse?, Error?) -> Void = { data, response, networkError in
             if let networkError = networkError {
-                
-              //  let error = self.ckError(forNetworkError: networkError)
-                completionHandler(nil, networkError)
-                
+                let error = self.ckError(forNetworkError: networkError)
+                completionHandler(nil, error)
             } else if let data = data {
-                
-                
-                let dataString = NSString(data: data, encoding: String.Encoding.utf8.rawValue)
-                CloudKit.debugPrint(dataString as Any)
-                let dictionary = try! JSONSerialization.jsonObject(with: data, options: []) as! [String: Any]
-                
-                if let httpResponse = response as? HTTPURLResponse {
+                do {
+                    let dataString = String(data: data, encoding: .utf8)
+                    CloudKit.debugPrint(dataString as Any)
+                    let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as! [String: Any]
+                    let httpResponse = response as! HTTPURLResponse
                     if httpResponse.statusCode >= 400 {
-                        // Error Occurred
+                        // Error occurred
                         let error = self.ckError(forServerResponseDictionary: dictionary)
                         completionHandler(nil, error)
-                        
                     } else {
                         completionHandler(dictionary, nil)
                     }
+                } catch let error {
+                    completionHandler(nil, error)
                 }
-                
             }
-            
         }
         let task = session.dataTask(with: request, completionHandler: requestCompletionHandler)
-        
         task.resume()
-        
         return task
     }
-    
+
     func urlRequest(with url: URL, data: Data? = nil, contentType: String) -> URLRequest? {
         // Build URL
         var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
@@ -163,11 +141,7 @@ class CKWebRequest {
 
     func urlRequest(with url: URL, parameters: [String: Any]? = nil) -> URLRequest? {
         if let parameters = parameters {
-            #if os(Linux)
-            let jsonData: Data = try! JSONSerialization.data(withJSONObject: parameters.bridge(), options: [])
-            #else
             let jsonData: Data = try! JSONSerialization.data(withJSONObject: parameters, options: [])
-            #endif
             return urlRequest(with: url, data: jsonData, contentType: CKWebRequest.jsonContentType)
         }
         return urlRequest(with: url, data: nil, contentType: CKWebRequest.jsonContentType)
@@ -178,13 +152,9 @@ class CKWebRequest {
         var components = URLComponents(string: url)
         components?.queryItems = authQueryItems
         CloudKit.debugPrint(components?.path as Any)
-        guard let requestURL = components?.url else {
-            return nil
-        }
+        guard let requestURL = components?.url else { return nil }
 
-        guard let req = urlRequest(with: requestURL, parameters: parameters) else {
-            return nil
-        }
+        guard let req = urlRequest(with: requestURL, parameters: parameters) else { return nil }
         return perform(request: req, completionHandler: completion)
     }
 
@@ -193,13 +163,9 @@ class CKWebRequest {
         var components = URLComponents(string: url)
         components?.queryItems = authQueryItems
         CloudKit.debugPrint(components?.path as Any)
-        guard let requestURL = components?.url else {
-            return nil
-        }
 
-        guard let req = urlRequest(with: requestURL, data: data, contentType: contentType) else {
-            return nil
-        }
+        guard let requestURL = components?.url else { return nil }
+        guard let req = urlRequest(with: requestURL, data: data, contentType: contentType) else { return nil }
 
         return perform(request: req, completionHandler: completion)
     }
