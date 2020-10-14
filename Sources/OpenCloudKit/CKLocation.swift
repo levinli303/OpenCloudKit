@@ -8,32 +8,27 @@
 
 import Foundation
 
-public protocol CKLocationType: CustomDictionaryConvertible, CKRecordValueLocation {
-    var coordinateType: CKLocationCoordinate2DType { get }
-    var altitude: CKLocationDistance { get }
-    var horizontalAccuracy: CKLocationAccuracy { get }
-    var verticalAccuracy: CKLocationAccuracy { get }
-    var course: CKLocationDirection { get }
-    var speed: CKLocationSpeed { get }
-    var timestamp: Date { get }
-}
+#if canImport(CoreLocation)
+import CoreLocation
 
-public protocol CKLocationCoordinate2DType {
-    var latitude: CKLocationDegrees { get }
-    var longitude: CKLocationDegrees { get }
-}
+// Use built-in CLLocation as CKLocation
+public typealias CKLocation = CLLocation
+public typealias CKLocationCoordinate2D = CLLocationCoordinate2D
+public typealias CKLocationDegrees = CLLocationDegrees
+public typealias CKLocationDistance = CLLocationDistance
+public typealias CKLocationAccuracy = CLLocationAccuracy
+public typealias CKLocationSpeed = CLLocationSpeed
+public typealias CKLocationDirection = CLLocationDirection
+
+#else
 
 public typealias CKLocationDegrees = Double
-
 public typealias CKLocationDistance = Double
-
 public typealias CKLocationAccuracy = Double
-
 public typealias CKLocationSpeed = Double
-
 public typealias CKLocationDirection = Double
 
-public struct CKLocationCoordinate2D: Equatable, CKLocationCoordinate2DType {
+public struct CKLocationCoordinate2D: Equatable {
     public var latitude: CKLocationDegrees
 
     public var longitude: CKLocationDegrees
@@ -86,17 +81,11 @@ public class CKLocation: NSObject {
     }
 
     public let coordinate: CKLocationCoordinate2D
-
     public let altitude: CKLocationDistance
-
     public let horizontalAccuracy: CKLocationAccuracy
-
     public let verticalAccuracy: CKLocationAccuracy
-
     public let course: CKLocationDirection
-
     public let speed: CKLocationSpeed
-
     public let timestamp: Date
 
     public override var description: String {
@@ -111,17 +100,13 @@ public class CKLocation: NSObject {
     }
 }
 
-extension CKLocation: CKLocationType {
-    public var coordinateType: CKLocationCoordinate2DType {
-        return coordinate
-    }
-}
+#endif
 
-extension CKLocationType {
-    public var dictionary: [String: Any] {
+extension CKLocation {
+    var dictionary: [String: Any] {
         return [
-            "latitude": NSNumber(value: coordinateType.latitude),
-            "longitude": NSNumber(value: coordinateType.longitude),
+            "latitude": NSNumber(value: coordinate.latitude),
+            "longitude": NSNumber(value: coordinate.longitude),
             "horizontalAccuracy": NSNumber(value: horizontalAccuracy),
             "verticalAccuracy": NSNumber(value: verticalAccuracy),
             "altitude": NSNumber(value: altitude),

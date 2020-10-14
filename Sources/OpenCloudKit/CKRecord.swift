@@ -391,7 +391,7 @@ extension CKRecordValue {
     }
 }
 
-public protocol CKRecordValueType: CKRecordValue {
+private protocol CKRecordValueType: CKRecordValue {
     associatedtype MappedType
     associatedtype TransformedType
 
@@ -405,7 +405,7 @@ extension CKRecordValueType {
     }
 }
 
-public protocol CKRecordValueString: CKRecordValueType where MappedType == String, TransformedType == String {}
+private protocol CKRecordValueString: CKRecordValueType where MappedType == String, TransformedType == String {}
 
 extension CKRecordValueString {
     public static var typeName: String? { return "STRING" }
@@ -415,7 +415,7 @@ extension CKRecordValueString {
     }
 }
 
-public protocol CKRecordValueInt64: CKRecordValueType where MappedType == Int64, TransformedType == Int64 {}
+private protocol CKRecordValueInt64: CKRecordValueType where MappedType == Int64, TransformedType == Int64 {}
 
 extension CKRecordValueInt64 {
     public static var typeName: String? { return "INT64" }
@@ -425,7 +425,7 @@ extension CKRecordValueInt64 {
     }
 }
 
-public protocol CKRecordValueDouble: CKRecordValueType where MappedType == Double, TransformedType == Double {}
+private protocol CKRecordValueDouble: CKRecordValueType where MappedType == Double, TransformedType == Double {}
 
 extension CKRecordValueDouble {
     public static var typeName: String? { return "DOUBLE" }
@@ -435,7 +435,7 @@ extension CKRecordValueDouble {
     }
 }
 
-public protocol CKRecordValueDate: CKRecordValueType where MappedType == Date, TransformedType == Int64 {}
+private protocol CKRecordValueDate: CKRecordValueType where MappedType == Date, TransformedType == Int64 {}
 
 extension CKRecordValueDate {
     public static var typeName: String? { return "TIMESTAMP" }
@@ -445,7 +445,7 @@ extension CKRecordValueDate {
     }
 }
 
-public protocol CKRecordValueData: CKRecordValueType where MappedType == Data, TransformedType == String {}
+private protocol CKRecordValueData: CKRecordValueType where MappedType == Data, TransformedType == String {}
 
 extension CKRecordValueData {
     public static var typeName: String? { return "BYTES" }
@@ -455,7 +455,7 @@ extension CKRecordValueData {
     }
 }
 
-public protocol CKRecordValueAsset: CKRecordValueType where MappedType == [String: Any], TransformedType == [String: Any] {}
+private protocol CKRecordValueAsset: CKRecordValueType where MappedType == [String: Any], TransformedType == [String: Any] {}
 
 extension CKRecordValueAsset {
     public static var typeName: String? { return "ASSETID" }
@@ -465,7 +465,7 @@ extension CKRecordValueAsset {
     }
 }
 
-public protocol CKRecordValueReference: CKRecordValueType where MappedType == [String: Any], TransformedType == [String: Any] {}
+private protocol CKRecordValueReference: CKRecordValueType where MappedType == [String: Any], TransformedType == [String: Any] {}
 
 extension CKRecordValueReference {
     public static var typeName: String? { return "REFERENCE" }
@@ -475,7 +475,7 @@ extension CKRecordValueReference {
     }
 }
 
-public protocol CKRecordValueLocation: CKRecordValueType where MappedType == CKLocation, TransformedType == [String: Any] {}
+private protocol CKRecordValueLocation: CKRecordValueType where MappedType == CKLocation, TransformedType == [String: Any] {}
 
 extension CKRecordValueLocation {
     public static var typeName: String? { return "LOCATION" }
