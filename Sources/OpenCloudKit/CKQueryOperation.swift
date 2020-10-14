@@ -70,7 +70,7 @@ public class CKQueryOperation: CKDatabaseOperation {
     
     override func performCKOperation() {
         let queryOperationURLRequest = CKQueryURLRequest(query: query!, cursor: cursor?.data, limit: resultsLimit, requestedFields: desiredKeys, zoneID: zoneID)
-        queryOperationURLRequest.accountInfoProvider = CloudKit.shared.defaultAccount
+        queryOperationURLRequest.accountInfoProvider =  CloudKit.shared.account(forContainer: operationContainer)
         queryOperationURLRequest.databaseScope = database?.scope ?? .public
         
         queryOperationURLRequest.completionBlock = { [weak self] (result) in

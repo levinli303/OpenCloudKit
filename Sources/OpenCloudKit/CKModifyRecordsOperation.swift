@@ -201,7 +201,7 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
     private func modifyRecord() {
         // Generate the CKOperation Web Service URL
         let request = CKModifyRecordsURLRequest(recordsToSave: recordsToSave, recordIDsToDelete: recordIDsToDelete, isAtomic: isAtomic, database: database!, savePolicy: savePolicy, zoneID: zoneID)
-        request.accountInfoProvider = CloudKit.shared.defaultAccount
+        request.accountInfoProvider = CloudKit.shared.account(forContainer: operationContainer)
 
         request.completionBlock = { [weak self] (result) in
 
@@ -294,7 +294,7 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
 
         // Request asset upload tokens...
         let request = CKAssetUploadTokenURLRequest(assetsToUpload: assetsToUpload)
-        request.accountInfoProvider = CloudKit.shared.defaultAccount
+        request.accountInfoProvider = CloudKit.shared.account(forContainer: operationContainer)
         request.zoneID = zoneID
 
         self.request = request

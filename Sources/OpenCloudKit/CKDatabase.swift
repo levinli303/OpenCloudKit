@@ -59,6 +59,7 @@ public class CKDatabase {
 
     public func add(_ operation: CKDatabaseOperation) {
         operation.database = self
+        operation.container = container
         // Add to queue
         operationQueue.addOperation(operation)
 

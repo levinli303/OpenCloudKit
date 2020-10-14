@@ -40,7 +40,7 @@ public class CKAcceptSharesOperation: CKOperation {
 
     override func performCKOperation() {
         let operationURLRequest = CKAcceptSharesURLRequest(shortGUIDs: shortGUIDs)
-        operationURLRequest.accountInfoProvider = CloudKit.shared.defaultAccount
+        operationURLRequest.accountInfoProvider = CloudKit.shared.account(forContainer: operationContainer)
         operationURLRequest.completionBlock = { [weak self] (result) in
             guard let strongSelf = self, !strongSelf.isCancelled else {
                 return

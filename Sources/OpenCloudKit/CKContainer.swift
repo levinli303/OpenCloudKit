@@ -13,17 +13,27 @@ public var CKCurrentUserDefaultName: String {
 }
 
 public class CKContainer {
-    let convenienceOperationQueue = OperationQueue()
+    static var containerFactories = [String: CKContainer]()
 
+    private let convenienceOperationQueue = OperationQueue()
     public let containerIdentifier: String
 
-    public init(containerIdentifier: String) {
+    private init(containerIdentifier: String) {
         self.containerIdentifier = containerIdentifier
+    }
+
+    public class func get(_ containerIdentifier: String) -> CKContainer {
+        if let existing = containerFactories[containerIdentifier] {
+            return existing
+        }
+        let container = CKContainer(containerIdentifier: containerIdentifier)
+        containerFactories[containerIdentifier] = container
+        return container
     }
 
     public class func `default`() -> CKContainer {
         // Get Default Container
-        return CKContainer(containerIdentifier: CloudKit.shared.containers.first!.containerIdentifier)
+        return get(CloudKit.shared.containers.first!.containerIdentifier)
     }
 
     public lazy var publicCloudDatabase: CKDatabase = {
@@ -45,8 +55,7 @@ public class CKContainer {
     func registerForNotifications() {}
 
     func accountStatus(completionHandler: @escaping (CKAccountStatus, Error?) -> Void) {
-
-        guard let _ = CloudKit.shared.defaultAccount.iCloudAuthToken else {
+        guard let _ = CloudKit.shared.account(forContainerConfig: CloudKit.shared.containers.first!)!.iCloudAuthToken else {
             completionHandler(.noAccount, nil)
             return
         }

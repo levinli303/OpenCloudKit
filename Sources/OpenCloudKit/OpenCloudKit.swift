@@ -18,8 +18,6 @@ public class CloudKit {
 
     public var environment: CKEnvironment = .development
 
-    public var defaultAccount: CKAccount!
-
     public private(set) var containers: [CKContainerConfig] = []
 
     public static let shared = CloudKit()
@@ -35,24 +33,30 @@ public class CloudKit {
 
     public func configure(with configuration: CKConfig) {
         self.containers = configuration.containers
-
-        // Setup DefaultAccount
-        let container = self.containers.first!
-        if let serverAuth = container.serverToServerKeyAuth {
-
-            // Setup Server Account
-            defaultAccount = CKServerAccount(containerInfo: container.containerInfo, keyID: serverAuth.keyID, privateKeyFile: serverAuth.privateKeyFile)
-
-        } else if let apiTokenAuth = container.apiTokenAuth {
-            // Setup Anoymous Account
-            defaultAccount = CKAccount(type: .anoymous, containerInfo: container.containerInfo, cloudKitAuthToken: apiTokenAuth)
-        }
     }
 
     func containerConfig(forContainer container: CKContainer) -> CKContainerConfig? {
-        return containers.filter({ (config) -> Bool in
+        return containers.first(where: { (config) -> Bool in
             return config.containerIdentifier == container.containerIdentifier
-        }).first
+        })
+    }
+
+    func account(forContainerConfig containerConfig: CKContainerConfig) -> CKAccount? {
+        if let serverAuth = containerConfig.serverToServerKeyAuth {
+            // Server Account
+            return CKServerAccount(containerInfo: containerConfig.containerInfo, keyID: serverAuth.keyID, privateKeyFile: serverAuth.privateKeyFile)
+        } else if let apiTokenAuth = containerConfig.apiTokenAuth {
+            // Anoymous Account
+            return CKAccount(type: .anoymous, containerInfo: containerConfig.containerInfo, cloudKitAuthToken: apiTokenAuth)
+        }
+        return nil
+    }
+
+    func account(forContainer container: CKContainer) -> CKAccount? {
+        guard let containerConfig = containerConfig(forContainer: container) else {
+            return nil
+        }
+        return account(forContainerConfig: containerConfig)
     }
 
     static func debugPrint(_ items: Any...) {

@@ -105,7 +105,7 @@ class CKURLRequest: NSObject {
 
     var url: URL {
         get {
-            let accountInfo = accountInfoProvider ?? CloudKit.shared.defaultAccount!
+            let accountInfo = accountInfoProvider!
             var baseURL: String
             switch serverType {
             case .database:

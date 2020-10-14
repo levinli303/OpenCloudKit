@@ -25,7 +25,6 @@ class CKAcceptSharesURLRequest: CKURLRequest {
         })
 
         requestProperties = parameters
-        accountInfoProvider = CloudKit.shared.defaultAccount
     }
 
     convenience init(shareMetadatasToAccept: [CKShareMetadata]) {
