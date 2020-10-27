@@ -26,39 +26,35 @@ struct CKServerRequestAuth {
     static let CKRequestDateHeaderKey =  "X-Apple-CloudKit-Request-ISO8601Date"
     static let CKRequestSignatureHeaderKey = "X-Apple-CloudKit-Request-SignatureV1"
 
+    static let globalLock = NSLock()
+
     let requestDate: String
     let signature: String
 
-    init?(requestBody: Data, urlPath: String, privateKeyPath: String) {
+    init?(requestBody: Data, urlPath: String, privateKey: KeyData) {
         self.requestDate = CKServerRequestAuth.ISO8601DateFormatter.string(from: Date())
-        if let signature = CKServerRequestAuth.signature(requestDate: requestDate,requestBody: requestBody, urlSubpath: urlPath, privateKeyPath: privateKeyPath) {
+        if let signature = CKServerRequestAuth.signature(requestDate: requestDate,requestBody: requestBody, urlSubpath: urlPath, privateKey: privateKey) {
             self.signature = signature
         } else {
             return nil
         }
     }
 
-    static func sign(data: Data, privateKeyPath: String) -> Data? {
+    static func sign(data: Data, privateKey: KeyData) -> Data? {
+        var finalData: Data?
+        globalLock.lock()
         do {
-            let ecsda = try! MessageDigest("sha256WithRSAEncryption")
-            let digestContext =  try! MessageDigestContext(ecsda)
+            let ecsda = try MessageDigest("sha256WithRSAEncryption")
+            let digestContext =  try MessageDigestContext(ecsda)
 
             try digestContext.update(data)
 
-            return try digestContext.sign(privateKeyURL: privateKeyPath)
-        } catch {
-            if let messageError = error as? MessageDigestContextError {
-                switch messageError {
-                case .privateKeyNotFound:
-                    print("Private Key at \(privateKeyPath) not found")
-                default:
-                    print("Error occured while signing \(error)")
-                }
-            } else {
-                CloudKit.debugPrint(error)
-            }
-            return nil
+            finalData = try digestContext.sign(keyData: privateKey)
+        } catch let error {
+            CloudKit.debugPrint(error)
         }
+        globalLock.unlock()
+        return finalData
     }
 
     static func rawPayload(withRequestDate requestDate: String, requestBody: Data, urlSubpath: String) -> String {
@@ -67,22 +63,22 @@ struct CKServerRequestAuth {
         return "\(requestDate):\(hashedBody):\(urlSubpath)"
     }
 
-    static func signature(requestDate: String, requestBody: Data, urlSubpath: String, privateKeyPath: String) -> String? {
+    static func signature(requestDate: String, requestBody: Data, urlSubpath: String, privateKey: KeyData) -> String? {
 
         let rawPayloadString = rawPayload(withRequestDate: requestDate, requestBody: requestBody, urlSubpath: urlSubpath)
         let requestData = rawPayloadString.data(using: String.Encoding.utf8)!
 
-        let signedData = sign(data: requestData, privateKeyPath: privateKeyPath)
+        let signedData = sign(data: requestData, privateKey: privateKey)
         return signedData?.base64EncodedString(options: [])
     }
 
     static func authenicateServer(forRequest request: URLRequest, withServerToServerKeyAuth auth: CKServerToServerKeyAuth) -> URLRequest? {
-        return authenticateServer(forRequest: request, serverKeyID: auth.keyID, privateKeyPath: auth.privateKeyFile)
+        return authenticateServer(forRequest: request, serverKeyID: auth.keyID, privateKey: auth.privateKey)
     }
 
-    static func authenticateServer(forRequest request: URLRequest, serverKeyID: String, privateKeyPath: String) -> URLRequest? {
+    static func authenticateServer(forRequest request: URLRequest, serverKeyID: String, privateKey: KeyData) -> URLRequest? {
         var request = request
-        guard let requestBody = request.httpBody, let path = request.url?.path, let auth = CKServerRequestAuth(requestBody: requestBody, urlPath: path, privateKeyPath: privateKeyPath) else {
+        guard let requestBody = request.httpBody, let path = request.url?.path, let auth = CKServerRequestAuth(requestBody: requestBody, urlPath: path, privateKey: privateKey) else {
             return nil
         }
 

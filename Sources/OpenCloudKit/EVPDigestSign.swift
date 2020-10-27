@@ -38,7 +38,6 @@ public enum MessageDigestContextError: Error {
     case updateFailed
     case signFailed
     case privateKeyLoadFailed
-    case privateKeyNotFound
 }
 
 public final class MessageDigestContext {
@@ -79,34 +78,49 @@ public final class MessageDigestContext {
         }
     }
 
-    public func sign(privateKeyURL: String, passPhrase: String? = nil) throws -> Data {
+    public func sign(keyData: KeyData, passPhrase: String? = nil) throws -> Data {
         // Load Private Key
-        let privateKeyFilePointer = BIO_new_file(privateKeyURL, "r")
-        guard let privateKeyFile = privateKeyFilePointer else {
-            throw MessageDigestContextError.privateKeyNotFound
-        }
-
-        guard let privateKey  = PEM_read_bio_PrivateKey(privateKeyFile, nil, nil, nil) else {
-            throw MessageDigestContextError.privateKeyLoadFailed
-        }
-
-        if ERR_peek_error() != 0 {
-            throw MessageDigestContextError.signFailed
-        }
-
         var length: UInt32 = 8192
         var signature = [UInt8](repeating: 0, count: Int(length))
 
-        if EVP_SignFinal(context, &signature, &length, privateKey) == 0 {
+        if EVP_SignFinal(context, &signature, &length, keyData.key) == 0 {
             throw MessageDigestContextError.signFailed
         }
 
-        EVP_PKEY_free(privateKey)
-        BIO_free_all(privateKeyFilePointer)
-
         let signatureBytes = Array(signature.prefix(upTo: Int(length)))
-
         return Data(bytes: signatureBytes, count: signatureBytes.count)
+    }
+}
+
+public class KeyData: Equatable {
+    fileprivate var bio: UnsafeMutablePointer<BIO>
+    fileprivate var key: UnsafeMutablePointer<EVP_PKEY>
+
+    init(filePath: String) throws {
+        let data = try Data(contentsOf: URL(fileURLWithPath: filePath))
+        var mem: UnsafeMutablePointer<BIO>?
+        var pkey: UnsafeMutablePointer<EVP_PKEY>?
+        data.withUnsafeBytes { dataBytes in
+            let buffer: UnsafePointer<UInt8> = dataBytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            mem = BIO_new_mem_buf(buffer, Int32(data.count))
+            if mem != nil {
+                pkey = PEM_read_bio_PrivateKey(mem, nil, nil, nil)
+            }
+        }
+        if mem == nil || pkey == nil {
+            throw MessageDigestContextError.privateKeyLoadFailed
+        }
+        bio = mem!
+        key = pkey!
+    }
+
+    deinit {
+        EVP_PKEY_free(key)
+        BIO_free_all(bio)
+    }
+
+    public static func == (lhs: KeyData, rhs: KeyData) -> Bool {
+        return lhs.bio == rhs.bio && lhs.key == rhs.key
     }
 }
 

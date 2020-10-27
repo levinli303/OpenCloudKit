@@ -23,40 +23,6 @@ public struct CKConfig {
     public init(container: CKContainerConfig) {
         self.containers = [container]
     }
-
-    init?(dictionary: [String: Any], workingDirectory: String?) {
-        guard let containerDictionaries = dictionary["containers"] as? [[String: Any]] else {
-            return nil
-        }
-
-        let containers = containerDictionaries.compactMap { (containerDictionary) -> CKContainerConfig? in
-            var containerConfig = CKContainerConfig(dictionary: containerDictionary)
-            if let workingDirectory = workingDirectory, let privateKeyFile = containerConfig?.serverToServerKeyAuth?.privateKeyFile {
-                containerConfig?.serverToServerKeyAuth?.privateKeyFile = "\(workingDirectory)/\(privateKeyFile)"
-            }
-            return containerConfig
-        }
-
-        if containers.count > 0 {
-            self.containers = containers
-        } else {
-            return nil
-        }
-    }
-
-    public init(contentsOfFile path: String) throws {
-
-        let url = URL(fileURLWithPath: path)
-
-        let directory = url.deletingLastPathComponent()
-        let jsonData = try Data(contentsOf: url, options: [])
-
-        if let dictionary = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] {
-            self.init(dictionary: dictionary, workingDirectory: directory.path)!
-        } else {
-            throw CKConfigError.invalidJSON
-        }
-    }
 }
 
 public struct CKContainerConfig {
@@ -90,37 +56,6 @@ public struct CKContainerConfig {
         self.apiTokenAuth = nil
         self.serverToServerKeyAuth = serverToServerKeyAuth
     }
-
-    init?(dictionary: [String: Any]) {
-        guard let containerIdentifier = dictionary["containerIdentifier"] as? String, let environmentValue = dictionary["environment"] as? String,
-              let environment = CKEnvironment(rawValue: environmentValue)  else {
-            return nil
-        }
-
-        let apnsEnvironment = CKEnvironment(rawValue: dictionary["apnsEnvironment"] as? String ?? "")
-
-        if let apiTokenAuthDictionary = dictionary["apiTokenAuth"] as? [String: Any] {
-
-            if let apiToken = apiTokenAuthDictionary["apiToken"] as? String {
-                self.init(containerIdentifier: containerIdentifier, environment: environment, apiTokenAuth: apiToken, apnsEnvironment: apnsEnvironment)
-            } else {
-                return nil
-            }
-
-        } else if let serverToServerKeyAuthDictionary = dictionary["serverToServerKeyAuth"] as? [String: Any] {
-            guard let keyID = serverToServerKeyAuthDictionary["keyID"] as? String, let privateKeyFile = serverToServerKeyAuthDictionary["privateKeyFile"] as? String else {
-                return nil
-            }
-
-            let privateKeyPassPhrase = serverToServerKeyAuthDictionary["privateKeyPassPhrase"] as? String
-            let auth = CKServerToServerKeyAuth(keyID: keyID, privateKeyFile: privateKeyFile, privateKeyPassPhrase: privateKeyPassPhrase)
-
-            self.init(containerIdentifier: containerIdentifier, environment: environment, serverToServerKeyAuth: auth, apnsEnvironment: apnsEnvironment)
-
-        } else {
-            return nil
-        }
-    }
 }
 
 extension CKContainerConfig {
@@ -132,20 +67,26 @@ extension CKContainerConfig {
 public struct CKServerToServerKeyAuth {
     // A unique identifier for the key generated using CloudKit Dashboard. To create this key, read
     public let keyID: String
-    // The path to the PEM encoded key file.
-    public var privateKeyFile: String
 
     //The pass phrase for the key.
     public let privateKeyPassPhrase: String?
 
-    public init(keyID: String, privateKeyFile: String, privateKeyPassPhrase: String? = nil) {
+    // DER data from the pem key
+    public var privateKey: KeyData
+
+    public init(keyID: String, privateKeyFile: String, privateKeyPassPhrase: String? = nil) throws {
+        let privateKey = try KeyData(filePath: privateKeyFile)
+        self.init(keyID: keyID, privateKey: privateKey, privateKeyPassPhrase: privateKeyPassPhrase)
+    }
+
+    public init(keyID: String, privateKey: KeyData, privateKeyPassPhrase: String? = nil) {
         self.keyID = keyID
-        self.privateKeyFile = privateKeyFile
+        self.privateKey = privateKey
         self.privateKeyPassPhrase = privateKeyPassPhrase
     }
 }
 extension CKServerToServerKeyAuth:Equatable {}
 
 public func ==(lhs: CKServerToServerKeyAuth, rhs: CKServerToServerKeyAuth) -> Bool {
-    return lhs.keyID == rhs.keyID && lhs.privateKeyFile == rhs.privateKeyFile && lhs.privateKeyPassPhrase == rhs.privateKeyPassPhrase
+    return lhs.keyID == rhs.keyID && lhs.privateKey == rhs.privateKey && lhs.privateKeyPassPhrase == rhs.privateKeyPassPhrase
 }

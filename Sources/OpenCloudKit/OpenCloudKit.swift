@@ -44,7 +44,7 @@ public class CloudKit {
     func account(forContainerConfig containerConfig: CKContainerConfig) -> CKAccount? {
         if let serverAuth = containerConfig.serverToServerKeyAuth {
             // Server Account
-            return CKServerAccount(containerInfo: containerConfig.containerInfo, keyID: serverAuth.keyID, privateKeyFile: serverAuth.privateKeyFile)
+            return CKServerAccount(containerInfo: containerConfig.containerInfo, keyID: serverAuth.keyID, privateKey: serverAuth.privateKey)
         } else if let apiTokenAuth = containerConfig.apiTokenAuth {
             // Anoymous Account
             return CKAccount(type: .anoymous, containerInfo: containerConfig.containerInfo, cloudKitAuthToken: apiTokenAuth)

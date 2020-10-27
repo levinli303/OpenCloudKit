@@ -63,7 +63,6 @@ public class CKAccount: CKAccountInfoProvider {
 }
 
 public class CKServerAccount: CKAccount {
-
     let serverToServerAuth: CKServerToServerKeyAuth
 
     init(containerInfo: CKContainerInfo, serverToServerAuth: CKServerToServerKeyAuth) {
@@ -71,10 +70,13 @@ public class CKServerAccount: CKAccount {
         super.init(type: .server, containerInfo: containerInfo, cloudKitAuthToken: nil)
     }
 
-    convenience init(containerInfo: CKContainerInfo, keyID: String, privateKeyFile: String, passPhrase: String? = nil) {
+    convenience init(containerInfo: CKContainerInfo, keyID: String, privateKeyFile: String, passPhrase: String? = nil) throws {
+        let keyAuth = try CKServerToServerKeyAuth(keyID: keyID, privateKeyFile: privateKeyFile, privateKeyPassPhrase: passPhrase)
+        self.init(containerInfo: containerInfo, serverToServerAuth: keyAuth)
+    }
 
-        let keyAuth =  CKServerToServerKeyAuth(keyID: keyID, privateKeyFile: privateKeyFile, privateKeyPassPhrase: passPhrase)
-
+    convenience init(containerInfo: CKContainerInfo, keyID: String, privateKey: KeyData, passPhrase: String? = nil) {
+        let keyAuth = CKServerToServerKeyAuth(keyID: keyID, privateKey: privateKey, privateKeyPassPhrase: passPhrase)
         self.init(containerInfo: containerInfo, serverToServerAuth: keyAuth)
     }
 }

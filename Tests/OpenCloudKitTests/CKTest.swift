@@ -15,7 +15,7 @@ class CKTest: XCTestCase {
 
     private class CloudKitHelper {
         class func configure(containerID: String, keyID: String, privateKeyFile: String, environment: CKEnvironment) {
-            let serverKeyAuth = CKServerToServerKeyAuth(keyID: keyID, privateKeyFile: privateKeyFile)
+            let serverKeyAuth = try! CKServerToServerKeyAuth(keyID: keyID, privateKeyFile: privateKeyFile)
             let defaultContainerConfig = CKContainerConfig(containerIdentifier: containerID, environment: environment, serverToServerKeyAuth: serverKeyAuth)
             let config = CKConfig(containers: [defaultContainerConfig])
 
