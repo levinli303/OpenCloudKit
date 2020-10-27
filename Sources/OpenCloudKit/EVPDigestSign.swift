@@ -70,13 +70,16 @@ public final class MessageDigestContext {
         self.context = c
     }
 
-    public func update(_ data: NSData) throws {
-        if EVP_DigestUpdate(context, data.bytes, data.length) == 0 {
-            throw MessageDigestContextError.updateFailed
+    public func update(_ data: Data) throws {
+        try data.withUnsafeBytes { dataBytes in
+            let buffer: UnsafePointer<UInt8> = dataBytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            if EVP_DigestUpdate(context, buffer, data.count) == 0 {
+                throw MessageDigestContextError.updateFailed
+            }
         }
     }
 
-    public func sign(privateKeyURL: String, passPhrase: String? = nil) throws -> NSData {
+    public func sign(privateKeyURL: String, passPhrase: String? = nil) throws -> Data {
         // Load Private Key
         let privateKeyFilePointer = BIO_new_file(privateKeyURL, "r")
         guard let privateKeyFile = privateKeyFilePointer else {
@@ -103,7 +106,7 @@ public final class MessageDigestContext {
 
         let signatureBytes = Array(signature.prefix(upTo: Int(length)))
 
-        return  NSData(bytes: signatureBytes, length: signatureBytes.count)
+        return Data(bytes: signatureBytes, count: signatureBytes.count)
     }
 }
 
