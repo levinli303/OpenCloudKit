@@ -201,7 +201,7 @@ extension CKRecordZoneSubscription {
        
 
         if let notificationInfo = notificationInfo {
-            subscription["notificationInfo"] = notificationInfo.dictionary as NSDictionary
+            subscription["notificationInfo"] = notificationInfo.dictionary
         }
         
         return subscription

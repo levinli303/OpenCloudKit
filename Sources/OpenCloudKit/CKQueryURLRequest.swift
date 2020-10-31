@@ -33,13 +33,18 @@ class CKQueryURLRequest: CKURLRequest {
         var parameters: [String: Any] = [:]
 
         let isZoneWide = false
-        if  let zoneID = zoneID , zoneID.zoneName != CKRecordZoneDefaultName {
+        if let zoneID = zoneID, zoneID.zoneName != CKRecordZoneDefaultName {
             // Add ZoneID Dictionary to parameters
             parameters["zoneID"] = zoneID.dictionary
         }
 
-        parameters["zoneWide"] = NSNumber(value: isZoneWide)
-        parameters["query"] = query.dictionary as NSDictionary
+        if limit > 0 {
+            parameters["resultsLimit"] = limit
+        }
+
+        parameters["desiredKeys"] = requestedFields
+        parameters["zoneWide"] = isZoneWide
+        parameters["query"] = query.dictionary
 
         if let cursor = cursor {
             parameters["continuationMarker"] = cursor.base64EncodedString(options: [])

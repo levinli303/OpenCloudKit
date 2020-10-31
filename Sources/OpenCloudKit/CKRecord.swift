@@ -238,7 +238,7 @@ extension CKRecord {
 
         for key in keys {
             if let value = object(forKey: key) {
-                fieldsDictionary[key] = value.recordFieldDictionary as NSDictionary
+                fieldsDictionary[key] = value.recordFieldDictionary
             }
         }
 
@@ -254,11 +254,11 @@ extension CKRecord {
         // Add Fields
         var fieldsDictionary: [String: Any] = [:]
         for (key, value) in values {
-            fieldsDictionary[key] = value.recordFieldDictionary as NSDictionary
+            fieldsDictionary[key] = value.recordFieldDictionary
         }
 
         var recordDictionary: [String: Any] = [
-        "fields": fieldsDictionary as NSDictionary,
+        "fields": fieldsDictionary,
         "recordType": recordType,
         "recordName": recordID.recordName
         ]

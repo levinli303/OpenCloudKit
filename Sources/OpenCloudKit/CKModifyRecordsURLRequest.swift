@@ -94,13 +94,13 @@ class CKModifyRecordsURLRequest: CKURLRequest {
                     operationType = "create"
                 }
 
-                recordDictionary["fields"] = fieldsDictionary as NSDictionary
+                recordDictionary["fields"] = fieldsDictionary
                 if let parent = record.parent {
                     recordDictionary["createShortGUID"] = NSNumber(value: 1)
                     recordDictionary["parent"] = ["recordName": parent.recordID.recordName]
                 }
 
-                let operationDictionary: [String: Any] = ["operationType": operationType, "record": recordDictionary as NSDictionary]
+                let operationDictionary: [String: Any] = ["operationType": operationType, "record": recordDictionary]
                 return operationDictionary
             })
 
