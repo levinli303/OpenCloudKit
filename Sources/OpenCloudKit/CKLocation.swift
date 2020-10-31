@@ -52,8 +52,8 @@ public class CKLocation: NSObject {
     public init(latitude: CKLocationDegrees, longitude: CKLocationDegrees) {
         self.coordinate = CKLocationCoordinate2D(latitude: latitude, longitude: longitude)
         self.altitude = 0
-        self.horizontalAccuracy = 0
-        self.verticalAccuracy = 0
+        self.horizontalAccuracy = -1
+        self.verticalAccuracy = -1
         self.timestamp = Date()
         self.speed = -1
         self.course = -1
@@ -94,8 +94,7 @@ public class CKLocation: NSObject {
 
     override public func isEqual(_ object: Any?) -> Bool {
         guard let other = object as? CKLocation else { return false }
-        guard coordinate == other.coordinate, timestamp == other.timestamp else { return false }
-        guard (altitude < 0 && other.altitude < 0) || altitude == other.altitude else { return false }
+        guard coordinate == other.coordinate, altitude == other.altitude, timestamp == other.timestamp else { return false }
         guard (horizontalAccuracy < 0 && other.horizontalAccuracy < 0) || horizontalAccuracy == other.horizontalAccuracy else { return false }
         guard (verticalAccuracy < 0 && other.verticalAccuracy < 0) || verticalAccuracy == other.verticalAccuracy else { return false }
         guard (course < 0 && other.course < 0) || course == other.course else { return false }
