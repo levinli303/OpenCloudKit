@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import COpenSSL
+import CNIOBoringSSL
 
 public enum MessageDigestError: Error {
     case unknownDigest
@@ -15,21 +15,19 @@ public enum MessageDigestError: Error {
 
 public final class MessageDigest {
     static var addedAllDigests = false
-    let messageDigest: UnsafeMutablePointer<EVP_MD>
+    let messageDigest: OpaquePointer
 
     public init(_ messageDigest: String) throws {
         if !MessageDigest.addedAllDigests {
-            #if !os(Linux)
-            OpenSSL_add_all_digests()
-            #endif
+            CNIOBoringSSL_OpenSSL_add_all_digests()
             MessageDigest.addedAllDigests = true
         }
 
-        guard let messageDigest = messageDigest.withCString({EVP_get_digestbyname($0)}) else {
+        guard let digest = CNIOBoringSSL_EVP_get_digestbyname(messageDigest) else {
             throw MessageDigestError.unknownDigest
         }
 
-        self.messageDigest = UnsafeMutablePointer(mutating: messageDigest)
+        self.messageDigest = digest
     }
 }
 
@@ -44,21 +42,13 @@ public final class MessageDigestContext {
     let context: UnsafeMutablePointer<EVP_MD_CTX>
 
     deinit {
-        #if !os(Linux)
-        EVP_MD_CTX_destroy(context)
-        #else
-        EVP_MD_CTX_free(context)
-        #endif
+        CNIOBoringSSL_EVP_MD_CTX_free(context)
     }
 
     public init(_ messageDigest: MessageDigest) throws {
-        #if !os(Linux)
-        let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_create()
-        #else
-        let context: UnsafeMutablePointer<EVP_MD_CTX>! = EVP_MD_CTX_new()
-        #endif
+        let context: UnsafeMutablePointer<EVP_MD_CTX>! = CNIOBoringSSL_EVP_MD_CTX_new()
 
-        if EVP_DigestInit(context, messageDigest.messageDigest) == 0 {
+        if CNIOBoringSSL_EVP_DigestInit(context, messageDigest.messageDigest) == 0 {
             throw MessageDigestContextError.initializationFailed
         }
 
@@ -72,7 +62,7 @@ public final class MessageDigestContext {
     public func update(_ data: Data) throws {
         try data.withUnsafeBytes { dataBytes in
             let buffer: UnsafePointer<UInt8> = dataBytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            if EVP_DigestUpdate(context, buffer, data.count) == 0 {
+            if CNIOBoringSSL_EVP_DigestUpdate(context, buffer, data.count) == 0 {
                 throw MessageDigestContextError.updateFailed
             }
         }
@@ -83,7 +73,7 @@ public final class MessageDigestContext {
         var length: UInt32 = 8192
         var signature = [UInt8](repeating: 0, count: Int(length))
 
-        if EVP_SignFinal(context, &signature, &length, keyData.key) == 0 {
+        if CNIOBoringSSL_EVP_SignFinal(context, &signature, &length, keyData.key) == 0 {
             throw MessageDigestContextError.signFailed
         }
 
@@ -102,9 +92,9 @@ public class KeyData: Equatable {
         var pkey: UnsafeMutablePointer<EVP_PKEY>?
         data.withUnsafeBytes { dataBytes in
             let buffer: UnsafePointer<UInt8> = dataBytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            mem = BIO_new_mem_buf(buffer, Int32(data.count))
+            mem = CNIOBoringSSL_BIO_new_mem_buf(buffer, Int32(data.count))
             if mem != nil {
-                pkey = PEM_read_bio_PrivateKey(mem, nil, nil, nil)
+                pkey = CNIOBoringSSL_PEM_read_bio_PrivateKey(mem, nil, nil, nil)
             }
         }
         if mem == nil || pkey == nil {
@@ -115,8 +105,8 @@ public class KeyData: Equatable {
     }
 
     deinit {
-        EVP_PKEY_free(key)
-        BIO_free_all(bio)
+        CNIOBoringSSL_EVP_PKEY_free(key)
+        CNIOBoringSSL_BIO_free_all(bio)
     }
 
     public static func == (lhs: KeyData, rhs: KeyData) -> Bool {
@@ -130,9 +120,9 @@ extension Data {
         return withUnsafeBytes { dataBytes in
             let buffer: UnsafePointer<UInt8> = dataBytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
             var ctx = SHA256_CTX()
-            SHA256_Init(&ctx)
-            SHA256_Update(&ctx, buffer, count)
-            SHA256_Final(hash, &ctx)
+            CNIOBoringSSL_SHA256_Init(&ctx)
+            CNIOBoringSSL_SHA256_Update(&ctx, buffer, count)
+            CNIOBoringSSL_SHA256_Final(hash, &ctx)
             let data = Data(bytes: hash, count: Int(SHA256_DIGEST_LENGTH))
             hash.deallocate()
             return data
