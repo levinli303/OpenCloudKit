@@ -93,10 +93,14 @@ public class CKLocation: NSObject {
     }
 
     override public func isEqual(_ object: Any?) -> Bool {
-        if let location = object as? CKLocation {
-            return location.coordinate == self.coordinate
-        }
-        return false
+        guard let other = object as? CKLocation else { return false }
+        guard coordinate == other.coordinate, timestamp == other.timestamp else { return false }
+        guard (altitude < 0 && other.altitude < 0) || altitude == other.altitude else { return false }
+        guard (horizontalAccuracy < 0 && other.horizontalAccuracy < 0) || horizontalAccuracy == other.horizontalAccuracy else { return false }
+        guard (verticalAccuracy < 0 && other.verticalAccuracy < 0) || verticalAccuracy == other.verticalAccuracy else { return false }
+        guard (course < 0 && other.course < 0) || course == other.course else { return false }
+        guard (speed < 0 && other.speed < 0) || speed == other.speed else { return false }
+        return true
     }
 }
 
@@ -105,15 +109,27 @@ public class CKLocation: NSObject {
 extension CKLocation {
     var dictionary: [String: Any] {
         return [
-            "latitude": NSNumber(value: coordinate.latitude),
-            "longitude": NSNumber(value: coordinate.longitude),
-            "horizontalAccuracy": NSNumber(value: horizontalAccuracy),
-            "verticalAccuracy": NSNumber(value: verticalAccuracy),
-            "altitude": NSNumber(value: altitude),
-            "speed": NSNumber(value: speed),
-            "course": NSNumber(value: course),
+            "latitude": coordinate.latitude,
+            "longitude": coordinate.longitude,
+            "horizontalAccuracy": horizontalAccuracy,
+            "verticalAccuracy": verticalAccuracy,
+            "altitude": altitude,
+            "speed": speed,
+            "course": course,
             // CKWebServicesReference doesn't say if this should be seconds or milliseconds, assuming millis since thats what TIMESTAMP uses.
-            "timestamp": NSNumber(value: UInt64(timestamp.timeIntervalSince1970 * 1000))
+            "timestamp": UInt64(timestamp.timeIntervalSince1970 * 1000)
         ]
+    }
+
+    convenience init(dictionary: [String: Any]) {
+        let latitude = (dictionary["latitude"] as? Double) ?? -1
+        let longitude = (dictionary["longitude"] as? Double) ?? -1
+        let horizontalAccuracy = (dictionary["horizontalAccuracy"] as? Double) ?? -1
+        let verticalAccuracy = (dictionary["verticalAccuracy"] as? Double) ?? -1
+        let altitude = (dictionary["altitude"] as? Double) ?? -1
+        let speed = (dictionary["speed"] as? Double) ?? -1
+        let course = (dictionary["course"] as? Double) ?? -1
+        let timestamp = (dictionary["timestamp"] as? Double) ?? -1
+        self.init(coordinate: CKLocationCoordinate2D(latitude: latitude, longitude: longitude), altitude: altitude, horizontalAccuracy: horizontalAccuracy, verticalAccuracy: verticalAccuracy, course: course, speed: speed, timestamp: Date(timeIntervalSince1970: timestamp / 1000))
     }
 }

@@ -142,10 +142,61 @@ class CKRecordTests: CKTest {
         wait(for: [expectation], timeout: 10)
     }
 
+    func testFetchLimit() {
+        let resultLimit = 1
+        let db = CKContainer.default().publicCloudDatabase
+        let query = CKQuery(recordType: Self.recordType, filters: [])
+        let op = CKQueryOperation(query: query)
+        op.resultsLimit = resultLimit
+        var records: [CKRecord] = []
+        op.recordFetchedBlock = { record in
+            records.append(record)
+        }
+        let expectation = XCTestExpectation(description: "Wait for response")
+        op.queryCompletionBlock = { _, _ in
+            expectation.fulfill()
+        }
+        db.add(op)
+        wait(for: [expectation], timeout: 10)
+        XCTAssertEqual(records.count, resultLimit)
+    }
+
+    func testDesiredKeys() {
+        let db = CKContainer.default().publicCloudDatabase
+        let recordID = CKRecordID(recordName: "043BB555-EA0D-487E-BCC4-257184A5078C")
+        let reference = CKReference(recordID: recordID, action: .none)
+        let query = CKQuery(recordType: Self.recordType, filters: [
+            CKQueryFilter(fieldName: "___recordID", comparator: .equals, fieldValue: reference)
+        ])
+        let op = CKQueryOperation(query: query)
+        op.resultsLimit = 1
+        op.desiredKeys = ["string", "int64", "double"]
+        var records: [CKRecord] = []
+        op.recordFetchedBlock = { record in
+            records.append(record)
+        }
+        let expectation = XCTestExpectation(description: "Wait for response")
+        op.queryCompletionBlock = { _, _ in
+            expectation.fulfill()
+        }
+        db.add(op)
+        wait(for: [expectation], timeout: 10)
+        for record in records {
+            XCTAssertNotNil(record["string"])
+            XCTAssertNotNil(record["int64"])
+            XCTAssertNotNil(record["double"])
+            XCTAssertNil(record["stringList"])
+            XCTAssertNil(record["int64List"])
+            XCTAssertNil(record["doubleList"])
+        }
+    }
+
     static var allTests = [
         ("testCreateRecord", testCreateRecord),
         ("testFetchRecord", testFetchRecord),
         ("testFetchRecordWithAsset", testFetchRecordWithAsset),
         ("testCreateRecordWithAsset", testCreateRecordWithAsset),
+        ("testFetchLimit", testFetchLimit),
+        ("testDesiredKeys", testDesiredKeys),
     ]
 }

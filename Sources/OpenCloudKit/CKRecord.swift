@@ -310,10 +310,7 @@ extension CKRecord {
                 switch type {
 
                 case "LOCATION":
-                    let latitude = dictionary["latitude"] as! Double
-                    let longitude = dictionary["longitude"] as! Double
-
-                    return CKLocation(latitude: latitude, longitude: longitude)
+                    return CKLocation(dictionary: dictionary)
                 case "ASSETID":
                     // size
                     // downloadURL
@@ -352,9 +349,7 @@ extension CKRecord {
                     }
                 case "LOCATION_LIST":
                     return (array as! [[String: Any]]).map { item -> CKLocation in
-                        let latitude = item["latitude"] as! Double
-                        let longitude = item["longitude"] as! Double
-                        return CKLocation(latitude: latitude, longitude: longitude)
+                        return CKLocation(dictionary: item)
                     }
                 case "REFERENCE_LIST":
                     return (array as! [[String: Any]]).map { item -> CKReference in
