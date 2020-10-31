@@ -94,7 +94,7 @@ public class CKLocation: NSObject {
 
     override public func isEqual(_ object: Any?) -> Bool {
         guard let other = object as? CKLocation else { return false }
-        guard coordinate == other.coordinate, altitude == other.altitude, timestamp == other.timestamp else { return false }
+        guard coordinate == other.coordinate, altitude == other.altitude else { return false }
         guard (horizontalAccuracy < 0 && other.horizontalAccuracy < 0) || horizontalAccuracy == other.horizontalAccuracy else { return false }
         guard (verticalAccuracy < 0 && other.verticalAccuracy < 0) || verticalAccuracy == other.verticalAccuracy else { return false }
         guard (course < 0 && other.course < 0) || course == other.course else { return false }

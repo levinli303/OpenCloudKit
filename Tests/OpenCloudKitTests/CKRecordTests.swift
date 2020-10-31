@@ -67,8 +67,8 @@ class CKRecordTests: CKTest {
             XCTAssertEqual(newRecord["doubleList"] as! [Double], Constant.doubleListValue)
             XCTAssertEqual(newRecord["date"] as! Date, Constant.dateValue)
             XCTAssertEqual(newRecord["dateList"] as! [Date], Constant.dateListValue)
-            XCTAssertEqual(newRecord["location"] as! CKLocation, Constant.locationValue)
-            XCTAssertEqual(newRecord["locationList"] as! [CKLocation], Constant.locationListValue)
+            XCTAssertEqual((newRecord["location"] as! CKLocation).coordinate, Constant.locationValue.coordinate)
+            XCTAssertEqual((newRecord["locationList"] as! [CKLocation]).map { $0.coordinate }, Constant.locationListValue.map { $0.coordinate })
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 10)
@@ -91,8 +91,8 @@ class CKRecordTests: CKTest {
             XCTAssertEqual(newRecord["doubleList"] as! [Double], Constant.doubleListValue)
             XCTAssertEqual(newRecord["date"] as! Date, Constant.dateValue)
             XCTAssertEqual(newRecord["dateList"] as! [Date], Constant.dateListValue)
-            XCTAssertEqual(newRecord["location"] as! CKLocation, Constant.locationValue)
-            XCTAssertEqual(newRecord["locationList"] as! [CKLocation], Constant.locationListValue)
+            XCTAssertEqual((newRecord["location"] as! CKLocation).coordinate, Constant.locationValue.coordinate)
+            XCTAssertEqual((newRecord["locationList"] as! [CKLocation]).map { $0.coordinate }, Constant.locationListValue.map { $0.coordinate })
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 10)
