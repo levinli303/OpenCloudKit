@@ -9,6 +9,19 @@ import XCTest
 import Foundation
 @testable import OpenCloudKit
 
+#if os(iOS) || os(macOS)
+typealias CKRecord = OpenCloudKit.CKRecord
+typealias CKContainer = OpenCloudKit.CKContainer
+typealias CKRecordValue = OpenCloudKit.CKRecordValue
+typealias CKAsset = OpenCloudKit.CKAsset
+
+extension CLLocationCoordinate2D: Equatable {
+    public static func == (lhs: CLLocationCoordinate2D, rhs: CLLocationCoordinate2D) -> Bool {
+        return lhs.longitude == rhs.longitude && lhs.latitude == rhs.latitude
+    }
+}
+#endif
+
 class CKRecordTests: CKTest {
     static var recordType = "TestData"
 
@@ -191,6 +204,54 @@ class CKRecordTests: CKTest {
         }
     }
 
+    func testFetchUnknownRecord() {
+        let db = CKContainer.default().publicCloudDatabase
+        let expectation = XCTestExpectation(description: "Wait for response")
+        let recordID = CKRecordID(recordName: "DO-NOT-CREATE")
+        db.fetch(withRecordID: recordID) { record, error in
+            XCTAssertNil(record)
+            XCTAssertNotNil(error)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10)
+    }
+
+    func testDeleteUnknownRecord() {
+        let db = CKContainer.default().publicCloudDatabase
+        let expectation = XCTestExpectation(description: "Wait for response")
+        let recordID = CKRecordID(recordName: "DO-NOT-CREATE")
+        db.delete(withRecordID: recordID) { record, error in
+            XCTAssertNil(error)
+            XCTAssertNotNil(record)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10)
+    }
+
+    func testCreateRecordUnknownType() {
+        let db = CKContainer.default().publicCloudDatabase
+        let expectation = XCTestExpectation(description: "Wait for response")
+        let recordID = CKRecordID(recordName: "qrqwsnjjfsfsdf")
+        db.save(record: CKRecord(recordType: "blah blah", recordID: recordID)) { record, error in
+            XCTAssertNil(record)
+            XCTAssertNotNil(error)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10)
+    }
+
+    func testCreateExistingRecord() {
+        let db = CKContainer.default().publicCloudDatabase
+        let expectation = XCTestExpectation(description: "Wait for response")
+        let recordID = CKRecordID(recordName: "08099BD9-ED8C-4175-B528-3CFD363ECA2E")
+        db.save(record: CKRecord(recordType: Self.recordType, recordID: recordID)) { record, error in
+            XCTAssertNil(record)
+            XCTAssertNotNil(error)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10)
+    }
+
     static var allTests = [
         ("testCreateRecord", testCreateRecord),
         ("testFetchRecord", testFetchRecord),
@@ -198,5 +259,10 @@ class CKRecordTests: CKTest {
         ("testCreateRecordWithAsset", testCreateRecordWithAsset),
         ("testFetchLimit", testFetchLimit),
         ("testDesiredKeys", testDesiredKeys),
+        ("testFetchUnknownRecord", testFetchUnknownRecord),
+        ("testCreateRecordUnknownType", testCreateRecordUnknownType),
+        ("testDeleteUnknownRecord", testDeleteUnknownRecord),
+        ("testCreateExistingRecord", testCreateExistingRecord),
+        ("testCreateExistingRecord", testCreateExistingRecord),
     ]
 }
