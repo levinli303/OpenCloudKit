@@ -78,9 +78,12 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
 
             guard !strongSelf.isCancelled else { return }
 
-            guard let dictionary = dictionary,
-                  let zoneDictionaries = dictionary["zones"] as? [[String: Any]],
-                  error == nil else {
+            if error != nil {
+                return
+            }
+
+            guard let zoneDictionaries = dictionary?["zones"] as? [[String: Any]] else {
+                returnError = CKPrettyError(code: .internalError, description: CKErrorStringFailedToParseServerResponse)
                 return
             }
 

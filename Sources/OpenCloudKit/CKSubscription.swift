@@ -45,7 +45,6 @@ public class CKSubscription: NSObject {
     }
     
      init?(dictionary: [String: Any]) {
-        
        guard let subscriptionID = dictionary["subscriptionID"] as? String,
         let subscriptionTypeValue = dictionary["subscriptionType"] as? String else {
             return nil

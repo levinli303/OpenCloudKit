@@ -70,6 +70,8 @@ public class CKFetchSubscriptionsOperation : CKDatabaseOperation {
 
             guard !strongSelf.isCancelled else { return }
 
+            if networkError == nil { return }
+
             guard let subscriptionsDictionary = dictionary?["subscriptions"] as? [[String: Any]] else {
                 returnError = CKPrettyError(code: .internalError, description: CKErrorStringFailedToParseServerResponse)
                 return

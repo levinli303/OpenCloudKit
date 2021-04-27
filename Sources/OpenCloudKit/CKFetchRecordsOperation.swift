@@ -11,7 +11,7 @@ import Foundation
 public class CKFetchRecordsOperation: CKDatabaseOperation {
     var isFetchCurrentUserOperation = false
 
-    var recordErrors: [CKRecordID: Error] = [:] // todo use this for partial errors
+    var recordErrors: [CKRecordID: Error] = [:]
 
     var shouldFetchAssetContent: Bool = false
 
@@ -102,9 +102,12 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
 
             guard !strongSelf.isCancelled else { return }
 
-            guard let dictionary = dictionary,
-                  let recordsDictionary = dictionary["records"] as? [[String: Any]],
-                  error == nil else {
+            if error != nil {
+                return
+            }
+
+            guard let recordsDictionary = dictionary?["records"] as? [[String: Any]] else {
+                returnError = CKPrettyError(code: .internalError, description: CKErrorStringFailedToParseServerResponse)
                 return
             }
 

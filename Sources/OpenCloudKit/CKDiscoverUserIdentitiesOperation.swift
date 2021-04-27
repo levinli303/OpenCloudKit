@@ -56,9 +56,12 @@ public class CKDiscoverUserIdentitiesOperation : CKOperation {
 
             guard !strongSelf.isCancelled else { return }
 
-            guard let dictionary = dictionary,
-                  let userDictionaries = dictionary["users"] as? [[String: Any]],
-                  error == nil else {
+            if error != nil {
+                return
+            }
+
+            guard let userDictionaries = dictionary?["users"] as? [[String: Any]] else {
+                returnError = CKPrettyError(code: .internalError, description: CKErrorStringFailedToParseServerResponse)
                 return
             }
 

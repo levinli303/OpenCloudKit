@@ -34,7 +34,7 @@ public class CKDiscoverAllUserIdentitiesOperation : CKOperation {
     override func performCKOperation() {
         let url = "\(databaseURL)/public/users/discover"
 
-        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: nil) { [weak self] (dictionary, error) in
+        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: nil) { [weak self] dictionary, error in
             guard let strongSelf = self else { return }
 
             var returnError = error
@@ -45,9 +45,12 @@ public class CKDiscoverAllUserIdentitiesOperation : CKOperation {
 
             guard !strongSelf.isCancelled else { return }
 
-            guard let dictionary = dictionary,
-                  let userDictionaries = dictionary["users"] as? [[String: Any]],
-                  error == nil else {
+            if error != nil {
+                return
+            }
+
+            guard let userDictionaries = dictionary?["users"] as? [[String: Any]] else {
+                returnError = CKPrettyError(code: .internalError, description: CKErrorStringFailedToParseServerResponse)
                 return
             }
 
