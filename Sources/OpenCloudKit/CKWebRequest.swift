@@ -49,16 +49,9 @@ class CKWebRequest {
 
     func ckError(forServerResponseDictionary dictionary: [String: Any]) -> NSError {
         if let recordFetchError = CKRecordFetchErrorDictionary(dictionary: dictionary) {
-            let errorCode = CKErrorCode.errorCode(serverError: recordFetchError.serverErrorCode)!
-
-            var userInfo: NSErrorUserInfoType  = [:]
-            userInfo["redirectURL"] = recordFetchError.redirectURL
-            userInfo[NSLocalizedDescriptionKey] = recordFetchError.reason
-            userInfo[CKErrorRetryAfterKey] = recordFetchError.retryAfter
-            userInfo["uuid"] = recordFetchError.uuid
-            return NSError(domain: CKErrorDomain, code: errorCode.rawValue, userInfo: userInfo)
+            return CKPrettyError(recordFetchError: recordFetchError)
         }
-        return NSError(domain: CKErrorDomain, code: CKErrorCode.internalError.rawValue, userInfo: NSErrorUserInfoType())
+        return CKPrettyError(code: .internalError)
     }
 
     func perform(request: URLRequest, completionHandler: @escaping ([String: Any]?, Error?) -> Void) -> URLSessionTask? {

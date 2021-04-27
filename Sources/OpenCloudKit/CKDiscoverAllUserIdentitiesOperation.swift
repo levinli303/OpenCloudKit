@@ -35,14 +35,15 @@ public class CKDiscoverAllUserIdentitiesOperation : CKOperation {
         let url = "\(databaseURL)/public/users/discover"
 
         urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: nil) { [weak self] (dictionary, error) in
-            guard let strongSelf = self, !strongSelf.isCancelled else {
-                return
-            }
+            guard let strongSelf = self else { return }
 
             var returnError = error
+
             defer {
                 strongSelf.finish(error: returnError)
             }
+
+            guard !strongSelf.isCancelled else { return }
 
             guard let dictionary = dictionary,
                   let userDictionaries = dictionary["users"] as? [[String: Any]],
@@ -60,7 +61,7 @@ public class CKDiscoverAllUserIdentitiesOperation : CKOperation {
                     strongSelf.discovered(userIdentity: userIdentity)
                 } else {
                     // Create Error
-                    returnError = NSError(domain: CKErrorDomain, code: CKErrorCode.partialFailure.rawValue, userInfo: [NSLocalizedDescriptionKey: "Failed to parse record from server"])
+                    returnError = CKPrettyError(code: .partialFailure, description: CKErrorStringFailedToParseRecord)
                     return
                 }
             }

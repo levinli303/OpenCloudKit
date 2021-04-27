@@ -46,16 +46,20 @@ public class CKModifySubscriptionsOperation : CKDatabaseOperation {
 
         let subscriptionURLRequest = CKModifySubscriptionsURLRequest(subscriptionsToSave: subscriptionsToSave, subscriptionIDsToDelete: subscriptionIDsToDelete)
         subscriptionURLRequest.completionBlock = { [weak self] (result) in
-            guard let strongSelf = self, !strongSelf.isCancelled else {
-                return
+            guard let strongSelf = self else { return }
+
+            var returnError: Error?
+
+            defer {
+                strongSelf.finish(error: returnError)
             }
+
+            guard !strongSelf.isCancelled else { return }
+
             switch result {
             case .success(let dictionary):
-
                 if let subscriptionsDictionary = dictionary["subscriptions"] as? [[String: Any]] {
                     // Parse JSON into CKRecords
-
-
                     for subscriptionDictionary in subscriptionsDictionary {
 
                         if let subscription = CKSubscription(dictionary: subscriptionDictionary) {
@@ -66,22 +70,16 @@ public class CKModifySubscriptionsOperation : CKDatabaseOperation {
                             strongSelf.deletedSubscriptionIDs.append(subscriptionID)
 
                         } else if let subscriptionFetchError = CKSubscriptionFetchErrorDictionary(dictionary: subscriptionDictionary) {
-
-                            // Create Error
-                            let _ = NSError(domain: CKErrorDomain, code: CKErrorCode.partialFailure.rawValue, userInfo: [NSLocalizedDescriptionKey: subscriptionFetchError.reason])
-
-                            // todo add to errors
-                            //subscriptionErrors["id"] = error
-
+                            let error = CKPrettyError(subscriptionFetchError: subscriptionFetchError)
+                            strongSelf.subscriptionErrors[subscriptionFetchError.subscriptionID] = error
                         } else {
-                            fatalError("Couldn't resolve record or record fetch error dictionary")
+                            returnError = CKPrettyError(code: .partialFailure, description: CKErrorStringFailedToResolveRecord)
+                            return
                         }
                     }
                 }
-
-                strongSelf.finish(error: nil)
             case .error(let error):
-                strongSelf.finish(error: error.error)
+                returnError = error.error
             }
         }
 

@@ -11,7 +11,7 @@ import Foundation
 public class CKFetchRecordsOperation: CKDatabaseOperation {
     var isFetchCurrentUserOperation = false
 
-    var recordErrors: [String: Any] = [:] // todo use this for partial errors
+    var recordErrors: [CKRecordID: Error] = [:] // todo use this for partial errors
 
     var shouldFetchAssetContent: Bool = false
 
@@ -51,10 +51,19 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
     }
 
     override func finishOnCallbackQueue(error: Error?) {
-        if(error == nil){
-            // todo build partial error using recordErrors
+        var error = error
+        if error == nil {
+            // report any partial errors
+            if recordErrors.count > 0 {
+                error = CKPrettyError(code: CKErrorCode.partialFailure, userInfo: [CKPartialErrorsByItemIDKey: recordErrors], description: CKErrorStringPartialErrorRecords)
+            }
         }
-        self.fetchRecordsCompletionBlock?(self.recordIDsToRecords, error)
+
+        fetchRecordsCompletionBlock?(recordIDsToRecords, error)
+
+        perRecordProgressBlock = nil
+        fetchRecordsCompletionBlock = nil
+        perRecordCompletionBlock = nil
 
         super.finishOnCallbackQueue(error: error)
     }
@@ -82,15 +91,16 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
 
         request["records"] = lookupRecords
 
-        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: request) { [weak self] (dictionary, error) in
+        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: request) { [weak self] dictionary, error in
+            guard let strongSelf = self else { return }
 
-            guard let strongSelf = self, !strongSelf.isCancelled else {
-                return
-            }
+            var returnError = error
 
             defer {
-                strongSelf.finish(error: error)
+                strongSelf.finish(error: returnError)
             }
+
+            guard !strongSelf.isCancelled else { return }
 
             guard let dictionary = dictionary,
                   let recordsDictionary = dictionary["records"] as? [[String: Any]],
@@ -100,8 +110,7 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
 
             // Process Records
             // Parse JSON into CKRecords
-            for (index,recordDictionary) in recordsDictionary.enumerated() {
-
+            for (index, recordDictionary) in recordsDictionary.enumerated() {
                 // Call Progress Block, this is hacky support and not the callbacks intented purpose
                 let progress = Double(index + 1) / Double((strongSelf.recordIDs!.count))
                 let recordID = strongSelf.recordIDs![index]
@@ -113,16 +122,18 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
                     // Call per record callback, not to be confused with finished
                     strongSelf.completed(record: record, recordID: record.recordID, error: nil)
 
-                } else {
-
+                } else if let recordFetchError = CKRecordFetchErrorDictionary(dictionary: recordDictionary) {
                     // Create Error
-                    let error = NSError(domain: CKErrorDomain, code: CKErrorCode.partialFailure.rawValue, userInfo: [NSLocalizedDescriptionKey: "Failed to parse record from server"])
+                    let error = CKPrettyError(recordFetchError: recordFetchError)
+                    // TODO: which zone?
+                    let recordID = CKRecordID(recordName: recordFetchError.recordName!)
 
-                    // Call per record callback, not to be confused with finished
-                    strongSelf.completed(record: nil, recordID: nil, error: error)
+                    strongSelf.recordErrors[recordID] = error
 
-                    // todo add to recordErrors array
-
+                    strongSelf.completed(record: nil, recordID: recordID, error: error)
+                } else {
+                    returnError = CKPrettyError(code: .partialFailure, description: CKErrorStringFailedToResolveRecord)
+                    return
                 }
             }
         }

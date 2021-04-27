@@ -73,13 +73,19 @@ public class CKQueryOperation: CKDatabaseOperation {
         queryOperationURLRequest.accountInfoProvider =  CloudKit.shared.account(forContainer: operationContainer)
         queryOperationURLRequest.databaseScope = database?.scope ?? .public
         
-        queryOperationURLRequest.completionBlock = { [weak self] (result) in
-            guard let strongSelf = self, !strongSelf.isCancelled else {
-                return
+        queryOperationURLRequest.completionBlock = { [weak self] result in
+            guard let strongSelf = self else { return }
+
+            var returnError: Error?
+
+            defer {
+                strongSelf.finish(error: returnError)
             }
+
+            guard !strongSelf.isCancelled else { return }
+
             switch result {
             case .success(let dictionary):
-                
                 // Process cursor
                 if let continuationMarker = dictionary["continuationMarker"] as? String {
                     let data = Data(base64Encoded: continuationMarker, options: [])
@@ -88,27 +94,23 @@ public class CKQueryOperation: CKDatabaseOperation {
                     }
                 }
                 
-                
                 // Process Records
                 if let recordsDictionary = dictionary["records"] as? [[String: Any]] {
                     // Parse JSON into CKRecords
                     for recordDictionary in recordsDictionary {
-                        
                         if let record = CKRecord(recordDictionary: recordDictionary) {
                             // Call RecordCallback
                             strongSelf.fetched(record: record)
                         } else {
                             // Create Error
                             // Invalid state to be in, this operation normally doesnt provide partial errors
-                            let error = NSError(domain: CKErrorDomain, code: CKErrorCode.partialFailure.rawValue, userInfo: [NSLocalizedDescriptionKey: "Failed to parse record from server"])
-                            strongSelf.finish(error: error)
+                            returnError = CKPrettyError(code: .partialFailure, description: CKErrorStringFailedToParseRecord)
                             return
                         }
                     }
                 }
-                strongSelf.finish(error: nil)
             case .error(let error):
-                strongSelf.finish(error: error.error)
+                returnError = error.error
             }
         }
         

@@ -18,10 +18,6 @@ public enum CKRecordSavePolicy : Int {
     case AllKeys
 }
 
-let CKErrorRetryAfterKey = "CKRetryAfter"
-let CKErrorRedirectURLKey = "CKRedirectURL"
-let CKPartialErrorsByItemIDKey: String = "CKPartialErrors"
-
 struct CKSubscriptionFetchErrorDictionary {
 
     static let subscriptionIDKey = "subscriptionID"
@@ -57,7 +53,6 @@ struct CKSubscriptionFetchErrorDictionary {
 }
 
 struct CKRecordFetchErrorDictionary {
-
     static let recordNameKey = "recordName"
     static let reasonKey = "reason"
     static let serverErrorCodeKey = "serverErrorCode"
@@ -146,20 +141,19 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
 
     override func finishOnCallbackQueue(error: Error?) {
         var error = error
-        if(error == nil){
+        if error == nil {
             // report any partial errors
-
-            if(recordErrors.count > 0){
-                error = CKPrettyError(code: CKErrorCode.partialFailure, userInfo: [NSLocalizedDescriptionKey: "Partial Failure", CKPartialErrorsByItemIDKey: recordErrors], description: "Failed to modify some records")
+            if recordErrors.count > 0 {
+                error = CKPrettyError(code: CKErrorCode.partialFailure, userInfo: [CKPartialErrorsByItemIDKey: recordErrors], description: CKErrorStringPartialErrorRecords)
             }
         }
 
         // Call the final completionBlock
-        self.modifyRecordsCompletionBlock?(savedRecords, deletedRecordIDs, error)
+        modifyRecordsCompletionBlock?(savedRecords, deletedRecordIDs, error)
 
-        self.modifyRecordsCompletionBlock = nil
-        self.perRecordProgressBlock = nil
-        self.perRecordCompletionBlock = nil
+        modifyRecordsCompletionBlock = nil
+        perRecordProgressBlock = nil
+        perRecordCompletionBlock = nil
 
         super.finishOnCallbackQueue(error: error)
     }
@@ -191,8 +185,20 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
     }
 
     override func performCKOperation() {
-        trackAssetsToUpload { [weak self] in
-            guard let strongSelf = self, !strongSelf.isCancelled else { return }
+        trackAssetsToUpload { [weak self] error in
+            guard let strongSelf = self else {
+                return
+            }
+
+            if let returnError = error {
+                strongSelf.finish(error: returnError)
+                return
+            }
+
+            guard !strongSelf.isCancelled else {
+                strongSelf.finish(error: nil)
+                return
+            }
 
             strongSelf.modifyRecord()
         }
@@ -203,17 +209,23 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
         let request = CKModifyRecordsURLRequest(recordsToSave: recordsToSave, recordIDsToDelete: recordIDsToDelete, isAtomic: isAtomic, database: database!, savePolicy: savePolicy, zoneID: zoneID)
         request.accountInfoProvider = CloudKit.shared.account(forContainer: operationContainer)
 
-        request.completionBlock = { [weak self] (result) in
-
-            guard let strongSelf = self, !strongSelf.isCancelled else {
+        request.completionBlock = { [weak self] result in
+            guard let strongSelf = self else {
                 return
             }
 
+            var returnError: Error?
+
+            defer {
+                strongSelf.finish(error: returnError)
+            }
+
+            guard !strongSelf.isCancelled else { return }
+
             switch result {
             case .error(let error):
-                strongSelf.modifyRecordsCompletionBlock?(nil, nil, error.error)
+                returnError = error.error
             case .success(let dictionary):
-
                 // Process Records
                 if let recordsDictionary = dictionary["records"] as? [[String: Any]] {
 
@@ -229,114 +241,109 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
 
                             // Call RecordCallback
                             strongSelf.completed(record: record, error: nil)
-
                         } else if let recordFetchError = CKRecordFetchErrorDictionary(dictionary: recordDictionary) {
-
                             // Create Error
-                            let error = NSError(domain: CKErrorDomain, code: CKErrorCode.partialFailure.rawValue, userInfo: [NSLocalizedDescriptionKey: recordFetchError.reason])
-                            let recordName = recordDictionary["recordName"] as! String
-                            let recordID = CKRecordID(recordName: recordName) // todo: get zone from dictionary
+                            let error = CKPrettyError(recordFetchError: recordFetchError)
+                            // TODO: which zone?
+                            let recordID = CKRecordID(recordName: recordFetchError.recordName!)
 
                             strongSelf.recordErrors[recordID] = error
 
-                            // todo the original record should be passed in here, that is probably what the self.recordsByRecordIDs was for
+                            // TODO: the original record should be passed in here, that is probably what the self.recordsByRecordIDs was for
                             strongSelf.completed(record: nil, error: error)
                         } else {
-
-                            if let _ = recordDictionary["recordName"],
-                               let _ = recordDictionary["deleted"] {
-
-                                let recordName = recordDictionary["recordName"] as! String
-                                let recordID = CKRecordID(recordName: recordName) // todo: get zone from dictionary
+                            if let recordName = recordDictionary["recordName"] as? String, recordDictionary["deleted"] != nil {
+                                let recordID = CKRecordID(recordName: recordName)
                                 strongSelf.deletedRecordIDs?.append(recordID)
-
-
                             } else {
-                                fatalError("Couldn't resolve record or record fetch error dictionary")
+                                returnError = CKPrettyError(code: .partialFailure, description: CKErrorStringFailedToResolveRecord)
+                                return
                             }
                         }
                     }
                 }
             }
-
-            // Mark operation as complete
-            strongSelf.finish(error: nil)
-
         }
 
         request.performRequest()
     }
 
-    private func trackAssetsToUpload(_ completion: @escaping () -> Void) {
+    private func trackAssetsToUpload(_ completion: @escaping (Error?) -> Void) {
         guard let records = recordsToSave else {
-            completion()
+            completion(nil)
             return
         }
 
-        var assets = [(asset: CKAsset, uploadToken: CKAssetUploadToken)]()
+        var assetInfos = [(asset: CKAsset, uploadToken: CKAssetUploadToken)]()
         for record in records {
             for key in record.allKeys() {
                 if let asset = record[key] as? CKAsset {
-                    assets.append((asset, CKAssetUploadToken(recordType: record.recordType, fieldName: key, recordName: record.recordID.recordName)))
+                    assetInfos.append((asset, CKAssetUploadToken(recordType: record.recordType, fieldName: key, recordName: record.recordID.recordName)))
                 } else if let assetArray = record[key] as? [CKAsset] {
                     for asset in assetArray {
-                        assets.append((asset, CKAssetUploadToken(recordType: record.recordType, fieldName: key, recordName: record.recordID.recordName)))
+                        assetInfos.append((asset, CKAssetUploadToken(recordType: record.recordType, fieldName: key, recordName: record.recordID.recordName)))
                     }
                 }
             }
         }
 
-        let assetsToUpload = assets.filter { $0.asset.fileURL.isFileURL }
-        guard assetsToUpload.count > 0 else {
-            completion()
+        // If there is a non local URL in assets, then fails
+        if assetInfos.contains(where: { !$0.asset.fileURL.isFileURL }) {
+            completion(CKPrettyError(code: .assetFileNotFound))
+            return
+        }
+
+        guard assetInfos.count > 0 else {
+            completion(nil)
             return
         }
 
         // Request asset upload tokens...
-        let request = CKAssetUploadTokenURLRequest(assetsToUpload: assetsToUpload)
+        let request = CKAssetUploadTokenURLRequest(assetsToUpload: assetInfos)
         request.accountInfoProvider = CloudKit.shared.account(forContainer: operationContainer)
         request.zoneID = zoneID
 
         self.request = request
-        request.completionBlock = { [weak self] (result) in
-            guard let strongSelf = self, !strongSelf.isCancelled else { return }
+        request.completionBlock = { [weak self] result in
+            guard let strongSelf = self, !strongSelf.isCancelled else {
+                completion(nil)
+                return
+            }
 
             switch result {
             case .success(let dictionary):
-                var assets = [(url: String, asset: CKAsset)]()
-
                 guard let tokens = dictionary["tokens"] as? [[String: Any]] else {
-                    strongSelf.finish(
-                        error: NSError(
-                            domain: CKErrorDomain,
-                            code: CKErrorCode.internalError.rawValue,
-                            userInfo: [NSLocalizedDescriptionKey: "Failed to parse response from server"]
-                        )
-                    )
+                    completion(CKPrettyError(code: .internalError, description: CKErrorStringFailedToParseServerResponse))
                     return
                 }
+
+                var assets = [CKAsset]()
+
+                guard tokens.count == assetInfos.count else {
+                    completion(CKPrettyError(code: .internalError, description: CKErrorStringAssetUploadWrongTokenNumber))
+                    return
+                }
+
                 for (index, token) in tokens.enumerated() {
                     guard let url = token["url"] as? String else {
                         strongSelf.finish(
-                            error: NSError(
-                                domain: CKErrorDomain,
-                                code: CKErrorCode.internalError.rawValue,
-                                userInfo: [NSLocalizedDescriptionKey: "Failed to parse response from server"]
-                            )
+                            error: CKPrettyError(code: .internalError, description: CKErrorStringFailedToParseServerResponse)
                         )
                         return
                     }
-                    assets.append((url, assetsToUpload[index].asset))
+                    let asset = assetInfos[index].asset
+                    asset.uploadReceipt = url
+                    assets.append(asset)
                 }
                 strongSelf.uploadAssets(assets, completion: completion)
             case .error(let error):
-                strongSelf.finish(error: error.error)
+                completion(error.error)
             }
         }
         request.performRequest()
     }
 
-    private func uploadAssets(_ assets: [(url: String, asset: CKAsset)], completion: @escaping () -> Void) {
+    private func uploadAssets(_ assets: [CKAsset], completion: @escaping (Error?) -> Void) {
         var currentAssetIndex = 0
 
         // Create payload for uploading
@@ -360,32 +367,35 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
         func uploadCurrentAsset() {
             // Check if all asset are uploaded
             guard currentAssetIndex < assets.count else {
-                completion()
+                completion(nil)
                 return
             }
 
             // Upload asset one by one
             let asset = assets[currentAssetIndex]
-            let data = try! Data(contentsOf: asset.asset.fileURL)
+            let data = try! Data(contentsOf: asset.fileURL)
             let (body, contentType) = createUploaHTTPBody(data)
-            var request = URLRequest(url: URL(string: asset.url)!)
+            var request = URLRequest(url: URL(string: asset.uploadReceipt!)!)
             request.httpMethod = "POST"
             request.setValue(contentType, forHTTPHeaderField: "Content-Type")
             request.httpBody = body
             urlSessionTask = CKWebRequest(container: operationContainer).perform(request: request, completionHandler: { [weak self] result, error in
-                guard let strongSelf = self, !strongSelf.isCancelled else { return }
+                guard let strongSelf = self, !strongSelf.isCancelled else {
+                    completion(nil)
+                    return
+                }
 
                 if error != nil {
-                    strongSelf.finish(error: error)
+                    completion(error)
                     return
                 }
 
                 guard let info = result?["singleFile"] as? [String: Any] else {
-                    strongSelf.finish(error: NSError(domain: CKErrorDomain, code: CKErrorCode.internalError.rawValue, userInfo: [NSLocalizedDescriptionKey: "Cannot fetch token to upload asset"]))
+                    completion(CKPrettyError(code: .internalError, description: CKErrorStringAssetUploadFailure))
                     return
                 }
 
-                assets[currentAssetIndex].asset.uploadInfo = info
+                assets[currentAssetIndex].uploadInfo = info
                 currentAssetIndex += 1
                 uploadCurrentAsset()
             })

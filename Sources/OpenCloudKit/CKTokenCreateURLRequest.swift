@@ -73,17 +73,22 @@ class CKTokenCreateOperation: CKOperation {
         request.accountInfoProvider = CloudKit.shared.account(forContainer: operationContainer)
         request.requestProperties = bodyDictionaryRepresentation
 
-        request.completionBlock = { result in
-            if(self.isCancelled){
-                return
+        request.completionBlock = { [weak self] result in
+            guard let strongSelf = self else { return }
+
+            var returnError: Error?
+
+            defer {
+                strongSelf.finish(error: returnError)
             }
+
+            guard !strongSelf.isCancelled else { return }
+
             switch result {
             case .success(let dictionary):
-                self.info = CKPushTokenInfo(dictionaryRepresentation: dictionary)!
-                self.finish(error:nil)
-
+                strongSelf.info = CKPushTokenInfo(dictionaryRepresentation: dictionary)!
             case .error(let error):
-                self.finish(error:error.error)
+                returnError = error.error
             }
         }
         request.performRequest()

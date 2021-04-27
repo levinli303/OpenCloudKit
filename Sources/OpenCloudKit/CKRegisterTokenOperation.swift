@@ -35,19 +35,24 @@ class CKRegisterTokenOperation : CKOperation {
     }
     
     override func performCKOperation() {
-        
         let request = CKTokenRegistrationURLRequest(token: apnsToken, apnsEnvironment: "\(apnsEnvironment)")
-        request.completionBlock = { [weak self] (result) in
-            guard let strongSelf = self, !strongSelf.isCancelled else {
-                return
+        request.completionBlock = { [weak self] result in
+            guard let strongSelf = self else { return }
+
+            var returnError: Error?
+
+            defer {
+                strongSelf.finish(error: returnError)
             }
+
+            guard !strongSelf.isCancelled else { return }
+
             switch result {
             case .success(let dictionary):
                 strongSelf.tokenInfo = CKPushTokenInfo(dictionaryRepresentation: dictionary)
                 CloudKit.debugPrint(dictionary)
-                strongSelf.finish(error: nil)
             case .error(let error):
-                strongSelf.finish(error: error.error)
+                returnError = error.error
             }
         }
         

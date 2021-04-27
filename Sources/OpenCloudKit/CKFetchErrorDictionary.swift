@@ -27,7 +27,6 @@ struct CKErrorDictionary {
     let uuid: String
 
     init?(dictionary: [String: Any]) {
-
         guard
             let uuid = dictionary["uuid"] as? String,
             let reason = dictionary[CKRecordFetchErrorDictionary.reasonKey] as? String,
@@ -43,24 +42,9 @@ struct CKErrorDictionary {
         self.retryAfter = (dictionary[CKRecordFetchErrorDictionary.retryAfterKey] as? NSNumber)
         self.redirectURL = dictionary[CKRecordFetchErrorDictionary.redirectURLKey] as? String
     }
-
-    func error() -> NSError {
-        let errorCode = CKErrorCode.errorCode(serverError: serverErrorCode)!
-
-        var userInfo: NSErrorUserInfoType = [NSLocalizedDescriptionKey: reason as Any, "serverErrorCode": serverErrorCode as Any]
-        if let redirectURL = redirectURL {
-            userInfo[CKErrorRedirectURLKey] = redirectURL
-        }
-        if let retryAfter = retryAfter {
-            userInfo[CKErrorRetryAfterKey] = retryAfter as NSNumber
-        }
-
-        return NSError(domain: CKErrorDomain, code: errorCode.rawValue, userInfo: userInfo)
-    }
 }
 
 struct CKFetchErrorDictionary<T: CKFetchErrorDictionaryIdentifier> {
-
     let identifier: T
     let reason: String
     let serverErrorCode: String
@@ -82,19 +66,5 @@ struct CKFetchErrorDictionary<T: CKFetchErrorDictionaryIdentifier> {
 
         self.retryAfter = (dictionary[CKRecordFetchErrorDictionary.retryAfterKey] as? NSNumber)
         self.redirectURL = dictionary[CKRecordFetchErrorDictionary.redirectURLKey] as? String
-    }
-
-    func error() -> NSError {
-        let errorCode = CKErrorCode.errorCode(serverError: serverErrorCode)!
-
-        var userInfo: NSErrorUserInfoType = [NSLocalizedDescriptionKey: reason as Any, "serverErrorCode": serverErrorCode as Any]
-        if let redirectURL = redirectURL {
-            userInfo[CKErrorRedirectURLKey] = redirectURL
-        }
-        if let retryAfter = retryAfter {
-            userInfo[CKErrorRetryAfterKey] = retryAfter as NSNumber
-        }
-
-        return NSError(domain: CKErrorDomain, code: errorCode.rawValue, userInfo: userInfo)
     }
 }

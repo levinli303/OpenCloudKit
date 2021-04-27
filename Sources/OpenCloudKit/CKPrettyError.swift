@@ -60,7 +60,7 @@ enum CKError {
             return ckError(forServerResponseDictionary: dictionary)
         case .parse(let parseError):
             let error = NSError(error: parseError)
-            return NSError(domain: CKErrorDomain, code: CKErrorCode.internalError.rawValue, userInfo: error.userInfo )
+            return CKPrettyError(code: .internalError, userInfo: error.userInfo)
         }
     }
     
@@ -77,48 +77,63 @@ enum CKError {
             errorCode = .networkFailure
         }
         
-        let error = NSError(domain: CKErrorDomain, code: errorCode.rawValue, userInfo: userInfo)
+        let error = CKPrettyError(code: errorCode, userInfo: userInfo)
         return error
     }
     
     func ckError(forServerResponseDictionary dictionary: [String: Any]) -> NSError {
         if let recordFetchError = CKRecordFetchErrorDictionary(dictionary: dictionary) {
-            
-            let errorCode = CKErrorCode.errorCode(serverError: recordFetchError.serverErrorCode)!
-            
-            var userInfo: NSErrorUserInfoType = [:]
-            
-            userInfo["redirectURL"] = recordFetchError.redirectURL
-            userInfo[NSLocalizedDescriptionKey] = recordFetchError.reason
-            
-            userInfo[CKErrorRetryAfterKey] = recordFetchError.retryAfter
-            userInfo["uuid"] = recordFetchError.uuid
-            
-            return NSError(domain: CKErrorDomain, code: errorCode.rawValue, userInfo: userInfo)
+            return CKPrettyError(recordFetchError: recordFetchError)
         } else {
-            
             let userInfo = [:] as NSErrorUserInfoType
-            return NSError(domain: CKErrorDomain, code: CKErrorCode.internalError.rawValue, userInfo: userInfo)
+            return CKPrettyError(code: .internalError, userInfo: userInfo)
         }
     }
 }
 
 class CKPrettyError: NSError {
+    convenience init<T: CKFetchErrorDictionaryIdentifier>(fetchError: CKFetchErrorDictionary<T>) {
+        let errorCode = CKErrorCode.errorCode(serverError: fetchError.serverErrorCode)!
 
-    /*
-     
-     CVarArgs not automatically supported in Swift Linux
+        var userInfo: NSErrorUserInfoType = ["serverErrorCode": fetchError.serverErrorCode]
+        if let redirectURL = fetchError.redirectURL {
+            userInfo[CKErrorRedirectURLKey] = redirectURL
+        }
+        if let retryAfter = fetchError.retryAfter {
+            userInfo[CKErrorRetryAfterKey] = retryAfter as NSNumber
+        }
 
-    convenience init(code: CKErrorCode, format: String, _ args: CVarArg...){
-        let description = String(format: format, arguments: args)
-        self.init(code, userInfo: nil, error: nil, path: nil, URL: nil, description: description)
+        self.init(errorCode, userInfo: userInfo, error: nil, path: nil, URL: nil, description: fetchError.reason)
     }
 
-    convenience init(code: CKErrorCode, userInfo: NSErrorUserInfoType, format: String, _ args: CVarArg...){
-        let description = String(format: format, arguments: args)
-        self.init(code: code, userInfo: userInfo, description: description)
+    convenience init(subscriptionFetchError: CKSubscriptionFetchErrorDictionary) {
+        let errorCode = CKErrorCode.errorCode(serverError: subscriptionFetchError.serverErrorCode)!
+
+        var userInfo: NSErrorUserInfoType = [:]
+        userInfo[CKErrorRedirectURLKey] = subscriptionFetchError.redirectURL
+
+        self.init(errorCode, userInfo: userInfo, error: nil, path: nil, URL: nil, description: subscriptionFetchError.reason)
     }
-    */
+
+    convenience init(recordFetchError: CKRecordFetchErrorDictionary) {
+        let errorCode = CKErrorCode.errorCode(serverError: recordFetchError.serverErrorCode)!
+
+        var userInfo: NSErrorUserInfoType = [:]
+
+        userInfo[CKErrorRedirectURLKey] = recordFetchError.redirectURL
+        userInfo[CKErrorRetryAfterKey] = recordFetchError.retryAfter
+        userInfo["uuid"] = recordFetchError.uuid
+
+        self.init(errorCode, userInfo: userInfo, error: nil, path: nil, URL: nil, description: recordFetchError.reason)
+    }
+
+    convenience init(code: CKErrorCode) {
+        self.init(code, userInfo: nil, error: nil, path: nil, URL: nil, description: code.description)
+    }
+
+    convenience init(code: CKErrorCode, userInfo: NSErrorUserInfoType) {
+        self.init(code, userInfo: userInfo, error: nil, path: nil, URL: nil, description: code.description)
+    }
     
     convenience init(code: CKErrorCode, description: String) {
         self.init(code, userInfo: nil, error: nil, path: nil, URL: nil, description: description)
@@ -131,8 +146,8 @@ class CKPrettyError: NSError {
     init(_ code: CKErrorCode, userInfo: NSErrorUserInfoType?, error: Error?, path: String?, URL: URL?, description: String?){
         var userInfo = userInfo
         
-        if(description != nil){
-            if(userInfo == nil){
+        if description != nil {
+            if userInfo == nil {
                 userInfo = NSErrorUserInfoType()
             }
             userInfo?[NSLocalizedDescriptionKey] = description;

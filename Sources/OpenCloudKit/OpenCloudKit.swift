@@ -117,7 +117,7 @@ public class CloudKit {
 
 }
 
-public protocol OpenCloudKitDelegate: class {
+public protocol OpenCloudKitDelegate: AnyObject {
 
     func didRecieveRemoteNotification(_ notification:CKNotification)
 

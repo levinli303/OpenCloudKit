@@ -42,9 +42,16 @@ public class CKAcceptSharesOperation: CKOperation {
         let operationURLRequest = CKAcceptSharesURLRequest(shortGUIDs: shortGUIDs)
         operationURLRequest.accountInfoProvider = CloudKit.shared.account(forContainer: operationContainer)
         operationURLRequest.completionBlock = { [weak self] (result) in
-            guard let strongSelf = self, !strongSelf.isCancelled else {
-                return
+            guard let strongSelf = self else { return }
+
+            var returnError: Error?
+
+            defer {
+                strongSelf.finish(error: returnError)
             }
+
+            guard !strongSelf.isCancelled else { return }
+
             switch result {
             case .success(let dictionary):
                 
@@ -57,11 +64,8 @@ public class CKAcceptSharesOperation: CKOperation {
                         }
                     }
                 }
-                
-                strongSelf.finish(error: nil)
-                
             case .error(let error):
-                strongSelf.finish(error: error.error)
+                returnError = error.error
             }
         }
         

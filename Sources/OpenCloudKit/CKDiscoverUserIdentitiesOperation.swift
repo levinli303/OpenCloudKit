@@ -46,15 +46,15 @@ public class CKDiscoverUserIdentitiesOperation : CKOperation {
         let request: [String: Any] = ["lookupInfos": lookUpInfos as Any]
 
         urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: request) { [weak self] (dictionary, error) in
-
-            guard let strongSelf = self, !strongSelf.isCancelled else {
-                return
-            }
+            guard let strongSelf = self else { return }
 
             var returnError = error
+
             defer {
                 strongSelf.finish(error: returnError)
             }
+
+            guard !strongSelf.isCancelled else { return }
 
             guard let dictionary = dictionary,
                   let userDictionaries = dictionary["users"] as? [[String: Any]],
@@ -65,14 +65,12 @@ public class CKDiscoverUserIdentitiesOperation : CKOperation {
             // Process Records
             // Parse JSON into CKRecords
             for userDictionary in userDictionaries {
-
                 if let userIdenity = CKUserIdentity(dictionary: userDictionary) {
                     // Call RecordCallback
                     strongSelf.discovered(userIdentity: userIdenity, lookupInfo: userIdenity.lookupInfo!)
-
                 } else {
                     // Create Error
-                    returnError = NSError(domain: CKErrorDomain, code: CKErrorCode.partialFailure.rawValue, userInfo: [NSLocalizedDescriptionKey: "Failed to parse record from server"])
+                    returnError = CKPrettyError(code: .partialFailure, description: CKErrorStringFailedToParseRecord)
                     // Call RecordCallback
                     return
                 }

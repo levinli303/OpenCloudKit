@@ -92,15 +92,16 @@ public class CKModifyRecordZonesOperation : CKDatabaseOperation {
 
         let request: [String: Any] = ["operations": zoneOperations]
 
-        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: request) { [weak self] (dictionary, error) in
+        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: request) { [weak self] dictionary, error in
+            guard let strongSelf = self else { return }
 
-            guard let strongSelf = self, !strongSelf.isCancelled else {
-                return
-            }
+            var returnError = error
 
             defer {
-                strongSelf.finish(error: error)
+                strongSelf.finish(error: returnError)
             }
+
+            guard !strongSelf.isCancelled else { return }
 
             guard let dictionary = dictionary,
                   let zoneDictionaries = dictionary["zones"] as? [[String: Any]],
@@ -113,9 +114,11 @@ public class CKModifyRecordZonesOperation : CKDatabaseOperation {
                 if let zone = CKRecordZone(dictionary: zoneDictionary) {
                     strongSelf.recordZonesByZoneIDs[zone.zoneID] = zone
                 } else if let fetchError = CKFetchErrorDictionary<CKRecordZoneID>(dictionary: zoneDictionary) {
-
-                    // Append Error
-                    strongSelf.recordZoneErrors[fetchError.identifier] = fetchError.error()
+                    let error = CKPrettyError(fetchError: fetchError)
+                    strongSelf.recordZoneErrors[fetchError.identifier] = error
+                } else {
+                    returnError = CKPrettyError(code: .partialFailure, description: CKErrorStringFailedToParseRecordZone)
+                    return
                 }
             }
         }

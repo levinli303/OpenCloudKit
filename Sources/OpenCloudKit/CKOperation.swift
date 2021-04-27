@@ -56,14 +56,13 @@ public class CKOperation: Operation {
     }
 
     open override func start() {
-        
         // Check if operation is already cancelled
         if isCancelled && isFinished {
             CloudKit.debugPrint("Not starting already cancelled operation \(self)")
             return
         }
 
-        if(isExecuting || isFinished){
+        if isExecuting || isFinished {
             // NSException not available on Linux, fatalError is the alternative.
             // NSException.raise(NSExceptionName.invalidArgumentException, format: "You can't restart an executing or finished CKOperation: %@", arguments:getVaList([self]))
             fatalError("You can't restart an executing or finished CKOperation")
@@ -72,8 +71,7 @@ public class CKOperation: Operation {
         // Send out KVO notifications for the executing
         isExecuting = true
 
-        if(isCancelled){
-
+        if isCancelled {
             // Must move the operation to the finished state if it is cancelled before it started.
             let error = CKPrettyError(code: CKErrorCode.operationCancelled, description: "Operation \(self) was cancelled before it started")
 
@@ -130,16 +128,16 @@ public class CKOperation: Operation {
 
     func finishInternalOnCallbackQueue(error: Error?){
         var error = error
-        if(!isExecuting){
+        if !isExecuting {
             return
         }
-        if(error == nil){
-            if(isCancelled){
+        if error == nil {
+            if isCancelled {
                 error = CKPrettyError(code: CKErrorCode.operationCancelled, description: "Operation \(self) was cancelled")
             }
         }
         // not sure why this is retained yet
-        if(self.error == nil){
+        if self.error == nil {
             self.error = error;
         }
         if(!isFinished){

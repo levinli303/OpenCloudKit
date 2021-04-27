@@ -40,9 +40,9 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
 
     override func finishOnCallbackQueue(error: Error?) {
         var error = error
-        if(error == nil){
+        if error == nil {
             if self.recordZoneErrors.count > 0 {
-                error = NSError(domain: CKErrorDomain, code: CKErrorCode.partialFailure.rawValue, userInfo: [CKPartialErrorsByItemIDKey: self.recordZoneErrors])
+                error = CKPrettyError(code: .partialFailure, userInfo: [CKPartialErrorsByItemIDKey: self.recordZoneErrors], description: CKErrorStringFailedToParseRecordZone)
             }
         }
         // Call the final completionBlock
@@ -67,15 +67,16 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
             request = nil
         }
 
-        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: request) { [weak self] (dictionary, error) in
+        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: request) { [weak self] dictionary, error in
+            guard let strongSelf = self else { return }
 
-            guard let strongSelf = self, !strongSelf.isCancelled else {
-                return
-            }
+            var returnError = error
 
             defer {
-                strongSelf.finish(error: error)
+                strongSelf.finish(error: returnError)
             }
+
+            guard !strongSelf.isCancelled else { return }
 
             guard let dictionary = dictionary,
                   let zoneDictionaries = dictionary["zones"] as? [[String: Any]],
@@ -89,9 +90,11 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
                 if let zone = CKRecordZone(dictionary: zoneDictionary) {
                     strongSelf.recordZoneByZoneID[zone.zoneID] = zone
                 } else if let fetchError = CKFetchErrorDictionary<CKRecordZoneID>(dictionary: zoneDictionary) {
-
-                    // Append Error
-                    strongSelf.recordZoneErrors[fetchError.identifier] = fetchError.error()
+                    let error = CKPrettyError(fetchError: fetchError)
+                    strongSelf.recordZoneErrors[fetchError.identifier] = error
+                } else {
+                    returnError = CKPrettyError(code: .partialFailure, description: CKErrorStringFailedToParseRecordZone)
+                    return
                 }
             }
         }

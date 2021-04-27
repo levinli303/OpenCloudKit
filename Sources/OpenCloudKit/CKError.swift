@@ -155,3 +155,15 @@ extension CKErrorCode: CustomStringConvertible {
         }
     }
 }
+
+let CKErrorRetryAfterKey = "CKRetryAfter"
+let CKErrorRedirectURLKey = "CKRedirectURL"
+let CKPartialErrorsByItemIDKey = "CKPartialErrors"
+let CKErrorStringFailedToParseServerResponse = "Failed to parse response from server"
+let CKErrorStringFailedToResolveRecord = "Couldn't resolve record or record fetch error dictionary"
+let CKErrorStringFailedToParseRecord = "Failed to parse record from server"
+let CKErrorStringFailedToParseRecordZone = "Failed to parse record zone from server"
+let CKErrorStringPartialErrorRecords = "Failed to modify some records"
+let CKErrorStringPartialErrorSubscriptions = "Failed to modify some subscriptions"
+let CKErrorStringAssetUploadWrongTokenNumber = "Failed to get correct number of tokens"
+let CKErrorStringAssetUploadFailure = "Failed to upload asset"

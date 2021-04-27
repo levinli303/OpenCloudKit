@@ -90,7 +90,6 @@ extension CKDatabase {
         let operation = CKModifyRecordsOperation(recordsToSave: [record], recordIDsToDelete: nil)
         operation.database = self
         operation.modifyRecordsCompletionBlock = { records, recordIDs, error in
-
             completionHandler(records?.first, error)
         }
         schedule(operation: operation)

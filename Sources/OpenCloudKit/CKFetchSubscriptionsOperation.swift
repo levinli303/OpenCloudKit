@@ -38,11 +38,9 @@ public class CKFetchSubscriptionsOperation : CKDatabaseOperation {
 
     override func finishOnCallbackQueue(error: Error?) {
         var error = error
-        if(error == nil){
-            if (subscriptionErrors.count > 0) {
-                error = NSError(domain: CKErrorDomain, code: CKErrorCode.partialFailure.rawValue, userInfo:
-                                    [NSLocalizedDescriptionKey: "Partial Error",
-                                     CKPartialErrorsByItemIDKey: subscriptionErrors])
+        if error == nil {
+            if subscriptionErrors.count > 0 {
+                error = CKPrettyError(code: .partialFailure, userInfo: [CKPartialErrorsByItemIDKey: subscriptionErrors], description: CKErrorStringPartialErrorSubscriptions)
             }
         }
         self.fetchSubscriptionCompletionBlock?(subscriptionsIDToSubscriptions, error)
@@ -61,38 +59,34 @@ public class CKFetchSubscriptionsOperation : CKDatabaseOperation {
         }
 
 
-        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: request) { [weak self] (dictionary, networkError) in
+        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: request) { [weak self] dictionary, networkError in
+            guard let strongSelf = self else { return }
 
-            guard let strongSelf = self, !strongSelf.isCancelled else {
-                return
-            }
+            var returnError = networkError
 
             defer {
-                strongSelf.finish(error: networkError)
+                strongSelf.finish(error: returnError)
             }
 
-            guard let dictionary = dictionary,
-                  let subscriptionsDictionary = dictionary["subscriptions"] as? [[String: Any]],
-                  networkError == nil else {
+            guard !strongSelf.isCancelled else { return }
+
+            guard let subscriptionsDictionary = dictionary?["subscriptions"] as? [[String: Any]] else {
+                returnError = CKPrettyError(code: .internalError, description: CKErrorStringFailedToParseServerResponse)
                 return
             }
 
             // Parse JSON into CKRecords
             for subscriptionDictionary in subscriptionsDictionary {
-
                 if let subscription = CKSubscription(dictionary: subscriptionDictionary) {
                     // Append Record
                     strongSelf.subscriptionsIDToSubscriptions[subscription.subscriptionID] = subscription
 
-                }  else if let subscriptionFetchError = CKSubscriptionFetchErrorDictionary(dictionary: subscriptionDictionary) {
-
-                    let errorCode = CKErrorCode.errorCode(serverError: subscriptionFetchError.serverErrorCode)!
-                    let error = NSError(domain: CKErrorDomain, code: errorCode.rawValue, userInfo: [NSLocalizedDescriptionKey: subscriptionFetchError.reason])
-
+                } else if let subscriptionFetchError = CKSubscriptionFetchErrorDictionary(dictionary: subscriptionDictionary) {
+                    let error = CKPrettyError(subscriptionFetchError: subscriptionFetchError)
                     strongSelf.subscriptionErrors[subscriptionFetchError.subscriptionID] = error
-
                 } else {
-                    fatalError("Couldn't resolve record or record fetch error dictionary")
+                    returnError = CKPrettyError(code: .partialFailure, description: CKErrorStringFailedToParseRecord)
+                    return
                 }
             }
         }
