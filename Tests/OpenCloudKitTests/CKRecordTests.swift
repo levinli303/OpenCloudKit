@@ -10,6 +10,8 @@ import Foundation
 @testable import OpenCloudKit
 
 #if os(iOS) || os(macOS)
+import CoreLocation
+
 typealias CKRecord = OpenCloudKit.CKRecord
 typealias CKContainer = OpenCloudKit.CKContainer
 typealias CKRecordValue = OpenCloudKit.CKRecordValue
