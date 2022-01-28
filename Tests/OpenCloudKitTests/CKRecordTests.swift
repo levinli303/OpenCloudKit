@@ -28,6 +28,8 @@ class CKRecordTests: CKTest {
     static var recordType = "TestData"
 
     enum Constant {
+        static let bytesValue = Data(repeating: 0, count: 10)
+        static let bytesListValue = (0..<8).map({ Data(repeating: $0, count: 10) })
         static let stringValue = "string"
         static let stringListValue = ["string0", "string1", "string2"]
         static let int64Value: Int64 = 0
@@ -58,6 +60,8 @@ class CKRecordTests: CKTest {
         let id = UUID().uuidString
         let recordID = CKRecordID(recordName: id)
         let record = CKRecord(recordType: Self.recordType, recordID: recordID)
+        record["bytes"] = Constant.bytesValue as CKRecordValue
+        record["bytesList"] = Constant.bytesListValue as CKRecordValue
         record["string"] = Constant.stringValue as CKRecordValue
         record["stringList"] = Constant.stringListValue as CKRecordValue
         record["int64"] = Constant.int64Value as CKRecordValue
@@ -74,6 +78,8 @@ class CKRecordTests: CKTest {
             XCTAssertNotNil(record)
 
             let newRecord = record!
+            XCTAssertEqual(newRecord["bytes"] as! Data, Constant.bytesValue)
+            XCTAssertEqual(newRecord["bytesList"] as! [Data], Constant.bytesListValue)
             XCTAssertEqual(newRecord["string"] as! String, Constant.stringValue)
             XCTAssertEqual(newRecord["stringList"] as! [String], Constant.stringListValue)
             XCTAssertEqual(newRecord["int64"] as! Int64, Constant.int64Value)

@@ -330,7 +330,7 @@ extension CKRecord {
                 case CKValueType.string:
                     return string
                 case CKValueType.data:
-                    return NSData(base64Encoded: string, options: [])
+                    return Data(base64Encoded: string)
                 default:
                     return string
                 }
@@ -358,6 +358,10 @@ extension CKRecord {
                 case "ASSETID_LIST":
                     return (array as! [[String: Any]]).map { item -> CKAsset in
                         return CKAsset(dictionary: item)!
+                    }
+                case "BYTES_LIST":
+                    return (array as! [String]).map { item -> Data in
+                        return Data(base64Encoded: item)!
                     }
                 default:
                     fatalError("List type of \(type) not supported")
