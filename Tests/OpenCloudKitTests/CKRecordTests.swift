@@ -260,6 +260,62 @@ class CKRecordTests: CKTest {
         wait(for: [expectation], timeout: 10)
     }
 
+    func testCurosr() {
+        let resultLimit = 1
+        let db = CKContainer.default().publicCloudDatabase
+        let query = CKQuery(recordType: Self.recordType, filters: [])
+        let op = CKQueryOperation(query: query)
+        op.resultsLimit = resultLimit
+        var records: [CKRecord] = []
+        op.recordFetchedBlock = { record in
+            records.append(record)
+        }
+        let expectation = XCTestExpectation(description: "Wait for response")
+        op.queryCompletionBlock = { cursor, _ in
+            guard let c = cursor else {
+                expectation.fulfill()
+                return
+            }
+            let continuedOperation = CKQueryOperation(cursor: c)
+            continuedOperation.query = query
+            continuedOperation.resultsLimit = resultLimit
+            continuedOperation.recordFetchedBlock = { record in
+                records.append(record)
+            }
+            continuedOperation.queryCompletionBlock = { _, _ in
+                expectation.fulfill()
+            }
+            db.add(continuedOperation)
+        }
+        db.add(op)
+        wait(for: [expectation], timeout: 10)
+        XCTAssertEqual(records.count, resultLimit * 2)
+    }
+
+    func testNoCurosr() {
+        let resultLimit = 1
+        let db = CKContainer.default().publicCloudDatabase
+        let reference = CKReference(recordID: CKRecordID(recordName: "DO-NOT-CREATE"), action: .none)
+        let query = CKQuery(recordType: Self.recordType, filters: [
+            CKQueryFilter(fieldName: "___recordID", comparator: .equals, fieldValue: reference)
+        ])
+        let op = CKQueryOperation(query: query)
+        op.resultsLimit = resultLimit
+        var records: [CKRecord] = []
+        op.recordFetchedBlock = { record in
+            records.append(record)
+        }
+        var savedCursor: CKQueryCursor?
+        let expectation = XCTestExpectation(description: "Wait for response")
+        op.queryCompletionBlock = { cursor, _ in
+            savedCursor = cursor
+            expectation.fulfill()
+        }
+        db.add(op)
+        wait(for: [expectation], timeout: 10)
+        XCTAssertNil(savedCursor)
+    }
+
     static var allTests = [
         ("testCreateRecord", testCreateRecord),
         ("testFetchRecord", testFetchRecord),
@@ -272,5 +328,7 @@ class CKRecordTests: CKTest {
         ("testDeleteUnknownRecord", testDeleteUnknownRecord),
         ("testCreateExistingRecord", testCreateExistingRecord),
         ("testCreateExistingRecord", testCreateExistingRecord),
+        ("testCurosr", testCurosr),
+        ("testNoCurosr", testNoCurosr),
     ]
 }
