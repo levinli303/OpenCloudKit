@@ -8,14 +8,17 @@
 
 import Foundation
 
+public extension CKRecord {
+    typealias ID = CKRecordID
+}
+
 public class CKRecordID: NSObject, NSSecureCoding {
 
     public convenience init(recordName: String) {
-        let defaultZone = CKRecordZoneID(zoneName: "_defaultZone", ownerName: "_defaultOwner")
-        self.init(recordName: recordName, zoneID: defaultZone)
+        self.init(recordName: recordName, zoneID: CKRecordZoneID.default)
     }
 
-    public init(recordName: String, zoneID: CKRecordZoneID) {
+    public init(recordName: String, zoneID: CKRecordZone.ID) {
 
         self.recordName = recordName
         self.zoneID = zoneID
@@ -24,7 +27,7 @@ public class CKRecordID: NSObject, NSSecureCoding {
 
     public let recordName: String
 
-    public var zoneID: CKRecordZoneID
+    public var zoneID: CKRecordZone.ID
 
     public override func isEqual(_ object: Any?) -> Bool {
         guard let other = object as? CKRecordID else { return false }
@@ -33,7 +36,7 @@ public class CKRecordID: NSObject, NSSecureCoding {
 
     public required convenience init?(coder: NSCoder) {
         let recordName = coder.decodeObject(of: NSString.self, forKey: "RecordName")
-        let zoneID = coder.decodeObject(of: CKRecordZoneID.self, forKey: "ZoneID")
+        let zoneID = coder.decodeObject(of: CKRecordZone.ID.self, forKey: "ZoneID")
         self.init(recordName: recordName! as String, zoneID: zoneID!)
     }
 
@@ -57,8 +60,8 @@ extension CKRecordID {
                 return nil
         }
 
-        // Parse ZoneID Dictionary into CKRecordZoneID
-        let zoneID = CKRecordZoneID(dictionary: zoneIDDictionary)!
+        // Parse ZoneID Dictionary into CKRecordZone.ID
+        let zoneID = CKRecordZone.ID(dictionary: zoneIDDictionary)!
         self.init(recordName: recordName, zoneID: zoneID)
     }
 

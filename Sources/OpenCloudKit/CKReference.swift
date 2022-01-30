@@ -40,7 +40,7 @@ open class CKReference: NSObject, NSSecureCoding {
 
     /* It is acceptable to relate two records that have not yet been uploaded to the server, but those records must be uploaded to the server in the same operation.
      If a record references a record that does not exist on the server and is not in the current save operation it will result in an error. */
-    public init(recordID: CKRecordID, action: CKReferenceAction) {
+    public init(recordID: CKRecord.ID, action: CKReferenceAction) {
         self.recordID = recordID
         self.referenceAction = action
     }
@@ -51,10 +51,10 @@ open class CKReference: NSObject, NSSecureCoding {
 
     public let referenceAction: CKReferenceAction
 
-    public let recordID: CKRecordID
+    public let recordID: CKRecord.ID
 
     public required convenience init?(coder: NSCoder) {
-        let recordID = coder.decodeObject(of: CKRecordID.self, forKey: "recordID")
+        let recordID = coder.decodeObject(of: CKRecord.ID.self, forKey: "recordID")
         let referenceAction = coder.decodeInt64(forKey: "referenceAction")
         self.init(recordID: recordID!, action: CKReferenceAction(rawValue: UInt(referenceAction))!)
     }
@@ -81,12 +81,12 @@ extension CKReference {
             return nil
         }
 
-        let recordID: CKRecordID
+        let recordID: CKRecord.ID
         if let zoneDictionary = dictionary["zoneID"] as? [String: Any],
-            let zoneID = CKRecordZoneID(dictionary: zoneDictionary) {
-            recordID = CKRecordID(recordName: recordName, zoneID: zoneID)
+            let zoneID = CKRecordZone.ID(dictionary: zoneDictionary) {
+            recordID = CKRecord.ID(recordName: recordName, zoneID: zoneID)
         } else {
-           recordID = CKRecordID(recordName: recordName)
+           recordID = CKRecord.ID(recordName: recordName)
         }
 
         self.init(recordID: recordID, action: action)

@@ -18,25 +18,25 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
         super.init()
     }
 
-    public init(recordZoneIDs zoneIDs: [CKRecordZoneID]) {
+    public init(recordZoneIDs zoneIDs: [CKRecordZone.ID]) {
         self.recordZoneIDs = zoneIDs
         super.init()
     }
 
     var isFetchAllRecordZonesOperation: Bool = false
 
-    var recordZoneIDs : [CKRecordZoneID]?
+    var recordZoneIDs : [CKRecordZone.ID]?
 
-    var recordZoneErrors: [CKRecordZoneID: NSError] = [:]
+    var recordZoneErrors: [CKRecordZone.ID: NSError] = [:]
 
-    public var recordZoneByZoneID: [CKRecordZoneID: CKRecordZone] = [:]
+    public var recordZoneByZoneID: [CKRecordZone.ID: CKRecordZone] = [:]
 
     /*  This block is called when the operation completes.
      The [NSOperation completionBlock] will also be called if both are set.
      If the error is CKErrorPartialFailure, the error's userInfo dictionary contains
      a dictionary of zoneIDs to errors keyed off of CKPartialErrorsByItemIDKey.
      */
-    public var fetchRecordZonesCompletionBlock: (([CKRecordZoneID : CKRecordZone]?, Error?) -> Swift.Void)?
+    public var fetchRecordZonesCompletionBlock: (([CKRecordZone.ID : CKRecordZone]?, Error?) -> Swift.Void)?
 
     override func finishOnCallbackQueue(error: Error?) {
         var error = error
@@ -92,7 +92,7 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
 
                 if let zone = CKRecordZone(dictionary: zoneDictionary) {
                     strongSelf.recordZoneByZoneID[zone.zoneID] = zone
-                } else if let fetchError = CKFetchErrorDictionary<CKRecordZoneID>(dictionary: zoneDictionary) {
+                } else if let fetchError = CKFetchErrorDictionary<CKRecordZone.ID>(dictionary: zoneDictionary) {
                     let error = CKPrettyError(fetchError: fetchError)
                     strongSelf.recordZoneErrors[fetchError.identifier] = error
                 } else {

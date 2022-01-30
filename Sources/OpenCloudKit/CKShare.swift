@@ -16,10 +16,10 @@ public class CKShare : CKRecord {
     
     /* When saving a newly created CKShare, you must save the share and its rootRecord in the same CKModifyRecordsOperation batch. */
     public convenience init(rootRecord: CKRecord) {
-        self.init(rootRecord: rootRecord, share: CKRecordID(recordName: "Share-\(rootRecord.recordID)"))
+        self.init(rootRecord: rootRecord, share: CKRecord.ID(recordName: "Share-\(rootRecord.recordID)"))
     }
     
-    public init(rootRecord: CKRecord, share shareID: CKRecordID) {
+    public init(rootRecord: CKRecord, share shareID: CKRecord.ID) {
         shortGUID = nil
 
        super.init(recordType: CKShareRecordType, recordID: shareID)

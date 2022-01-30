@@ -9,7 +9,7 @@
 import Foundation
 
 public class CKFetchSubscriptionsOperation : CKDatabaseOperation {
-    public var subscriptionErrors : [String : NSError] = [:]
+    var subscriptionErrors : [String : NSError] = [:]
 
     public var subscriptionsIDToSubscriptions: [String: CKSubscription] = [:]
 

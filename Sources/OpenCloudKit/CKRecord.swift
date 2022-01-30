@@ -21,22 +21,24 @@ extension CKRecordFieldProvider where Self: CustomDictionaryConvertible {
 */
 
 public class CKRecord: NSObject, NSSecureCoding {
+    public typealias RecordType = String
+    public typealias FieldKey = String
 
     var values: [String: CKRecordValue] = [:]
 
-    public let recordType: String
+    public let recordType: RecordType
 
-    public let recordID: CKRecordID
+    public let recordID: ID
 
     public var recordChangeTag: String?
 
     /* This is a User Record recordID, identifying the user that created this record. */
-    public var creatorUserRecordID: CKRecordID?
+    public var creatorUserRecordID: ID?
 
     public var creationDate = Date()
 
     /* This is a User Record recordID, identifying the user that last modified this record. */
-    public var lastModifiedUserRecordID: CKRecordID?
+    public var lastModifiedUserRecordID: ID?
 
     public var modificationDate: Date?
 
@@ -46,10 +48,10 @@ public class CKRecord: NSObject, NSSecureCoding {
 
     public convenience init(recordType: String) {
         let UUID = NSUUID().uuidString
-        self.init(recordType: recordType, recordID: CKRecordID(recordName: UUID))
+        self.init(recordType: recordType, recordID: ID(recordName: UUID))
     }
 
-    public init(recordType: String, recordID: CKRecordID) {
+    public init(recordType: String, recordID: ID) {
         self.recordID = recordID
         self.recordType = recordType
     }
@@ -103,7 +105,7 @@ public class CKRecord: NSObject, NSSecureCoding {
         return"<\(type(of: self)); recordType = \(recordType);recordID = \(recordID); values = \(values)>"
     }
 
-    init?(recordDictionary: [String: Any], recordID: CKRecordID? = nil) {
+    init?(recordDictionary: [String: Any], recordID: ID? = nil) {
 
         guard let recordName = recordDictionary[CKRecordDictionary.recordName] as? String,
             let recordType = recordDictionary[CKRecordDictionary.recordType] as? String
@@ -111,18 +113,18 @@ public class CKRecord: NSObject, NSSecureCoding {
                 return nil
         }
 
-        // Parse ZoneID Dictionary into CKRecordZoneID
-        let zoneID: CKRecordZoneID
+        // Parse ZoneID Dictionary into CKRecordZone.ID
+        let zoneID: CKRecordZone.ID
         if let zoneIDDictionary = recordDictionary[CKRecordDictionary.zoneID] as? [String: Any] {
-            zoneID = CKRecordZoneID(dictionary: zoneIDDictionary)!
+            zoneID = CKRecordZone.ID(dictionary: zoneIDDictionary)!
         } else {
-            zoneID = CKRecordZoneID(zoneName: CKRecordZoneDefaultName, ownerName: "_defaultOwner")
+            zoneID = CKRecordZone.ID.default
         }
 
         if let recordID = recordID {
             self.recordID = recordID
         } else {
-            let recordID = CKRecordID(recordName: recordName, zoneID: zoneID)
+            let recordID = ID(recordName: recordName, zoneID: zoneID)
             self.recordID = recordID
         }
 
@@ -135,13 +137,13 @@ public class CKRecord: NSObject, NSSecureCoding {
 
         // Parse Created Dictionary
         if let createdDictionary = recordDictionary[CKRecordDictionary.created] as? [String: Any], let created = CKRecordLog(dictionary: createdDictionary) {
-            self.creatorUserRecordID = CKRecordID(recordName: created.userRecordName)
+            self.creatorUserRecordID = ID(recordName: created.userRecordName)
             self.creationDate = Date(timeIntervalSince1970: Double(created.timestamp) / 1000)
         }
 
         // Parse Modified Dictionary
         if let modifiedDictionary = recordDictionary[CKRecordDictionary.modified] as? [String: Any], let modified = CKRecordLog(dictionary: modifiedDictionary) {
-            self.lastModifiedUserRecordID = CKRecordID(recordName: modified.userRecordName)
+            self.lastModifiedUserRecordID = ID(recordName: modified.userRecordName)
             self.modificationDate = Date(timeIntervalSince1970: Double(modified.timestamp) / 1000)
         }
 
@@ -155,7 +157,7 @@ public class CKRecord: NSObject, NSSecureCoding {
 
         if let parentReferenceDictionary = recordDictionary["parent"] as? [String: Any], let recordName = parentReferenceDictionary["parent"] as? String {
 
-            let recordID = CKRecordID(recordName: recordName, zoneID: zoneID)
+            let recordID = ID(recordName: recordName, zoneID: zoneID)
             let reference = CKReference(recordID: recordID, action: .none)
             parent = reference
         }
@@ -163,11 +165,11 @@ public class CKRecord: NSObject, NSSecureCoding {
 
     public required init?(coder: NSCoder) {
         recordType = coder.decodeObject(of: NSString.self, forKey: "RecordType")! as String
-        recordID = coder.decodeObject(of: CKRecordID.self, forKey: "RecordID")!
+        recordID = coder.decodeObject(of: ID.self, forKey: "RecordID")!
         recordChangeTag = coder.decodeObject(of: NSString.self, forKey: "ETag") as String?
-        creatorUserRecordID = coder.decodeObject(of: CKRecordID.self, forKey: "CreatorUserRecordID")
+        creatorUserRecordID = coder.decodeObject(of: ID.self, forKey: "CreatorUserRecordID")
         creationDate = coder.decodeObject(of: NSDate.self, forKey: "RecordCtime")! as Date
-        lastModifiedUserRecordID = coder.decodeObject(of: CKRecordID.self, forKey: "LastModifiedUserRecordID")
+        lastModifiedUserRecordID = coder.decodeObject(of: ID.self, forKey: "LastModifiedUserRecordID")
         modificationDate = coder.decodeObject(of: NSDate.self, forKey: "RecordMtime") as Date?
         parent = coder.decodeObject(of: CKReference.self, forKey: "ParentReference")
         // TODO: changed keys set

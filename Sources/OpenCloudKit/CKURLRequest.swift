@@ -22,11 +22,6 @@ enum CKOperationRequestType: String {
     case tokens
 }
 
-enum CKURLRequestError {
-    case JSONParse(NSError)
-    case networkError(NSError)
-}
-
 enum CKURLRequestResult {
     case success([String: Any])
     case error(CKError)

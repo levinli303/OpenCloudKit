@@ -14,7 +14,7 @@ protocol CKFetchErrorDictionaryIdentifier {
     static var identifierKey: String { get }
 }
 
-extension CKRecordZoneID: CKFetchErrorDictionaryIdentifier {
+extension CKRecordZone.ID: CKFetchErrorDictionaryIdentifier {
     @nonobjc static let identifierKey = "zoneID"
 }
 

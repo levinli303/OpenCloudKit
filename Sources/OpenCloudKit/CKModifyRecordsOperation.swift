@@ -93,7 +93,7 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
         super.init()
     }
 
-    public convenience init(recordsToSave records: [CKRecord]?, recordIDsToDelete recordIDs: [CKRecordID]?) {
+    public convenience init(recordsToSave records: [CKRecord]?, recordIDsToDelete recordIDs: [CKRecord.ID]?) {
         self.init()
 
         recordsToSave = records
@@ -104,15 +104,15 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
 
     public var recordsToSave: [CKRecord]?
 
-    public var recordIDsToDelete: [CKRecordID]?
+    public var recordIDsToDelete: [CKRecord.ID]?
 
-    //var recordsByRecordIDs: [CKRecordID: CKRecord] = [:] // not sure what this is for yet
+    //var recordsByRecordIDs: [CKRecord.ID: CKRecord] = [:] // not sure what this is for yet
 
     /* Determines whether the batch should fail atomically or not. YES by default.
      This only applies to zones that support CKRecordZoneCapabilityAtomic. */
     public var isAtomic: Bool = false
 
-    public var zoneID: CKRecordZoneID?
+    public var zoneID: CKRecordZone.ID?
 
     /* Called repeatedly during transfer.
      It is possible for progress to regress when a retry is automatically triggered.
@@ -123,11 +123,11 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
     /* Called on success or failure for each record. */
     public var perRecordCompletionBlock: ((CKRecord?, Error?) -> Swift.Void)?
 
-    private var recordErrors: [CKRecordID: Error] = [:]
+    private var recordErrors: [CKRecord.ID: Error] = [:]
 
     private var savedRecords: [CKRecord]?
 
-    private var deletedRecordIDs: [CKRecordID]?
+    private var deletedRecordIDs: [CKRecord.ID]?
 
     /*  This block is called when the operation completes.
      The [NSOperation completionBlock] will also be called if both are set.
@@ -137,7 +137,7 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
      seen all record changes, and may be invoked while the server is processing the side effects
      of those changes.
      */
-    public var modifyRecordsCompletionBlock: (([CKRecord]?, [CKRecordID]?, Error?) -> Swift.Void)?
+    public var modifyRecordsCompletionBlock: (([CKRecord]?, [CKRecord.ID]?, Error?) -> Swift.Void)?
 
     override func finishOnCallbackQueue(error: Error?) {
         var error = error
@@ -230,7 +230,7 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
                 if let recordsDictionary = dictionary["records"] as? [[String: Any]] {
 
                     strongSelf.savedRecords = [CKRecord]()
-                    strongSelf.deletedRecordIDs = [CKRecordID]()
+                    strongSelf.deletedRecordIDs = [CKRecord.ID]()
                     // Parse JSON into CKRecords
                     for recordDictionary in recordsDictionary {
 
@@ -245,7 +245,7 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
                             // Create Error
                             let error = CKPrettyError(recordFetchError: recordFetchError)
                             // TODO: which zone?
-                            let recordID = CKRecordID(recordName: recordFetchError.recordName!)
+                            let recordID = CKRecord.ID(recordName: recordFetchError.recordName!)
 
                             strongSelf.recordErrors[recordID] = error
 
@@ -253,7 +253,7 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
                             strongSelf.completed(record: nil, error: error)
                         } else {
                             if let recordName = recordDictionary["recordName"] as? String, recordDictionary["deleted"] != nil {
-                                let recordID = CKRecordID(recordName: recordName)
+                                let recordID = CKRecord.ID(recordName: recordName)
                                 strongSelf.deletedRecordIDs?.append(recordID)
                             } else {
                                 returnError = CKPrettyError(code: .partialFailure, description: CKErrorStringFailedToResolveRecord)

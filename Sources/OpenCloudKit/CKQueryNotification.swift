@@ -27,8 +27,8 @@ public class CKQueryNotification : CKNotification {
                 let ownerName = queryDictionary["zoid"] as? String,
                 let recordName = queryDictionary["rid"] as? String
                 {
-                    let zoneID = CKRecordZoneID(zoneName: zoneName, ownerName: ownerName)
-                    recordID = CKRecordID(recordName: recordName, zoneID: zoneID)
+                    let zoneID = CKRecordZone.ID(zoneName: zoneName, ownerName: ownerName)
+                    recordID = CKRecord.ID(recordName: recordName, zoneID: zoneID)
             }
             
             // Set database scope
@@ -56,7 +56,7 @@ public class CKQueryNotification : CKNotification {
      "desiredKeys" property of CKNotificationInfo */
     public var recordFields: [String : Any]?
     
-    public var recordID: CKRecordID?
+    public var recordID: CKRecord.ID?
     
     public var isPublicDatabase: Bool {
         return databaseScope == .public

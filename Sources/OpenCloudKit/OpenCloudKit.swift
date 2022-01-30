@@ -127,14 +127,20 @@ public protocol OpenCloudKitDelegate: AnyObject {
 
 }
 
-extension CKRecordID {
+extension CKRecord.ID {
     var isDefaultName: Bool {
-        return recordName == CKRecordZoneDefaultName
+        return recordName == CKRecordZone.ID.defaultZoneName
     }
 }
 
+public extension CKRecordZone {
+    typealias ID = CKRecordZoneID
+}
 
 public class CKRecordZoneID: NSObject, NSSecureCoding {
+    /* The default zone has no capabilities */
+    public static let `default`: CKRecordZone.ID = CKRecordZoneID(zoneName: defaultZoneName, ownerName: CKCurrentUserDefaultName)
+    public static let defaultZoneName: String = "_defaultZone"
 
     public init(zoneName: String, ownerName: String) {
         self.zoneName = zoneName
@@ -183,7 +189,7 @@ extension CKRecordZoneID: CKCodable {
             "zoneName": zoneName
         ]
 
-        if ownerName != CKRecordZoneIDDefaultOwnerName {
+        if ownerName != CKCurrentUserDefaultName {
             zoneIDDictionary["ownerRecordName"] = ownerName
         }
 

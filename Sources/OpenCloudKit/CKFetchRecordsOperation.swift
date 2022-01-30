@@ -11,24 +11,24 @@ import Foundation
 public class CKFetchRecordsOperation: CKDatabaseOperation {
     var isFetchCurrentUserOperation = false
 
-    var recordErrors: [CKRecordID: Error] = [:]
+    var recordErrors: [CKRecord.ID: Error] = [:]
 
     var shouldFetchAssetContent: Bool = false
 
-    var recordIDsToRecords: [CKRecordID: CKRecord] = [:]
+    var recordIDsToRecords: [CKRecord.ID: CKRecord] = [:]
 
     /* Called repeatedly during transfer. */
-    public var perRecordProgressBlock: ((CKRecordID, Double) -> Void)?
+    public var perRecordProgressBlock: ((CKRecord.ID, Double) -> Void)?
 
     /* Called on success or failure for each record. */
-    public var perRecordCompletionBlock: ((CKRecord?, CKRecordID?, Error?) -> Void)?
+    public var perRecordCompletionBlock: ((CKRecord?, CKRecord.ID?, Error?) -> Void)?
 
     /*  This block is called when the operation completes.
      The [NSOperation completionBlock] will also be called if both are set.
      If the error is CKErrorPartialFailure, the error's userInfo dictionary contains
      a dictionary of recordIDs to errors keyed off of CKPartialErrorsByItemIDKey.
      */
-    public var fetchRecordsCompletionBlock: (([CKRecordID : CKRecord]?, Error?) -> Void)?
+    public var fetchRecordsCompletionBlock: (([CKRecord.ID : CKRecord]?, Error?) -> Void)?
 
     public class func fetchCurrentUserRecord() -> Self {
         let operation = self.init()
@@ -41,11 +41,11 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
         super.init()
     }
 
-    public var recordIDs: [CKRecordID]?
+    public var recordIDs: [CKRecord.ID]?
 
-    public var desiredKeys: [String]?
+    public var desiredKeys: [CKRecord.FieldKey]?
 
-    public convenience init(recordIDs: [CKRecordID]) {
+    public convenience init(recordIDs: [CKRecord.ID]) {
         self.init()
         self.recordIDs = recordIDs
     }
@@ -68,13 +68,13 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
         super.finishOnCallbackQueue(error: error)
     }
 
-    func completed(record: CKRecord?, recordID: CKRecordID?, error: Error?){
+    func completed(record: CKRecord?, recordID: CKRecord.ID?, error: Error?){
         callbackQueue.async {
             self.perRecordCompletionBlock?(record, recordID, error)
         }
     }
 
-    func progressed(recordID: CKRecordID, progress: Double){
+    func progressed(recordID: CKRecord.ID, progress: Double){
         callbackQueue.async {
             self.perRecordProgressBlock?(recordID, progress)
         }
@@ -129,7 +129,7 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
                     // Create Error
                     let error = CKPrettyError(recordFetchError: recordFetchError)
                     // TODO: which zone?
-                    let recordID = CKRecordID(recordName: recordFetchError.recordName!)
+                    let recordID = CKRecord.ID(recordName: recordFetchError.recordName!)
 
                     strongSelf.recordErrors[recordID] = error
 

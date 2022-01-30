@@ -8,10 +8,11 @@
 
 import Foundation
 
-let CKQueryOperationMaximumResults = 0
-
 public class CKQueryOperation: CKDatabaseOperation {
-    
+    public class var maximumResults: Int {
+        return 0
+    }
+
     public override init() {
         super.init()
     }
@@ -22,35 +23,35 @@ public class CKQueryOperation: CKDatabaseOperation {
 
     }
     
-    public convenience init(cursor: CKQueryCursor) {
+    public convenience init(cursor: Cursor) {
         self.init()
         self.cursor = cursor
+        self.query = cursor.query
+        self.zoneID = cursor.zoneID
     }
     
     public var shouldFetchAssetContent = true
     
     public var query: CKQuery?
     
-    public var cursor: CKQueryCursor?
+    public var cursor: Cursor?
     
-    public var resultsCursor: CKQueryCursor?
+    public var resultsCursor: Cursor?
     
     var isFinishing: Bool = false
     
-    public var zoneID: CKRecordZoneID?
+    public var zoneID: CKRecordZone.ID?
 
-    public var resultsLimit: Int = CKQueryOperationMaximumResults
+    public var resultsLimit: Int = CKQueryOperation.maximumResults
 
-    public var desiredKeys: [String]?
+    public var desiredKeys: [CKRecord.FieldKey]?
 
     public var recordFetchedBlock: ((CKRecord) -> Swift.Void)?
 
-    public var queryCompletionBlock: ((CKQueryCursor?, Error?) -> Swift.Void)?
+    public var queryCompletionBlock: ((Cursor?, Error?) -> Swift.Void)?
     
     override func CKOperationShouldRun() throws {
-        // "Warn: There's no point in running a query if there are no progress or completion blocks set. Bailing early."
-        
-        if(query == nil && cursor == nil){
+        if query == nil && cursor == nil {
             throw CKPrettyError(code: CKErrorCode.invalidArguments, description: "either a query or query cursor must be provided for \(self)")
         }
     }
@@ -69,6 +70,8 @@ public class CKQueryOperation: CKDatabaseOperation {
     }
     
     override func performCKOperation() {
+        let zoneID = self.zoneID
+        let query = self.query
         let queryOperationURLRequest = CKQueryURLRequest(query: query!, cursor: cursor?.data, limit: resultsLimit, requestedFields: desiredKeys, zoneID: zoneID)
         queryOperationURLRequest.accountInfoProvider =  CloudKit.shared.account(forContainer: operationContainer)
         queryOperationURLRequest.databaseScope = database?.scope ?? .public
@@ -90,7 +93,7 @@ public class CKQueryOperation: CKDatabaseOperation {
                 if let continuationMarker = dictionary["continuationMarker"] as? String {
                     let data = Data(base64Encoded: continuationMarker, options: [])
                     if let data = data {
-                        strongSelf.resultsCursor = CKQueryCursor(data: data, zoneID: CKRecordZoneID(zoneName: "_defaultZone", ownerName: ""))
+                        strongSelf.resultsCursor = Cursor(data: data, query: query, zoneID: zoneID)
                     }
                 }
                 

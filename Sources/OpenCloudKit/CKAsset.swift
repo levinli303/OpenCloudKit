@@ -18,7 +18,7 @@ public class CKAsset: NSObject {
 
     var downloaded: Bool = false
 
-    var recordID: CKRecordID?
+    var recordID: CKRecord.ID?
 
     var downloadBaseURL: String?
 

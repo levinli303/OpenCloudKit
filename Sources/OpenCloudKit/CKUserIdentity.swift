@@ -16,7 +16,7 @@ public class CKUserIdentity : NSObject {
     
     public let nameComponents: CKPersonNameComponentsType?
     
-    public let userRecordID: CKRecordID?
+    public let userRecordID: CKRecord.ID?
     
     public let hasiCloudAccount: Bool
     
@@ -24,7 +24,7 @@ public class CKUserIdentity : NSObject {
     
     var lastName: String?
     
-    public init(userRecordID: CKRecordID) {
+    public init(userRecordID: CKRecord.ID) {
         
         self.userRecordID = userRecordID
         
@@ -47,7 +47,7 @@ public class CKUserIdentity : NSObject {
         }
         
         if let userRecordName = dictionary["userRecordName"] as? String {
-            self.userRecordID = CKRecordID(recordName: userRecordName)
+            self.userRecordID = CKRecord.ID(recordName: userRecordName)
         } else {
             self.userRecordID = nil
         }

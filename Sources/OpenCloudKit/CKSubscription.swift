@@ -12,54 +12,46 @@ public protocol CustomDictionaryConvertible {
     var dictionary: [String: Any] { get }
 }
 
-public enum CKSubscriptionType : Int, CustomStringConvertible {
-    
-    case query
-    
-    case recordZone
-    
-    public var description: String {
-        switch self {
-        case .query:
-            return "query"
-        case .recordZone:
-            return "zone"
+public class CKSubscription: NSObject {
+    public enum SubscriptionType : Int, CustomStringConvertible {
+        case query
+        case recordZone
+
+        public var description: String {
+            switch self {
+            case .query:
+                return "query"
+            case .recordZone:
+                return "zone"
+            }
         }
     }
-}
 
-public class CKSubscription: NSObject {
-    
     public let subscriptionID: String
-    
-    public let subscriptionType: CKSubscriptionType
-    
-    public var notificationInfo: CKNotificationInfo?
+    public let subscriptionType: SubscriptionType
+    public var notificationInfo: NotificationInfo?
 
-    init(subscriptionID: String, subscriptionType: CKSubscriptionType) {
-        
+    init(subscriptionID: String, subscriptionType: SubscriptionType) {
         self.subscriptionID = subscriptionID
-        
         self.subscriptionType = subscriptionType
-        
     }
     
-     init?(dictionary: [String: Any]) {
-       guard let subscriptionID = dictionary["subscriptionID"] as? String,
+    init?(dictionary: [String: Any]) {
+        guard let subscriptionID = dictionary["subscriptionID"] as? String,
         let subscriptionTypeValue = dictionary["subscriptionType"] as? String else {
             return nil
         }
-        
+
         self.subscriptionID = subscriptionID
-        
-        let subscriptionType: CKSubscriptionType
+
+        let subscriptionType: SubscriptionType
         switch(subscriptionTypeValue) {
         case "zone":
-            subscriptionType = CKSubscriptionType.recordZone
+            subscriptionType = .recordZone
         default:
-            subscriptionType = CKSubscriptionType.query
+            subscriptionType = .query
         }
-        
+
         self.subscriptionType = subscriptionType
     }
 }
@@ -77,10 +69,7 @@ extension CKSubscription {
     }
 }
 
-
-
 public struct CKQuerySubscriptionOptions : OptionSet {
-    
     public var rawValue: UInt
     
     public init(rawValue: UInt) {
@@ -113,7 +102,6 @@ public struct CKQuerySubscriptionOptions : OptionSet {
     }
 }
 
-
 public class CKQuerySubscription : CKSubscription {
     
     public convenience init(recordType: String, predicate: NSPredicate, options querySubscriptionOptions: CKQuerySubscriptionOptions) {
@@ -130,7 +118,7 @@ public class CKQuerySubscription : CKSubscription {
         
         self.querySubscriptionOptions = querySubscriptionOptions
         
-        super.init(subscriptionID: subscriptionID, subscriptionType: CKSubscriptionType.query)
+        super.init(subscriptionID: subscriptionID, subscriptionType: SubscriptionType.query)
         
        
     }
@@ -142,7 +130,7 @@ public class CKQuerySubscription : CKSubscription {
     public var predicate: NSPredicate
     
     /* Optional property.  If set, a query subscription is scoped to only record changes in the indicated zone. */
-    public var zoneID: CKRecordZoneID?
+    public var zoneID: CKRecordZone.ID?
     
     public let querySubscriptionOptions: CKQuerySubscriptionOptions
     
@@ -171,83 +159,54 @@ extension CKQuerySubscription {
 }
 
 public class CKRecordZoneSubscription : CKSubscription {
-    
-    public convenience init(zoneID: CKRecordZoneID) {
+    public convenience init(zoneID: CKRecordZone.ID) {
         let subscriptionID = NSUUID().uuidString
         self.init(zoneID: zoneID, subscriptionID: subscriptionID)
     }
     
-    public init(zoneID: CKRecordZoneID, subscriptionID: String) {
+    public init(zoneID: CKRecordZone.ID, subscriptionID: String) {
         self.zoneID = zoneID
 
-        super.init(subscriptionID: subscriptionID, subscriptionType: CKSubscriptionType.recordZone)
+        super.init(subscriptionID: subscriptionID, subscriptionType: SubscriptionType.recordZone)
     }
     
-    public let zoneID: CKRecordZoneID
-    
+    public let zoneID: CKRecordZone.ID
     public var recordType: String?
-    
 }
 
-extension CKRecordZoneSubscription {
-    
-    public var dictionary: [String: Any] {
-        
-        var subscription: [String: Any] =  ["subscriptionID": subscriptionID,
-                                                  "subscriptionType": subscriptionType.description,
-                                                  "zoneID": zoneID.dictionary as Any
-                                                ]
-       
+public extension CKRecordZoneSubscription {
+    var dictionary: [String: Any] {
+        var subscription: [String: Any] =  [
+            "subscriptionID": subscriptionID,
+            "subscriptionType": subscriptionType.description,
+            "zoneID": zoneID.dictionary as Any
+        ]
 
         if let notificationInfo = notificationInfo {
             subscription["notificationInfo"] = notificationInfo.dictionary
         }
-        
         return subscription
     }
 }
 
-public class CKNotificationInfo : NSObject {
-    
-    
-    public var alertBody: String?
-    
-    
-    public var alertLocalizationKey: String?
-    
-    
-    public var alertLocalizationArgs: [String]?
-    
-    
-    public var alertActionLocalizationKey: String?
-    
-    
-    public var alertLaunchImage: String?
-    
-    
-    public var soundName: String?
-    
-    
-    public var desiredKeys: [String]?
-    
-    
-    public var shouldBadge: Bool = false
-    
-    
-    public var shouldSendContentAvailable: Bool = false
-    
-    
-    public var category: String?
-    
+public extension CKSubscription {
+    class NotificationInfo : NSObject {
+        public var alertBody: String?
+        public var alertLocalizationKey: String?
+        public var alertLocalizationArgs: [String]?
+        public var alertActionLocalizationKey: String?
+        public var alertLaunchImage: String?
+        public var soundName: String?
+        public var desiredKeys: [CKRecord.FieldKey]?
+        public var shouldBadge: Bool = false
+        public var shouldSendContentAvailable: Bool = false
+        public var category: String?
+    }
 }
 
-extension CKNotificationInfo {
-    
-    
+extension CKSubscription.NotificationInfo {
     var dictionary: [String: Any] {
-        
         var notificationInfo: [String: Any] = [:]
-        
         notificationInfo[CKNotificationInfoDictionary.alertBodyKey] = alertBody
         notificationInfo[CKNotificationInfoDictionary.alertLocalizationKey] = alertLocalizationKey
         notificationInfo[CKNotificationInfoDictionary.alertLocalizationArgsKey] = alertLocalizationArgs
@@ -256,29 +215,18 @@ extension CKNotificationInfo {
         notificationInfo[CKNotificationInfoDictionary.soundName] = soundName
         notificationInfo[CKNotificationInfoDictionary.shouldBadge] = NSNumber(value: shouldBadge)
         notificationInfo[CKNotificationInfoDictionary.shouldSendContentAvailable] = NSNumber(value: shouldSendContentAvailable)
-        
         return notificationInfo
-        
     }
 }
 
 struct CKNotificationInfoDictionary {
-    
     static let alertBodyKey = "alertBody"
-    
     static let alertLocalizationKey = "alertLocalizationKey"
-    
     static let alertLocalizationArgsKey = "alertLocalizationArgs"
-    
     static let alertActionLocalizationKeyKey = "alertActionLocalizationKey"
-    
     static let alertLaunchImageKey = "alertLaunchImage"
-    
     static let soundName = "soundName"
-    
     static let shouldBadge = "shouldBadge"
-    
     static let shouldSendContentAvailable = "shouldSendContentAvailable"
-    
 }
 

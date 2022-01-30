@@ -25,14 +25,14 @@ public struct CKShortGUID {
     
     public let shouldFetchRootRecord: Bool
     
-    public  let rootRecordDesiredKeys: [String]?
+    public  let rootRecordDesiredKeys: [CKRecord.FieldKey]?
     
     public var dictionary: [String: Any] {
         let dict:[String: Any] = ["value": value, "shouldFetchRootRecord": shouldFetchRootRecord.number]
         return dict
     }
     
-    public init(value: String, shouldFetchRootRecord: Bool, rootRecordDesiredKeys: [String]? = nil) {
+    public init(value: String, shouldFetchRootRecord: Bool, rootRecordDesiredKeys: [CKRecord.FieldKey]? = nil) {
         self.value = value
         self.shouldFetchRootRecord = shouldFetchRootRecord
         self.rootRecordDesiredKeys = rootRecordDesiredKeys
@@ -52,7 +52,7 @@ open class CKShareMetadata  {
     
     open var share: CKShare?
     
-    open var rootRecordID: CKRecordID?
+    open var rootRecordID: CKRecord.ID?
     
     /* These properties reflect the participant properties of the user invoking CKFetchShareMetadataOperation */
     open var participantType: CKShareParticipantType = .unknown
@@ -79,9 +79,9 @@ open class CKShareMetadata  {
         
         let rootRecordName = dictionary["rootRecordName"] as! String
         
-        let zoneID = CKRecordZoneID(dictionary: dictionary["zoneID"] as! [String:Any])!
+        let zoneID = CKRecordZone.ID(dictionary: dictionary["zoneID"] as! [String:Any])!
         
-        rootRecordID = CKRecordID(recordName: rootRecordName, zoneID: zoneID)
+        rootRecordID = CKRecord.ID(recordName: rootRecordName, zoneID: zoneID)
         
         // Set participant type
         let rawParticipantType = dictionary["participantType"] as! String

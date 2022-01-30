@@ -58,7 +58,7 @@ class CKRecordTests: CKTest {
     func testCreateRecord() {
         let db = CKContainer.default().publicCloudDatabase
         let id = UUID().uuidString
-        let recordID = CKRecordID(recordName: id)
+        let recordID = CKRecord.ID(recordName: id)
         let record = CKRecord(recordType: Self.recordType, recordID: recordID)
         record["bytes"] = Constant.bytesValue as CKRecordValue
         record["bytesList"] = Constant.bytesListValue as CKRecordValue
@@ -98,7 +98,7 @@ class CKRecordTests: CKTest {
     func testFetchRecord() {
         let db = CKContainer.default().publicCloudDatabase
         let expectation = XCTestExpectation(description: "Wait for response")
-        let recordID = CKRecordID(recordName: "E2F5C6D8-31F6-4A6D-B018-4C629DCB3FF3")
+        let recordID = CKRecord.ID(recordName: "E2F5C6D8-31F6-4A6D-B018-4C629DCB3FF3")
         db.fetch(withRecordID: recordID) { record, error in
             XCTAssertNil(error)
             XCTAssertNotNil(record)
@@ -122,7 +122,7 @@ class CKRecordTests: CKTest {
     func testFetchRecordWithAsset() {
         let db = CKContainer.default().publicCloudDatabase
         let expectation = XCTestExpectation(description: "Wait for response")
-        let recordID = CKRecordID(recordName: "7301F079-0298-4DED-8948-8A1286C84653")
+        let recordID = CKRecord.ID(recordName: "7301F079-0298-4DED-8948-8A1286C84653")
         db.fetch(withRecordID: recordID) { record, error in
             XCTAssertNil(error)
             XCTAssertNotNil(record)
@@ -142,7 +142,7 @@ class CKRecordTests: CKTest {
     func testCreateRecordWithAsset() {
         let db = CKContainer.default().publicCloudDatabase
         let id = UUID().uuidString
-        let recordID = CKRecordID(recordName: id)
+        let recordID = CKRecord.ID(recordName: id)
         let record = CKRecord(recordType: Self.recordType, recordID: recordID)
         record["asset"] = CKAsset(fileURL: URL(fileURLWithPath: "asset1.txt")) as CKRecordValue
         record["assetList"] = [CKAsset(fileURL: URL(fileURLWithPath: "asset1.txt")), CKAsset(fileURL: URL(fileURLWithPath: "asset2.txt"))] as CKRecordValue
@@ -184,7 +184,7 @@ class CKRecordTests: CKTest {
 
     func testDesiredKeys() {
         let db = CKContainer.default().publicCloudDatabase
-        let recordID = CKRecordID(recordName: "043BB555-EA0D-487E-BCC4-257184A5078C")
+        let recordID = CKRecord.ID(recordName: "043BB555-EA0D-487E-BCC4-257184A5078C")
         let reference = CKReference(recordID: recordID, action: .none)
         let query = CKQuery(recordType: Self.recordType, filters: [
             CKQueryFilter(fieldName: "___recordID", comparator: .equals, fieldValue: reference)
@@ -215,7 +215,7 @@ class CKRecordTests: CKTest {
     func testFetchUnknownRecord() {
         let db = CKContainer.default().publicCloudDatabase
         let expectation = XCTestExpectation(description: "Wait for response")
-        let recordID = CKRecordID(recordName: "DO-NOT-CREATE")
+        let recordID = CKRecord.ID(recordName: "DO-NOT-CREATE")
         db.fetch(withRecordID: recordID) { record, error in
             XCTAssertNil(record)
             XCTAssertNotNil(error)
@@ -227,7 +227,7 @@ class CKRecordTests: CKTest {
     func testDeleteUnknownRecord() {
         let db = CKContainer.default().publicCloudDatabase
         let expectation = XCTestExpectation(description: "Wait for response")
-        let recordID = CKRecordID(recordName: "DO-NOT-CREATE")
+        let recordID = CKRecord.ID(recordName: "DO-NOT-CREATE")
         db.delete(withRecordID: recordID) { record, error in
             XCTAssertNil(error)
             XCTAssertNotNil(record)
@@ -239,7 +239,7 @@ class CKRecordTests: CKTest {
     func testCreateRecordUnknownType() {
         let db = CKContainer.default().publicCloudDatabase
         let expectation = XCTestExpectation(description: "Wait for response")
-        let recordID = CKRecordID(recordName: "qrqwsnjjfsfsdf")
+        let recordID = CKRecord.ID(recordName: "qrqwsnjjfsfsdf")
         db.save(record: CKRecord(recordType: "blah blah", recordID: recordID)) { record, error in
             XCTAssertNil(record)
             XCTAssertNotNil(error)
@@ -251,7 +251,7 @@ class CKRecordTests: CKTest {
     func testCreateExistingRecord() {
         let db = CKContainer.default().publicCloudDatabase
         let expectation = XCTestExpectation(description: "Wait for response")
-        let recordID = CKRecordID(recordName: "08099BD9-ED8C-4175-B528-3CFD363ECA2E")
+        let recordID = CKRecord.ID(recordName: "08099BD9-ED8C-4175-B528-3CFD363ECA2E")
         db.save(record: CKRecord(recordType: Self.recordType, recordID: recordID)) { record, error in
             XCTAssertNil(record)
             XCTAssertNotNil(error)
@@ -277,7 +277,6 @@ class CKRecordTests: CKTest {
                 return
             }
             let continuedOperation = CKQueryOperation(cursor: c)
-            continuedOperation.query = query
             continuedOperation.resultsLimit = resultLimit
             continuedOperation.recordFetchedBlock = { record in
                 records.append(record)
@@ -295,7 +294,7 @@ class CKRecordTests: CKTest {
     func testNoCurosr() {
         let resultLimit = 1
         let db = CKContainer.default().publicCloudDatabase
-        let reference = CKReference(recordID: CKRecordID(recordName: "DO-NOT-CREATE"), action: .none)
+        let reference = CKReference(recordID: CKRecord.ID(recordName: "DO-NOT-CREATE"), action: .none)
         let query = CKQuery(recordType: Self.recordType, filters: [
             CKQueryFilter(fieldName: "___recordID", comparator: .equals, fieldValue: reference)
         ])
@@ -305,7 +304,7 @@ class CKRecordTests: CKTest {
         op.recordFetchedBlock = { record in
             records.append(record)
         }
-        var savedCursor: CKQueryCursor?
+        var savedCursor: CKQueryOperation.Cursor?
         let expectation = XCTestExpectation(description: "Wait for response")
         op.queryCompletionBlock = { cursor, _ in
             savedCursor = cursor

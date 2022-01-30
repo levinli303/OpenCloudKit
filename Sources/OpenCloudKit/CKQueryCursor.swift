@@ -8,16 +8,17 @@
 
 import Foundation
 
-public class CKQueryCursor: NSObject {
-    var data: Data
+public extension CKQueryOperation {
+    class Cursor: NSObject {
+        let data: Data
+        let query: CKQuery?
+        let zoneID: CKRecordZone.ID?
 
-    var zoneID: CKRecordZoneID
-
-    init(data: Data, zoneID: CKRecordZoneID) {
-        
-        self.data = data
-        self.zoneID = zoneID
-        
-        super.init()
+        init(data: Data, query: CKQuery?, zoneID: CKRecordZone.ID?) {
+            self.data = data
+            self.zoneID = zoneID
+            self.query = query
+            super.init()
+        }
     }
 }

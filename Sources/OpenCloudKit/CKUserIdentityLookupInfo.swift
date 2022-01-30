@@ -22,13 +22,13 @@ public class CKUserIdentityLookupInfo : NSObject {
         self.userRecordID = nil
     }
     
-    public init(userRecordID: CKRecordID) {
+    public init(userRecordID: CKRecord.ID) {
         self.emailAddress = nil
         self.phoneNumber = nil
         self.userRecordID = userRecordID
     }
     
-    public init(emailAddress: String, phoneNumber: String, userRecordID: CKRecordID) {
+    public init(emailAddress: String, phoneNumber: String, userRecordID: CKRecord.ID) {
         self.emailAddress = emailAddress
         self.phoneNumber = phoneNumber
         self.userRecordID = userRecordID
@@ -46,7 +46,7 @@ public class CKUserIdentityLookupInfo : NSObject {
         })
     }
     
-    public class func lookupInfos(with recordIDs: [CKRecordID]) -> [CKUserIdentityLookupInfo] {
+    public class func lookupInfos(with recordIDs: [CKRecord.ID]) -> [CKUserIdentityLookupInfo] {
         return recordIDs.map({ (recordID) -> CKUserIdentityLookupInfo in
             return CKUserIdentityLookupInfo(userRecordID: recordID)
         })
@@ -56,7 +56,7 @@ public class CKUserIdentityLookupInfo : NSObject {
     
     public let phoneNumber: String?
     
-    public let userRecordID: CKRecordID?
+    public let userRecordID: CKRecord.ID?
 }
 
 extension CKUserIdentityLookupInfo: CKCodable {
@@ -68,7 +68,7 @@ extension CKUserIdentityLookupInfo: CKCodable {
                 return nil
         }
         
-        self.init(emailAddress: emailAddress, phoneNumber: phoneNumber, userRecordID: CKRecordID(recordName: userRecordName))
+        self.init(emailAddress: emailAddress, phoneNumber: phoneNumber, userRecordID: CKRecord.ID(recordName: userRecordName))
     }
     
     var dictionary: [String: Any] {

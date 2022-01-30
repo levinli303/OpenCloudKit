@@ -11,9 +11,9 @@ import Foundation
 class CKModifyRecordsURLRequest: CKURLRequest {
     var recordsToSave: [CKRecord]?
 
-    var recordIDsToDelete: [CKRecordID]?
+    var recordIDsToDelete: [CKRecord.ID]?
 
-    var recordsByRecordIDs: [CKRecordID: CKRecord] = [:]
+    var recordsByRecordIDs: [CKRecord.ID: CKRecord] = [:]
 
     var atomic: Bool = true
 
@@ -21,7 +21,7 @@ class CKModifyRecordsURLRequest: CKURLRequest {
 
     var savePolicy: CKRecordSavePolicy
 
-    init(recordsToSave: [CKRecord]?, recordIDsToDelete: [CKRecordID]?, isAtomic: Bool, database: CKDatabase, savePolicy: CKRecordSavePolicy, zoneID: CKRecordZoneID?) {
+    init(recordsToSave: [CKRecord]?, recordIDsToDelete: [CKRecord.ID]?, isAtomic: Bool, database: CKDatabase, savePolicy: CKRecordSavePolicy, zoneID: CKRecordZone.ID?) {
         self.recordsToSave = recordsToSave
         self.recordIDsToDelete = recordIDsToDelete
         self.atomic = isAtomic

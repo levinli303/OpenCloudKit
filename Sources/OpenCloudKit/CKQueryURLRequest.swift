@@ -15,9 +15,9 @@ class CKQueryURLRequest: CKURLRequest {
     var queryResponses: [[String: Any]] = []
     var requestedFields: [String]?
     var resultsCursor: Data?
-    var zoneID: CKRecordZoneID?
+    var zoneID: CKRecordZone.ID?
 
-    init(query: CKQuery, cursor: Data?, limit: Int, requestedFields: [String]?, zoneID: CKRecordZoneID?) {
+    init(query: CKQuery, cursor: Data?, limit: Int, requestedFields: [String]?, zoneID: CKRecordZone.ID?) {
         self.query = query
         self.cursor = cursor
         self.limit = limit
@@ -33,7 +33,7 @@ class CKQueryURLRequest: CKURLRequest {
         var parameters: [String: Any] = [:]
 
         let isZoneWide = false
-        if let zoneID = zoneID, zoneID.zoneName != CKRecordZoneDefaultName {
+        if let zoneID = zoneID, zoneID.zoneName != CKRecordZone.ID.defaultZoneName {
             // Add ZoneID Dictionary to parameters
             parameters["zoneID"] = zoneID.dictionary
         }

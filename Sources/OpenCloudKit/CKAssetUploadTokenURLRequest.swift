@@ -27,7 +27,7 @@ struct CKAssetUploadToken: Encodable {
 class CKAssetUploadTokenURLRequest: CKURLRequest {
     var assetsToUpload: [(asset: CKAsset, uploadToken: CKAssetUploadToken)]
 
-    var zoneID: CKRecordZoneID?
+    var zoneID: CKRecordZone.ID?
 
     func operationsDictionary() -> [[String: Any]] {
         return assetsToUpload.map({ $0.uploadToken.dictionary })

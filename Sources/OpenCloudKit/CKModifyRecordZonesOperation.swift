@@ -13,7 +13,7 @@ public class CKModifyRecordZonesOperation : CKDatabaseOperation {
         super.init()
     }
 
-    public convenience init(recordZonesToSave: [CKRecordZone]?, recordZoneIDsToDelete: [CKRecordZoneID]?) {
+    public convenience init(recordZonesToSave: [CKRecordZone]?, recordZoneIDsToDelete: [CKRecordZone.ID]?) {
         self.init()
         self.recordZonesToSave = recordZonesToSave
         self.recordZoneIDsToDelete = recordZoneIDsToDelete
@@ -21,11 +21,11 @@ public class CKModifyRecordZonesOperation : CKDatabaseOperation {
 
     public var recordZonesToSave: [CKRecordZone]?
 
-    public var recordZoneIDsToDelete: [CKRecordZoneID]?
+    public var recordZoneIDsToDelete: [CKRecordZone.ID]?
 
-    var recordZoneErrors: [CKRecordZoneID: NSError] = [:]
+    var recordZoneErrors: [CKRecordZone.ID: NSError] = [:]
 
-    var recordZonesByZoneIDs:[CKRecordZoneID: CKRecordZone] = [:]
+    var recordZonesByZoneIDs:[CKRecordZone.ID: CKRecordZone] = [:]
 
     /*  This block is called when the operation completes.
      The [NSOperation completionBlock] will also be called if both are set.
@@ -35,7 +35,7 @@ public class CKModifyRecordZonesOperation : CKDatabaseOperation {
      seen all record changes, and may be invoked while the server is processing the side effects
      of those changes.
      */
-    public var modifyRecordZonesCompletionBlock: (([CKRecordZone]?, [CKRecordZoneID]?, Error?) -> Swift.Void)?
+    public var modifyRecordZonesCompletionBlock: (([CKRecordZone]?, [CKRecordZone.ID]?, Error?) -> Swift.Void)?
 
     func zoneOperations() -> [[String: Any]] {
 
@@ -116,7 +116,7 @@ public class CKModifyRecordZonesOperation : CKDatabaseOperation {
             for zoneDictionary in zoneDictionaries {
                 if let zone = CKRecordZone(dictionary: zoneDictionary) {
                     strongSelf.recordZonesByZoneIDs[zone.zoneID] = zone
-                } else if let fetchError = CKFetchErrorDictionary<CKRecordZoneID>(dictionary: zoneDictionary) {
+                } else if let fetchError = CKFetchErrorDictionary<CKRecordZone.ID>(dictionary: zoneDictionary) {
                     let error = CKPrettyError(fetchError: fetchError)
                     strongSelf.recordZoneErrors[fetchError.identifier] = error
                 } else {

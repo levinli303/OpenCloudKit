@@ -14,7 +14,7 @@ class CKModifySubscriptionsURLRequest: CKURLRequest {
 
     var subscriptionIDsToDelete: [String]?
 
-    var zoneID: CKRecordZoneID?
+    var zoneID: CKRecordZone.ID?
 
     func operationsDictionary() -> [[String: Any]] {
         var operations: [[String: Any]] = []

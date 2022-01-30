@@ -75,7 +75,7 @@ public class CKDatabase {
 
 extension CKDatabase {
     /* Records convenience methods */
-    public func fetch(withRecordID recordID: CKRecordID, completionHandler: @escaping (CKRecord?, Error?) -> Void) {
+    public func fetch(withRecordID recordID: CKRecord.ID, completionHandler: @escaping (CKRecord?, Error?) -> Void) {
         let fetchRecordOperation = CKFetchRecordsOperation(recordIDs: [recordID])
         fetchRecordOperation.database = self
         fetchRecordOperation.fetchRecordsCompletionBlock = {
@@ -95,7 +95,7 @@ extension CKDatabase {
         schedule(operation: operation)
     }
 
-    public func delete(withRecordID recordID: CKRecordID, completionHandler: @escaping (CKRecordID?, Error?) -> Void) {
+    public func delete(withRecordID recordID: CKRecord.ID, completionHandler: @escaping (CKRecord.ID?, Error?) -> Void) {
         let operation = CKModifyRecordsOperation(recordsToSave: [], recordIDsToDelete: [recordID])
         operation.modifyRecordsCompletionBlock = { records, recordIDs, error in
             completionHandler(recordIDs?.first, error)
@@ -104,7 +104,7 @@ extension CKDatabase {
         schedule(operation: operation)
     }
 
-    public func perform(query: CKQuery, inZoneWithID zoneID: CKRecordZoneID?,completionHandler: @escaping ([CKRecord]?, Error?) -> Void) {
+    public func perform(query: CKQuery, inZoneWithID zoneID: CKRecordZone.ID?,completionHandler: @escaping ([CKRecord]?, Error?) -> Void) {
         let queryOperation = CKQueryOperation(query: query)
         queryOperation.database = self
 
@@ -141,7 +141,7 @@ extension CKDatabase {
         schedule(operation: operation)
     }
 
-    public func fetch(withRecordZoneID zoneID: CKRecordZoneID, completionHandler: @escaping (CKRecordZone?, Error?) -> Swift.Void) {
+    public func fetch(withRecordZoneID zoneID: CKRecordZone.ID, completionHandler: @escaping (CKRecordZone?, Error?) -> Swift.Void) {
         let operation = CKFetchRecordZonesOperation(recordZoneIDs: [zoneID])
         operation.fetchRecordZonesCompletionBlock = { recordZoneByZoneID, error in
             completionHandler(recordZoneByZoneID?[zoneID], error)
@@ -160,7 +160,7 @@ extension CKDatabase {
         schedule(operation: operation)
     }
 
-    public func delete(withRecordZoneID zoneID: CKRecordZoneID, completionHandler: @escaping (CKRecordZoneID?, Error?) -> Swift.Void) {
+    public func delete(withRecordZoneID zoneID: CKRecordZone.ID, completionHandler: @escaping (CKRecordZone.ID?, Error?) -> Swift.Void) {
         let operation = CKModifyRecordZonesOperation(recordZonesToSave: [], recordZoneIDsToDelete: [zoneID])
         operation.modifyRecordZonesCompletionBlock = { savedZones, deletedZones, error in
             completionHandler(deletedZones?.first, error)
