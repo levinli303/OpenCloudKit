@@ -29,60 +29,44 @@ enum CKURLRequestResult {
 
 class CKURLRequest: NSObject {
     var accountInfoProvider: CKAccountInfoProvider?
-
     var databaseScope: CKDatabaseScope = .public
-
     var dateRequestWentOut: Date?
-
     var httpMethod: String = "POST"
-
     var isFinished: Bool = false
-
     var requiresSigniture: Bool = false
-
     var path: String = ""
-
     var requestContentType: String = "application/json; charset=utf-8"
-
     var requestProperties:[String: Any]?
-
     var urlSessionTask: URLSessionDataTask?
-
     var allowsAnonymousAccount = false
-
     var operationType: CKOperationRequestType = .records
-
     var metricsDelegate: CKURLRequestMetricsDelegate?
-
     var metrics: CKOperationMetrics?
-
     var completionBlock: ((CKURLRequestResult) -> ())?
 
     var request: URLRequest {
-        get {
-            var urlRequest = URLRequest(url: url)
-            if let properties = requestProperties {
-                let jsonData = try! JSONSerialization.data(withJSONObject: properties, options: [])
+        var urlRequest = URLRequest(url: url)
+        if let properties = requestProperties {
+            let jsonData = try! JSONSerialization.data(withJSONObject: properties, options: [])
 
-                urlRequest.httpBody = jsonData
-                urlRequest.httpMethod = httpMethod
-                urlRequest.addValue(requestContentType, forHTTPHeaderField: "Content-Type")
+            urlRequest.httpBody = jsonData
+            urlRequest.httpMethod = httpMethod
+            urlRequest.addValue(requestContentType, forHTTPHeaderField: "Content-Type")
 
-                let dataString = NSString(data: jsonData, encoding: String.Encoding.utf8.rawValue)
+            let dataString = NSString(data: jsonData, encoding: String.Encoding.utf8.rawValue)
 
-                CloudKit.debugPrint(dataString as Any)
-                if let serverAccount = accountInfoProvider as? CKServerAccount {
-                    // Sign Request
-                    if let signedRequest  = CKServerRequestAuth.authenicateServer(forRequest: urlRequest, withServerToServerKeyAuth: serverAccount.serverToServerAuth) {
-                        urlRequest = signedRequest
-                    }
+            CloudKit.debugPrint(dataString as Any)
+            if let serverAccount = accountInfoProvider as? CKServerAccount {
+                // Sign Request
+                if let signedRequest  = CKServerRequestAuth.authenicateServer(forRequest: urlRequest, withServerToServerKeyAuth: serverAccount.serverToServerAuth) {
+                    urlRequest = signedRequest
                 }
-            } else {
-                urlRequest.httpMethod = httpMethod
-
             }
-            return urlRequest
+        } else {
+            urlRequest.httpMethod = httpMethod
+
         }
+        return urlRequest
     }
 
     var sessionConfiguration: URLSessionConfiguration  {
@@ -99,53 +83,51 @@ class CKURLRequest: NSObject {
     }
 
     var url: URL {
-        get {
-            let accountInfo = accountInfoProvider!
-            var baseURL: String
-            switch serverType {
-            case .database:
-                baseURL =  accountInfo.containerInfo.publicCloudDBURL(databaseScope: databaseScope).appendingPathComponent("\(operationType)/\(path)").absoluteString
-            case .device:
-                let account = accountInfo as! CKAccount
-                baseURL = account.baseURL(forServerType: serverType)
-                    .appendingPathComponent(accountInfo.containerInfo.containerID)
-                    .appendingPathComponent("\(accountInfo.containerInfo.environment)")
-                    .appendingPathComponent("\(operationType)/\(path)").absoluteString
+        let accountInfo = accountInfoProvider!
+        var baseURL: String
+        switch serverType {
+        case .database:
+            baseURL =  accountInfo.containerInfo.publicCloudDBURL(databaseScope: databaseScope).appendingPathComponent("\(operationType)/\(path)").absoluteString
+        case .device:
+            let account = accountInfo as! CKAccount
+            baseURL = account.baseURL(forServerType: serverType)
+                .appendingPathComponent(accountInfo.containerInfo.containerID)
+                .appendingPathComponent("\(accountInfo.containerInfo.environment)")
+                .appendingPathComponent("\(operationType)/\(path)").absoluteString
 
-            default:
-                fatalError("Type not supported")
-            }
-
-            //  var urlComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-            switch accountInfo.accountType {
-            case .server:
-                break
-            case .anoymous, .primary:
-                //  urlComponents.queryItems = []
-                // if let accountInfo = accountInfoProvider {
-
-                //  let apiTokenItem = URLQueryItem(name: "ckAPIToken", value: accountInfo.cloudKitAuthToken)
-                // urlComponents.queryItems?.append(apiTokenItem)
-
-                baseURL += "?ckAPIToken=\(accountInfo.cloudKitAuthToken ?? "")"
-
-                if let icloudAuthToken = accountInfo.iCloudAuthToken {
-
-                    //let webAuthTokenQueryItem = URLQueryItem(name: "ckWebAuthToken", value: icloudAuthToken)
-                    // urlComponents.queryItems?.append(webAuthTokenQueryItem)
-                    let encodedWebAuthToken = icloudAuthToken.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!.replacingOccurrences(of: "+", with: "%2B")
-                    baseURL += "&ckWebAuthToken=\(encodedWebAuthToken)"
-
-                }
-
-
-            }
-
-            // Perform Encoding
-            // urlComponents.percentEncodedQuery = urlComponents.percentEncodedQuery?.replacingOccurrences(of:"+", with: "%2B")
-            //CloudKit.debugPrint(urlComponents.url!)
-            return URL(string: baseURL)!
+        default:
+            fatalError("Type not supported")
         }
+
+        //  var urlComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
+        switch accountInfo.accountType {
+        case .server:
+            break
+        case .anoymous, .primary:
+            //  urlComponents.queryItems = []
+            // if let accountInfo = accountInfoProvider {
+
+            //  let apiTokenItem = URLQueryItem(name: "ckAPIToken", value: accountInfo.cloudKitAuthToken)
+            // urlComponents.queryItems?.append(apiTokenItem)
+
+            baseURL += "?ckAPIToken=\(accountInfo.cloudKitAuthToken ?? "")"
+
+            if let icloudAuthToken = accountInfo.iCloudAuthToken {
+
+                //let webAuthTokenQueryItem = URLQueryItem(name: "ckWebAuthToken", value: icloudAuthToken)
+                // urlComponents.queryItems?.append(webAuthTokenQueryItem)
+                let encodedWebAuthToken = icloudAuthToken.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!.replacingOccurrences(of: "+", with: "%2B")
+                baseURL += "&ckWebAuthToken=\(encodedWebAuthToken)"
+
+            }
+
+
+        }
+
+        // Perform Encoding
+        // urlComponents.percentEncodedQuery = urlComponents.percentEncodedQuery?.replacingOccurrences(of:"+", with: "%2B")
+        //CloudKit.debugPrint(urlComponents.url!)
+        return URL(string: baseURL)!
     }
 
     var resultData = Data()

@@ -46,9 +46,9 @@ public class CKQueryOperation: CKDatabaseOperation {
 
     public var desiredKeys: [CKRecord.FieldKey]?
 
-    public var recordFetchedBlock: ((CKRecord) -> Swift.Void)?
+    public var recordFetchedBlock: ((CKRecord) -> Void)?
 
-    public var queryCompletionBlock: ((Cursor?, Error?) -> Swift.Void)?
+    public var queryCompletionBlock: ((Cursor?, Error?) -> Void)?
     
     override func CKOperationShouldRun() throws {
         if query == nil && cursor == nil {

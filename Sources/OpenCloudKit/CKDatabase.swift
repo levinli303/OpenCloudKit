@@ -45,7 +45,6 @@ enum CKModifyOperation: String {
 }
 
 public class CKDatabase {
-
     weak var container: CKContainer!
 
     public let scope: CKDatabaseScope
@@ -128,7 +127,7 @@ extension CKDatabase {
 
     /* Zones convenience methods */
 
-    public func fetchAll(completionHandler: @escaping ([CKRecordZone]?, Error?) -> Swift.Void) {
+    public func fetchAll(completionHandler: @escaping ([CKRecordZone]?, Error?) -> Void) {
         let operation = CKFetchRecordZonesOperation.fetchAllRecordZonesOperation()
         operation.fetchRecordZonesCompletionBlock = { recordZoneByZoneID, error in
             if let recordZones = recordZoneByZoneID?.values {
@@ -141,7 +140,7 @@ extension CKDatabase {
         schedule(operation: operation)
     }
 
-    public func fetch(withRecordZoneID zoneID: CKRecordZone.ID, completionHandler: @escaping (CKRecordZone?, Error?) -> Swift.Void) {
+    public func fetch(withRecordZoneID zoneID: CKRecordZone.ID, completionHandler: @escaping (CKRecordZone?, Error?) -> Void) {
         let operation = CKFetchRecordZonesOperation(recordZoneIDs: [zoneID])
         operation.fetchRecordZonesCompletionBlock = { recordZoneByZoneID, error in
             completionHandler(recordZoneByZoneID?[zoneID], error)
@@ -149,7 +148,7 @@ extension CKDatabase {
         schedule(operation: operation)
     }
 
-    public func save(_ zone: CKRecordZone, completionHandler: @escaping (CKRecordZone?, Error?) -> Swift.Void) {
+    public func save(_ zone: CKRecordZone, completionHandler: @escaping (CKRecordZone?, Error?) -> Void) {
         let operation = CKModifyRecordZonesOperation(recordZonesToSave: [zone], recordZoneIDsToDelete: nil)
         operation.modifyRecordZonesCompletionBlock = {
             (savedZones, deletedZones, error) in
@@ -160,7 +159,7 @@ extension CKDatabase {
         schedule(operation: operation)
     }
 
-    public func delete(withRecordZoneID zoneID: CKRecordZone.ID, completionHandler: @escaping (CKRecordZone.ID?, Error?) -> Swift.Void) {
+    public func delete(withRecordZoneID zoneID: CKRecordZone.ID, completionHandler: @escaping (CKRecordZone.ID?, Error?) -> Void) {
         let operation = CKModifyRecordZonesOperation(recordZonesToSave: [], recordZoneIDsToDelete: [zoneID])
         operation.modifyRecordZonesCompletionBlock = { savedZones, deletedZones, error in
             completionHandler(deletedZones?.first, error)
@@ -171,7 +170,7 @@ extension CKDatabase {
 
     /* Subscriptions convenience methods */
 
-    public func fetchAll(completionHandler: @escaping ([CKSubscription]?, Error?) -> Swift.Void) {
+    public func fetchAll(completionHandler: @escaping ([CKSubscription]?, Error?) -> Void) {
         let operation = CKFetchSubscriptionsOperation.fetchAllSubscriptionsOperation()
         operation.fetchSubscriptionCompletionBlock = { subscriptionsBySubscriptionID, error in
             if let subscriptions = subscriptionsBySubscriptionID?.values {
@@ -184,7 +183,7 @@ extension CKDatabase {
         schedule(operation: operation)
     }
 
-    public func fetch(withSubscriptionID subscriptionID: String, completionHandler: @escaping (CKSubscription?, Error?) -> Swift.Void) {
+    public func fetch(withSubscriptionID subscriptionID: String, completionHandler: @escaping (CKSubscription?, Error?) -> Void) {
         let operation = CKFetchSubscriptionsOperation(subscriptionIDs: [subscriptionID])
         operation.fetchSubscriptionCompletionBlock = {
             (subscriptionsBySubscriptionID, error) in
@@ -194,7 +193,7 @@ extension CKDatabase {
         schedule(operation: operation)
     }
 
-    public func save(_ subscription: CKSubscription, completionHandler: @escaping (CKSubscription?, Error?) -> Swift.Void) {
+    public func save(_ subscription: CKSubscription, completionHandler: @escaping (CKSubscription?, Error?) -> Void) {
         let modifyOperation = CKModifySubscriptionsOperation(subscriptionsToSave: [subscription], subscriptionIDsToDelete: nil)
         modifyOperation.modifySubscriptionsCompletionBlock = { subscriptions, deleted, error in
             completionHandler(subscriptions?.first, error)
@@ -203,12 +202,19 @@ extension CKDatabase {
         schedule(operation: modifyOperation)
     }
 
-    public func delete(withSubscriptionID subscriptionID: String, completionHandler: @escaping (String?, Error?) -> Swift.Void) {
+    public func delete(withSubscriptionID subscriptionID: String, completionHandler: @escaping (String?, Error?) -> Void) {
         let modifyOperation = CKModifySubscriptionsOperation(subscriptionsToSave: nil, subscriptionIDsToDelete: [subscriptionID])
         modifyOperation.modifySubscriptionsCompletionBlock = { subscriptions, deleted, error in
             completionHandler(deleted?.first, error)
         }
 
         schedule(operation: modifyOperation)
+    }
+}
+
+extension CKDatabase {
+    var operationURL: String {
+        let urlForDatabaseOperation = "\(container.databaseURL)\(scope)"
+        return urlForDatabaseOperation
     }
 }

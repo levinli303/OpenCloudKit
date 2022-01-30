@@ -118,10 +118,10 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
      It is possible for progress to regress when a retry is automatically triggered.
      Todo: still to be implemented
      */
-    public var perRecordProgressBlock: ((CKRecord, Double) -> Swift.Void)?
+    public var perRecordProgressBlock: ((CKRecord, Double) -> Void)?
 
     /* Called on success or failure for each record. */
-    public var perRecordCompletionBlock: ((CKRecord?, Error?) -> Swift.Void)?
+    public var perRecordCompletionBlock: ((CKRecord?, Error?) -> Void)?
 
     private var recordErrors: [CKRecord.ID: Error] = [:]
 
@@ -137,7 +137,7 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
      seen all record changes, and may be invoked while the server is processing the side effects
      of those changes.
      */
-    public var modifyRecordsCompletionBlock: (([CKRecord]?, [CKRecord.ID]?, Error?) -> Swift.Void)?
+    public var modifyRecordsCompletionBlock: (([CKRecord]?, [CKRecord.ID]?, Error?) -> Void)?
 
     override func finishOnCallbackQueue(error: Error?) {
         var error = error

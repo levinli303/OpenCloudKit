@@ -17,12 +17,12 @@ public class CKDownloadAssetsOperation: CKDatabaseOperation {
 
     var assetsByDownloadTask:[URLSessionDownloadTask: CKAsset] = [:]
 
-    public var perAssetProgressBlock: ((CKAsset, Double) -> Swift.Void)?
+    public var perAssetProgressBlock: ((CKAsset, Double) -> Void)?
 
     /* Called on success or failure for each record. */
-    public var perAssetCompletionBlock: ((CKAsset, Error?) -> Swift.Void)?
+    public var perAssetCompletionBlock: ((CKAsset, Error?) -> Void)?
 
-    public var downloadAssetsCompletionBlock: (([CKAsset], Error?) -> Swift.Void)?
+    public var downloadAssetsCompletionBlock: (([CKAsset], Error?) -> Void)?
 
     public var downloadedAssets: [CKAsset] = []
 

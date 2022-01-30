@@ -205,25 +205,18 @@ public class CKOperation: Operation {
 }
 
 public class CKDatabaseOperation : CKOperation {
-
     public var database: CKDatabase?
-
 }
 
 extension CKOperation {
     var databaseURL: String {
         let operationContainer = container ?? CKContainer.default()
-        return "\(CKServerInfo.path)/database/\(CKServerInfo.version)/\(operationContainer.containerIdentifier)/\(CloudKit.shared.environment)/"
+        return operationContainer.databaseURL
     }
 }
 
 extension CKDatabaseOperation {
     var operationURL: String {
-
-        // Create URL
-        let operationDatabase = database?.scope ?? CKDatabaseScope.public
-        let urlForDatabaseOperation = "\(databaseURL)\(operationDatabase)"
-
-        return urlForDatabaseOperation
+        return (database ?? CKContainer.default().publicCloudDatabase).operationURL
     }
 }

@@ -35,7 +35,7 @@ public class CKModifyRecordZonesOperation : CKDatabaseOperation {
      seen all record changes, and may be invoked while the server is processing the side effects
      of those changes.
      */
-    public var modifyRecordZonesCompletionBlock: (([CKRecordZone]?, [CKRecordZone.ID]?, Error?) -> Swift.Void)?
+    public var modifyRecordZonesCompletionBlock: (([CKRecordZone]?, [CKRecordZone.ID]?, Error?) -> Void)?
 
     func zoneOperations() -> [[String: Any]] {
 
