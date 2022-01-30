@@ -94,50 +94,53 @@ class CKURLRequest: NSObject {
                 .appendingPathComponent(accountInfo.containerInfo.containerID)
                 .appendingPathComponent("\(accountInfo.containerInfo.environment)")
                 .appendingPathComponent("\(operationType)/\(path)").absoluteString
-
         default:
             fatalError("Type not supported")
         }
 
-        //  var urlComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
+        // var urlComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
         switch accountInfo.accountType {
         case .server:
             break
         case .anoymous, .primary:
-            //  urlComponents.queryItems = []
+            // urlComponents.queryItems = []
             // if let accountInfo = accountInfoProvider {
 
-            //  let apiTokenItem = URLQueryItem(name: "ckAPIToken", value: accountInfo.cloudKitAuthToken)
+            // let apiTokenItem = URLQueryItem(name: "ckAPIToken", value: accountInfo.cloudKitAuthToken)
             // urlComponents.queryItems?.append(apiTokenItem)
-
             baseURL += "?ckAPIToken=\(accountInfo.cloudKitAuthToken ?? "")"
 
             if let icloudAuthToken = accountInfo.iCloudAuthToken {
-
                 //let webAuthTokenQueryItem = URLQueryItem(name: "ckWebAuthToken", value: icloudAuthToken)
                 // urlComponents.queryItems?.append(webAuthTokenQueryItem)
                 let encodedWebAuthToken = icloudAuthToken.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!.replacingOccurrences(of: "+", with: "%2B")
                 baseURL += "&ckWebAuthToken=\(encodedWebAuthToken)"
-
             }
-
-
         }
 
         // Perform Encoding
         // urlComponents.percentEncodedQuery = urlComponents.percentEncodedQuery?.replacingOccurrences(of:"+", with: "%2B")
-        //CloudKit.debugPrint(urlComponents.url!)
+        // CloudKit.debugPrint(urlComponents.url!)
         return URL(string: baseURL)!
     }
-
-    var resultData = Data()
 
     func performRequest() {
         dateRequestWentOut = Date()
         // maybe could have passed in CKOperation's callbackQueue as the delegateQueue, would have simplified the code
         let session = URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: nil)
-
-        urlSessionTask = session.dataTask(with: request)
+        urlSessionTask = session.dataTask(with: request) { [weak self] data, response, error in
+            guard let self = self else { return }
+            if let error = error {
+                CloudKit.debugPrint(error)
+                // Handle Error
+                self.completionBlock?(.error(.network(error)))
+            } else if let data = data {
+                if let operationMetrics = self.metrics {
+                    self.metricsDelegate?.requestDidFinish(withMetrics: operationMetrics)
+                }
+                self.completionBlock?(self.handleData(data))
+            }
+        }
         urlSessionTask!.resume()
         session.finishTasksAndInvalidate()
     }
@@ -149,54 +152,36 @@ class CKURLRequest: NSObject {
     func requestDidParseNodeFailure() {}
 
     func requestDidParseObject() {}
+
+    private func handleData(_ data: Data) -> CKURLRequestResult {
+        // Parse JSON
+        do {
+            let jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as! [String: Any]
+            CloudKit.debugPrint(jsonObject)
+
+            // Call completion block
+            if let _ = CKErrorDictionary(dictionary: jsonObject) {
+                return .error(CKError.server(jsonObject))
+            } else {
+                return .success(jsonObject)
+            }
+        } catch {
+            return .error(.parse(error))
+        }
+    }
 }
 
 extension CKURLRequest: URLSessionDataDelegate {
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        // append the data to the end
-        resultData.append(data)
+        metrics?.bytesDownloaded += UInt(data.count)
     }
 
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
-
         completionHandler(.allow)
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
-
         metrics = CKOperationMetrics(bytesDownloaded: 0, bytesUploaded: UInt(totalBytesSent), duration: 0, startDate: dateRequestWentOut!)
-    }
-
-    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        if let error = error {
-            CloudKit.debugPrint(error)
-            // Handle Error
-            completionBlock?(.error(.network(error)))
-        } else {
-
-            if let operationMetrics = metrics {
-                metrics?.bytesDownloaded = UInt(resultData.count)
-                metricsDelegate?.requestDidFinish(withMetrics: operationMetrics)
-            }
-
-            // Parse JSON
-            do {
-                let jsonObject = try JSONSerialization.jsonObject(with: resultData, options: []) as! [String: Any]
-
-                CloudKit.debugPrint(jsonObject)
-
-                // Call completion block
-                if let _ = CKErrorDictionary(dictionary: jsonObject) {
-                    completionBlock?(.error(CKError.server(jsonObject)))
-                } else {
-                    let result = CKURLRequestResult.success(jsonObject)
-                    completionBlock?(result)
-                }
-
-            } catch let error {
-                completionBlock?(.error(.parse(error)))
-            }
-        }
     }
 }
 
