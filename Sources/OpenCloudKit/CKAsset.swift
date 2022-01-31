@@ -9,6 +9,24 @@
 import Foundation
 
 public class CKAsset: NSObject {
+    struct UploadInfo: Decodable {
+        let size: Int64
+        let receipt: String
+        let fileChecksum: String
+        let referenceChecksum: String?
+        let wrappingKey: String?
+
+        var dictionary: [String: Any] {
+            var results: [String: Any] = [
+                "size": size,
+                "receipt": receipt,
+                "fileChecksum": fileChecksum,
+            ]
+            results["referenceChecksum"] = referenceChecksum
+            results["wrappingKey"] = wrappingKey
+            return results
+        }
+    }
 
     public var fileURL : URL
 
@@ -35,9 +53,7 @@ public class CKAsset: NSObject {
         return size != nil
     }
 
-    var uploadReceipt: String?
-
-    var uploadInfo: [String: Any]?
+    var uploadInfo: UploadInfo?
 
     public init(fileURL: URL) {
         self.fileURL = fileURL
@@ -63,6 +79,6 @@ public class CKAsset: NSObject {
 
 extension CKAsset: CustomDictionaryConvertible {
     public var dictionary: [String: Any] {
-        return uploadInfo ?? [:]
+        return uploadInfo?.dictionary ?? [:]
     }
 }

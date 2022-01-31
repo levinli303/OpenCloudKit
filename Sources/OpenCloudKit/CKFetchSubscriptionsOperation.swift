@@ -8,90 +8,130 @@
 
 import Foundation
 
+#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
+import FoundationNetworking
+#endif
+
 public class CKFetchSubscriptionsOperation : CKDatabaseOperation {
-    var subscriptionErrors : [String : NSError] = [:]
-
-    public var subscriptionsIDToSubscriptions: [String: CKSubscription] = [:]
-
     public override required init() {
         super.init()
     }
 
-    public class func fetchAllSubscriptionsOperation() -> Self {
-        let operation = self.init()
-        return operation
+    public static func fetchAllSubscriptionsOperation() -> CKFetchSubscriptionsOperation {
+        return CKFetchSubscriptionsOperation()
     }
 
-    public convenience init(subscriptionIDs: [String]) {
+    public convenience init(subscriptionIDs: [CKSubscription.ID]) {
         self.init()
         self.subscriptionIDs = subscriptionIDs
     }
 
-    public var subscriptionIDs: [String]?
-
-    /*  This block is called when the operation completes.
-     The [NSOperation completionBlock] will also be called if both are set.
-     If the error is CKErrorPartialFailure, the error's userInfo dictionary contains
-     a dictionary of subscriptionID to errors keyed off of CKPartialErrorsByItemIDKey.
-     */
-    public var fetchSubscriptionCompletionBlock: (([String : CKSubscription]?, Error?) -> Void)?
-
-    override func finishOnCallbackQueue(error: Error?) {
-        var error = error
-        if error == nil {
-            if subscriptionErrors.count > 0 {
-                error = CKPrettyError(code: .partialFailure, userInfo: [CKPartialErrorsByItemIDKey: subscriptionErrors], description: CKErrorStringPartialErrorSubscriptions)
-            }
-        }
-        self.fetchSubscriptionCompletionBlock?(subscriptionsIDToSubscriptions, error)
-
-        super.finishOnCallbackQueue(error: error)
-    }
+    public var subscriptionIDs: [CKSubscription.ID]?
+    public var fetchSubscriptionsResultBlock: ((_ operationResult: Result<Void, Error>) -> Void)?
+    public var perSubscriptionResultBlock: ((_ subscriptionID: CKSubscription.ID, _ subscriptionResult: Result<CKSubscription, Error>) -> Void)?
 
     override func performCKOperation() {
-
-        let url = "\(operationURL)/subscriptions/lookup"
-
-        var request: [String: Any] = [:]
-        if let subscriptionIDs = subscriptionIDs {
-
-            request["subscriptions"] = subscriptionIDs
-        }
-
-
-        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: request) { [weak self] dictionary, networkError in
-            guard let strongSelf = self else { return }
-
-            var returnError = networkError
-
-            defer {
-                strongSelf.finish(error: returnError)
+        let db = database ?? CKContainer.default().publicCloudDatabase
+        task = Task { [weak self] in
+            if let ids = subscriptionIDs {
+                do {
+                    let subscriptionResults = try await db.subscriptions(for: ids)
+                    guard let self = self else { return }
+                    for (subscriptionID, subscriptionResult) in subscriptionResults {
+                        self.callbackQueue.async {
+                            self.perSubscriptionResultBlock?(subscriptionID, subscriptionResult)
+                        }
+                    }
+                    callbackQueue.async {
+                        self.fetchSubscriptionsResultBlock?(.success(()))
+                        self.finishOnCallbackQueue()
+                    }
+                }
+                catch {
+                    guard let self = self else { return }
+                    callbackQueue.async {
+                        self.fetchSubscriptionsResultBlock?(.failure(error))
+                        self.finishOnCallbackQueue()
+                    }
+                }
             }
-
-            guard !strongSelf.isCancelled else { return }
-
-            if networkError == nil { return }
-
-            guard let subscriptionsDictionary = dictionary?["subscriptions"] as? [[String: Any]] else {
-                returnError = CKPrettyError(code: .internalError, description: CKErrorStringFailedToParseServerResponse)
-                return
-            }
-
-            // Parse JSON into CKRecords
-            for subscriptionDictionary in subscriptionsDictionary {
-                if let subscription = CKSubscription(dictionary: subscriptionDictionary) {
-                    // Append Record
-                    strongSelf.subscriptionsIDToSubscriptions[subscription.subscriptionID] = subscription
-
-                } else if let subscriptionFetchError = CKSubscriptionFetchErrorDictionary(dictionary: subscriptionDictionary) {
-                    let error = CKPrettyError(subscriptionFetchError: subscriptionFetchError)
-                    strongSelf.subscriptionErrors[subscriptionFetchError.subscriptionID] = error
-                } else {
-                    returnError = CKPrettyError(code: .partialFailure, description: CKErrorStringFailedToParseRecord)
-                    return
+            else {
+                do {
+                    let subscriptionResults = try await db.allSubscriptions()
+                    guard let self = self else { return }
+                    for subscription in subscriptionResults {
+                        self.callbackQueue.async {
+                            self.perSubscriptionResultBlock?(subscription.subscriptionID, .success(subscription))
+                        }
+                    }
+                    callbackQueue.async {
+                        self.fetchSubscriptionsResultBlock?(.success(()))
+                        self.finishOnCallbackQueue()
+                    }
+                }
+                catch {
+                    guard let self = self else { return }
+                    callbackQueue.async {
+                        self.fetchSubscriptionsResultBlock?(.failure(error))
+                        self.finishOnCallbackQueue()
+                    }
                 }
             }
         }
-        urlSessionTask?.resume()
+    }
+}
+
+extension CKDatabase {
+    public func subscriptions(for ids: [CKSubscription.ID]) async throws -> [CKSubscription.ID : Result<CKSubscription, Error>] {
+        let request = CKURLRequestBuilder(database: self, operationType: .subscriptions, path: "lookup")
+            .setParameter(key: "subscriptions", value: ids)
+            .build()
+
+        let dictionary = try await CKURLRequestHelper.performURLRequest(request)
+        var subscriptions = [CKSubscription.ID: Result<CKSubscription, Error>]()
+
+        // Process subscriptions
+        guard let subscriptionsDictionary = dictionary["subscriptions"] as? [[String: Any]] else {
+            throw CKError.conversionError
+        }
+
+        // Parse JSON into CKSubscription
+        for subscriptionDictionary in subscriptionsDictionary {
+            if let subscription = CKSubscription(dictionary: subscriptionDictionary) {
+                subscriptions[subscription.subscriptionID] = .success(subscription)
+            } else if let fetchError = CKSubscriptionFetchError(dictionary: subscriptionDictionary) {
+                // Partial error
+                subscriptions[fetchError.subscriptionID] = .failure(CKError.subscriptionFetchError(error: fetchError))
+            }  else {
+                // Unknown error
+                throw CKError.conversionError
+            }
+        }
+        return subscriptions
+    }
+
+    public func allSubscriptions() async throws -> [CKSubscription] {
+        let request = CKURLRequestBuilder(database: self, operationType: .subscriptions, path: "list")
+            .setHTTPMethod("GET")
+            .build()
+
+        let dictionary = try await CKURLRequestHelper.performURLRequest(request)
+        var subscriptions = [CKSubscription]()
+
+        // Process subscriptions
+        guard let subscriptionsDictionary = dictionary["subscriptions"] as? [[String: Any]] else {
+            throw CKError.conversionError
+        }
+
+        // Parse JSON into CKSubscription
+        for subscriptionDictionary in subscriptionsDictionary {
+            if let subscription = CKSubscription(dictionary: subscriptionDictionary) {
+                subscriptions.append(subscription)
+            } else {
+                // Unknown error
+                throw CKError.conversionError
+            }
+        }
+        return subscriptions
     }
 }

@@ -8,7 +8,7 @@
 
 import Foundation
 
-#if os(Linux)
+#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
     public typealias NSSortDescriptor = SortDescriptor
 
     open class SortDescriptor: NSObject, NSSecureCoding, NSCopying {

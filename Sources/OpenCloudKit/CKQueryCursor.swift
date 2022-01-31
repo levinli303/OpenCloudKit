@@ -11,10 +11,10 @@ import Foundation
 public extension CKQueryOperation {
     class Cursor: NSObject {
         let data: Data
-        let query: CKQuery?
+        let query: CKQuery
         let zoneID: CKRecordZone.ID?
 
-        init(data: Data, query: CKQuery?, zoneID: CKRecordZone.ID?) {
+        init(data: Data, query: CKQuery, zoneID: CKRecordZone.ID?) {
             self.data = data
             self.zoneID = zoneID
             self.query = query

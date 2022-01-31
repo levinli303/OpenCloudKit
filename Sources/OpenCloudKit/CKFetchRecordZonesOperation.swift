@@ -8,9 +8,13 @@
 
 import Foundation
 
+#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
+import FoundationNetworking
+#endif
+
 public class CKFetchRecordZonesOperation : CKDatabaseOperation {
-    public class func fetchAllRecordZonesOperation() -> Self {
-        return self.init()
+    public static func fetchAllRecordZonesOperation() -> CKFetchRecordZonesOperation {
+        return CKFetchRecordZonesOperation()
     }
 
     public override required init() {
@@ -23,83 +27,116 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
         super.init()
     }
 
-    var isFetchAllRecordZonesOperation: Bool = false
+    public var recordZoneIDs : [CKRecordZone.ID]?
 
-    var recordZoneIDs : [CKRecordZone.ID]?
-
-    var recordZoneErrors: [CKRecordZone.ID: NSError] = [:]
-
-    public var recordZoneByZoneID: [CKRecordZone.ID: CKRecordZone] = [:]
-
-    /*  This block is called when the operation completes.
-     The [NSOperation completionBlock] will also be called if both are set.
-     If the error is CKErrorPartialFailure, the error's userInfo dictionary contains
-     a dictionary of zoneIDs to errors keyed off of CKPartialErrorsByItemIDKey.
-     */
-    public var fetchRecordZonesCompletionBlock: (([CKRecordZone.ID : CKRecordZone]?, Error?) -> Void)?
-
-    override func finishOnCallbackQueue(error: Error?) {
-        var error = error
-        if error == nil {
-            if self.recordZoneErrors.count > 0 {
-                error = CKPrettyError(code: .partialFailure, userInfo: [CKPartialErrorsByItemIDKey: self.recordZoneErrors], description: CKErrorStringFailedToParseRecordZone)
-            }
-        }
-        // Call the final completionBlock
-        self.fetchRecordZonesCompletionBlock?(self.recordZoneByZoneID, error)
-
-        super.finishOnCallbackQueue(error: error)
-    }
+    public var fetchRecordZonesResultBlock: ((_ operationResult: Result<Void, Error>) -> Void)?
+    public var perRecordZoneResultBlock: ((_ recordZoneID: CKRecordZone.ID, _ recordZoneResult: Result<CKRecordZone, Error>) -> Void)?
 
     override func performCKOperation() {
-        let url: String
-        let request: [String: Any]?
-
-        if let recordZoneIDs = recordZoneIDs {
-            url = "\(databaseURL)/zones/lookup"
-            let zones =  recordZoneIDs.map({ (zoneID) -> [String: Any] in
-                return zoneID.dictionary
-            })
-
-            request = ["zones": zones]
-        } else {
-            url = "\(databaseURL)/zones/list"
-            request = nil
-        }
-
-        urlSessionTask = CKWebRequest(container: operationContainer).request(withURL: url, parameters: request) { [weak self] dictionary, error in
-            guard let strongSelf = self else { return }
-
-            var returnError = error
-
-            defer {
-                strongSelf.finish(error: returnError)
+        let db = database ?? CKContainer.default().publicCloudDatabase
+        task = Task { [weak self] in
+            if let ids = recordZoneIDs {
+                do {
+                    let zoneResults = try await db.recordZones(for: ids)
+                    guard let self = self else { return }
+                    for (zoneID, zoneResult) in zoneResults {
+                        self.callbackQueue.async {
+                            self.perRecordZoneResultBlock?(zoneID, zoneResult)
+                        }
+                    }
+                    callbackQueue.async {
+                        self.fetchRecordZonesResultBlock?(.success(()))
+                        self.finishOnCallbackQueue()
+                    }
+                }
+                catch {
+                    guard let self = self else { return }
+                    callbackQueue.async {
+                        self.fetchRecordZonesResultBlock?(.failure(error))
+                        self.finishOnCallbackQueue()
+                    }
+                }
             }
-
-            guard !strongSelf.isCancelled else { return }
-
-            if error != nil {
-                return
-            }
-
-            guard let zoneDictionaries = dictionary?["zones"] as? [[String: Any]] else {
-                returnError = CKPrettyError(code: .internalError, description: CKErrorStringFailedToParseServerResponse)
-                return
-            }
-
-            // Parse JSON into CKRecords
-            for zoneDictionary in zoneDictionaries {
-
-                if let zone = CKRecordZone(dictionary: zoneDictionary) {
-                    strongSelf.recordZoneByZoneID[zone.zoneID] = zone
-                } else if let fetchError = CKFetchErrorDictionary<CKRecordZone.ID>(dictionary: zoneDictionary) {
-                    let error = CKPrettyError(fetchError: fetchError)
-                    strongSelf.recordZoneErrors[fetchError.identifier] = error
-                } else {
-                    returnError = CKPrettyError(code: .partialFailure, description: CKErrorStringFailedToParseRecordZone)
-                    return
+            else {
+                do {
+                    let zoneResults = try await db.allRecordZones()
+                    guard let self = self else { return }
+                    for zone in zoneResults {
+                        self.callbackQueue.async {
+                            self.perRecordZoneResultBlock?(zone.zoneID, .success(zone))
+                        }
+                    }
+                    callbackQueue.async {
+                        self.fetchRecordZonesResultBlock?(.success(()))
+                        self.finishOnCallbackQueue()
+                    }
+                }
+                catch {
+                    guard let self = self else { return }
+                    callbackQueue.async {
+                        self.fetchRecordZonesResultBlock?(.failure(error))
+                        self.finishOnCallbackQueue()
+                    }
                 }
             }
         }
+    }
+}
+
+extension CKDatabase {
+    public func recordZones(for ids: [CKRecordZone.ID]) async throws -> [CKRecordZone.ID: Result<CKRecordZone, Error>] {
+        let lookupRecords = ids.map { zoneID -> [String: Any] in
+            return zoneID.dictionary
+        }
+        let request = CKURLRequestBuilder(database: self, operationType: .zones, path: "lookup")
+            .setParameter(key: "zones", value: lookupRecords)
+            .build()
+
+        let dictionary = try await CKURLRequestHelper.performURLRequest(request)
+        var zones = [CKRecordZone.ID: Result<CKRecordZone, Error>]()
+
+        // Process records
+        guard let zonesDictionary = dictionary["zones"] as? [[String: Any]] else {
+            throw CKError.conversionError
+        }
+
+        // Parse JSON into CKRecordZone
+        for zoneDictionary in zonesDictionary {
+            if let zone = CKRecordZone(dictionary: zoneDictionary) {
+                zones[zone.zoneID] = .success(zone)
+            } else if let fetchError = CKRecordZoneFetchError(dictionary: zoneDictionary) {
+                // Partial error
+                zones[fetchError.zoneID] = .failure(CKError.recordZoneFetchError(error: fetchError))
+            }  else {
+                // Unknown error
+                throw CKError.conversionError
+            }
+        }
+        return zones
+    }
+
+    public func allRecordZones() async throws -> [CKRecordZone] {
+        let request = CKURLRequestBuilder(database: self, operationType: .zones, path: "list")
+            .setHTTPMethod("GET")
+            .build()
+
+        let dictionary = try await CKURLRequestHelper.performURLRequest(request)
+        var zones = [CKRecordZone]()
+
+        // Process record zones
+        guard let zonesDictionary = dictionary["zones"] as? [[String: Any]] else {
+            throw CKError.conversionError
+        }
+
+        // Parse JSON into CKRecordZone
+        for zoneDictionary in zonesDictionary {
+            if let zone = CKRecordZone(dictionary: zoneDictionary) {
+                zones.append(zone)
+            } else {
+                // Unknown error
+                throw CKError.conversionError
+            }
+        }
+        return zones
     }
 }

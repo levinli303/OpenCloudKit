@@ -1,0 +1,187 @@
+//
+//  CKURLRequestBuilder.swift
+//  
+//
+//  Created by Levin Li on 2022/1/30.
+//
+
+import Foundation
+
+#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
+import FoundationNetworking
+#endif
+
+enum CKOperationRequestType: String {
+    case records
+    case assets
+    case zones
+    case users
+    case lookup
+    case subscriptions
+    case tokens
+}
+
+struct CKServerInfo {
+    static let path = "https://api.apple-cloudkit.com"
+    static let version = "1"
+}
+
+class CKURLRequestBuilder {
+    let account: CKAccount
+    let url: URL
+    var requestProperties: [String: Any] = [:]
+    var requestContentType: String = "application/json; charset=utf-8"
+    var requestHTTPMethod: String = "POST"
+    var requestData: Data?
+
+    init(account: CKAccount, serverType: CKServerType, scope: CKDatabaseScope?, operationType: CKOperationRequestType, path: String) {
+        var baseURL = URL(string: CKServerInfo.path)!
+        baseURL.appendPathComponent(serverType.urlComponent)
+        baseURL.appendPathComponent(CKServerInfo.version)
+        baseURL.appendPathComponent(account.containerInfo.containerID)
+        baseURL.appendPathComponent(account.containerInfo.environment.rawValue)
+        if let databaseScope = scope {
+            baseURL.appendPathComponent(databaseScope.description)
+        }
+        baseURL.appendPathComponent(operationType.rawValue)
+        baseURL.appendPathComponent(path)
+
+        var urlComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
+        switch account.accountType {
+        case .server:
+            break
+        case .anoymous, .primary:
+            var queryItems = [URLQueryItem(name: "ckAPIToken", value: account.cloudKitAuthToken ?? "")]
+
+            if let icloudAuthToken = account.iCloudAuthToken {
+                let encodedWebAuthToken = icloudAuthToken.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!.replacingOccurrences(of: "+", with: "%2B")
+                queryItems.append(URLQueryItem(name: "ckWebAuthToken", value: encodedWebAuthToken))
+            }
+            urlComponents.queryItems = queryItems
+        }
+        self.account = account
+        self.url = urlComponents.url!
+    }
+
+    convenience init(database: CKDatabase, operationType: CKOperationRequestType, path: String) {
+        self.init(account: CloudKit.shared.account(forContainer: database.container)!, serverType: .database, scope: database.scope, operationType: operationType, path: path)
+    }
+
+    init(url: URL, database: CKDatabase) {
+        self.url = url
+        self.account = CloudKit.shared.account(forContainer: database.container)!
+    }
+
+    func setZone(_ zoneID: CKRecordZoneID?) -> CKURLRequestBuilder {
+        requestProperties["zoneID"] = zoneID?.dictionary
+        return self
+    }
+
+    func setContentType(_ contentType: String) -> CKURLRequestBuilder {
+        requestContentType = contentType
+        return self
+    }
+
+    func setData(_ data: Data) -> CKURLRequestBuilder {
+        requestData = data
+        return self
+    }
+
+    func setHTTPMethod(_ httpMethod: String) -> CKURLRequestBuilder {
+        requestHTTPMethod = httpMethod
+        return self
+    }
+
+    func setParameter(key: String, value: Any?) -> CKURLRequestBuilder {
+        requestProperties[key] = value
+        return self
+    }
+
+    func build() -> URLRequest {
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = requestHTTPMethod
+        urlRequest.addValue(requestContentType, forHTTPHeaderField: "Content-Type")
+        if let data = requestData {
+            urlRequest.httpBody = data
+        }  else if !requestProperties.isEmpty {
+            let jsonData = try! JSONSerialization.data(withJSONObject: requestProperties, options: [])
+            urlRequest.httpBody = jsonData
+        }
+        if let serverAccount = account as? CKServerAccount {
+            if let signedRequest = CKServerRequestAuth.authenicateServer(forRequest: urlRequest, withServerToServerKeyAuth: serverAccount.serverToServerAuth) {
+                urlRequest = signedRequest
+            }
+        }
+        return urlRequest
+    }
+}
+
+class CKURLRequestHelper {
+    private static func _performURLRequest(_ request: URLRequest) async throws -> Data {
+        var dataResponseTuple: (data: Data, response: URLResponse)!
+        do {
+            dataResponseTuple = try await URLSession.shared.data(for: request, delegate: nil)
+        } catch {
+            if Task.isCancelled {
+                throw CKError.cancellation
+            }
+            throw CKError.networkError(error: error)
+        }
+
+        let httpResponse = dataResponseTuple.response as! HTTPURLResponse
+        if httpResponse.statusCode >= 400 {
+            if let requestError = try? JSONDecoder().decode(CKRequestError.self, from: dataResponseTuple.data) {
+                throw CKError.requestError(error: requestError)
+            }
+            // Indicates an error, but we do not know how to parse the error
+            // throw generic error instead
+            throw CKError.genericHTTPError(status: httpResponse.statusCode)
+        }
+        let data = dataResponseTuple.data
+        return data
+    }
+
+    static func performURLRequest(_ request: URLRequest) async throws -> [String: Any] {
+        let data = try await _performURLRequest(request)
+        var jsonObject: Any!
+        do {
+            jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
+        }
+        catch {
+            throw CKError.jsonError(error: error)
+        }
+
+        guard let dictionary = jsonObject as? [String: Any] else {
+            throw CKError.conversionError
+        }
+
+        return dictionary
+    }
+
+    static func performURLRequest<Response: Decodable>(_ request: URLRequest) async throws -> Response {
+        let data = try await _performURLRequest(request)
+        do {
+            return try JSONDecoder().decode(Response.self, from: data)
+        }
+        catch {
+            throw CKError.jsonError(error: error)
+        }
+    }
+}
+
+#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
+// swift-corelibs-foundation still has not integrated concurrency support for Linux yet...
+extension URLSession {
+    func data(for request: URLRequest, delegate: URLSessionDelegate?) async throws -> (data: Data, response: URLResponse) {
+        return try await withCheckedThrowingContinuation { continuation in
+            dataTask(with: request, completionHandler: { data, response, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: (data!, response!))
+                }
+            }).resume()
+        }
+    }
+}
+#endif

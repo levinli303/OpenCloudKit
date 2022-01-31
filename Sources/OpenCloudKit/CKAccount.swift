@@ -14,7 +14,7 @@ public enum CKAccountType {
     case server
 }
 
-public class CKAccount: CKAccountInfoProvider {
+public class CKAccount {
     let accountType: CKAccountType
 
     var isAnonymousAccount: Bool {
@@ -42,23 +42,6 @@ public class CKAccount: CKAccountInfoProvider {
         self.containerInfo = containerInfo
         self.iCloudAuthToken = iCloudAuthToken
         self.cloudKitAuthToken = cloudKitAuthToken
-    }
-
-    func baseURL(forServerType serverType: CKServerType) -> URL {
-        var baseURL = URL(string: CKServerInfo.path)!
-        switch serverType {
-        case .database:
-            baseURL.appendPathComponent("database")
-        case .device:
-            baseURL.appendPathComponent("device")
-        default:
-            baseURL.appendPathComponent("database")
-        }
-
-        // Append version
-
-        return baseURL.appendingPathComponent("\(CKServerInfo.version)")
-
     }
 }
 

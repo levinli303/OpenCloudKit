@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import CNIOBoringSSL
+import CCryptoBoringSSL
 
 public enum MessageDigestError: Error {
     case unknownDigest
@@ -19,11 +19,11 @@ public final class MessageDigest {
 
     public init(_ messageDigest: String) throws {
         if !MessageDigest.addedAllDigests {
-            CNIOBoringSSL_OpenSSL_add_all_digests()
+            CCryptoBoringSSL_OpenSSL_add_all_digests()
             MessageDigest.addedAllDigests = true
         }
 
-        guard let digest = CNIOBoringSSL_EVP_get_digestbyname(messageDigest) else {
+        guard let digest = CCryptoBoringSSL_EVP_get_digestbyname(messageDigest) else {
             throw MessageDigestError.unknownDigest
         }
 
@@ -42,13 +42,13 @@ public final class MessageDigestContext {
     let context: UnsafeMutablePointer<EVP_MD_CTX>
 
     deinit {
-        CNIOBoringSSL_EVP_MD_CTX_free(context)
+        CCryptoBoringSSL_EVP_MD_CTX_free(context)
     }
 
     public init(_ messageDigest: MessageDigest) throws {
-        let context: UnsafeMutablePointer<EVP_MD_CTX>! = CNIOBoringSSL_EVP_MD_CTX_new()
+        let context: UnsafeMutablePointer<EVP_MD_CTX>! = CCryptoBoringSSL_EVP_MD_CTX_new()
 
-        if CNIOBoringSSL_EVP_DigestInit(context, messageDigest.messageDigest) == 0 {
+        if CCryptoBoringSSL_EVP_DigestInit(context, messageDigest.messageDigest) == 0 {
             throw MessageDigestContextError.initializationFailed
         }
 
@@ -62,7 +62,7 @@ public final class MessageDigestContext {
     public func update(_ data: Data) throws {
         try data.withUnsafeBytes { dataBytes in
             let buffer: UnsafePointer<UInt8> = dataBytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            if CNIOBoringSSL_EVP_DigestUpdate(context, buffer, data.count) == 0 {
+            if CCryptoBoringSSL_EVP_DigestUpdate(context, buffer, data.count) == 0 {
                 throw MessageDigestContextError.updateFailed
             }
         }
@@ -73,7 +73,7 @@ public final class MessageDigestContext {
         var length: UInt32 = 8192
         var signature = [UInt8](repeating: 0, count: Int(length))
 
-        if CNIOBoringSSL_EVP_SignFinal(context, &signature, &length, keyData.key) == 0 {
+        if CCryptoBoringSSL_EVP_SignFinal(context, &signature, &length, keyData.key) == 0 {
             throw MessageDigestContextError.signFailed
         }
 
@@ -92,9 +92,9 @@ public class KeyData: Equatable {
         var pkey: UnsafeMutablePointer<EVP_PKEY>?
         data.withUnsafeBytes { dataBytes in
             let buffer: UnsafePointer<UInt8> = dataBytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            mem = CNIOBoringSSL_BIO_new_mem_buf(buffer, Int32(data.count))
+            mem = CCryptoBoringSSL_BIO_new_mem_buf(buffer, Int32(data.count))
             if mem != nil {
-                pkey = CNIOBoringSSL_PEM_read_bio_PrivateKey(mem, nil, nil, nil)
+                pkey = CCryptoBoringSSL_PEM_read_bio_PrivateKey(mem, nil, nil, nil)
             }
         }
         if mem == nil || pkey == nil {
@@ -105,8 +105,8 @@ public class KeyData: Equatable {
     }
 
     deinit {
-        CNIOBoringSSL_EVP_PKEY_free(key)
-        CNIOBoringSSL_BIO_free_all(bio)
+        CCryptoBoringSSL_EVP_PKEY_free(key)
+        CCryptoBoringSSL_BIO_free_all(bio)
     }
 
     public static func == (lhs: KeyData, rhs: KeyData) -> Bool {
@@ -120,9 +120,9 @@ extension Data {
         return withUnsafeBytes { dataBytes in
             let buffer: UnsafePointer<UInt8> = dataBytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
             var ctx = SHA256_CTX()
-            CNIOBoringSSL_SHA256_Init(&ctx)
-            CNIOBoringSSL_SHA256_Update(&ctx, buffer, count)
-            CNIOBoringSSL_SHA256_Final(hash, &ctx)
+            CCryptoBoringSSL_SHA256_Init(&ctx)
+            CCryptoBoringSSL_SHA256_Update(&ctx, buffer, count)
+            CCryptoBoringSSL_SHA256_Final(hash, &ctx)
             let data = Data(bytes: hash, count: Int(SHA256_DIGEST_LENGTH))
             hash.deallocate()
             return data

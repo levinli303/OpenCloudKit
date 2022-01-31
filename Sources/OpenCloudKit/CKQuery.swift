@@ -21,30 +21,19 @@ struct CKSortDescriptorDictionary {
 }
 
 public class CKQuery: CKCodable {
-    
     public var recordType: String
     
-    public var predicate: NSPredicate
-    
     let filters: [CKQueryFilter]
-    
-    public init(recordType: String, predicate: NSPredicate) {
-        self.recordType = recordType
-        self.predicate = predicate
-        self.filters = CKPredicate(predicate: predicate).filters()
-    }
     
     public init(recordType: String, filters: [CKQueryFilter]) {
         self.recordType = recordType
         self.filters = filters
-        self.predicate = NSPredicate(value: true)
     }
     
     public var sortDescriptors: [NSSortDescriptor] = []
     
     // Returns a Dictionary Representation of a Query Dictionary
     var dictionary: [String: Any] {
-        
         var queryDictionary: [String: Any] = ["recordType": recordType]
         
         queryDictionary["filterBy"] = filters.map({ (filter) -> [String: Any] in

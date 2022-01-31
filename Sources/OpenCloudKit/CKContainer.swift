@@ -79,8 +79,4 @@ public class CKContainer {
             fatalError("CKDatabaseOperations must be submitted to a CKDatabase")
         }
     }
-
-    var databaseURL: String {
-        return "\(CKServerInfo.path)/database/\(CKServerInfo.version)/\(containerIdentifier)/\(CloudKit.shared.environment)/"
-    }
 }

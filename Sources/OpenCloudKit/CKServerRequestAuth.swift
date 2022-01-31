@@ -8,7 +8,7 @@
 
 import Foundation
 
-#if os(Linux)
+#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
 import FoundationNetworking
 #endif
 
@@ -33,7 +33,7 @@ struct CKServerRequestAuth {
 
     init?(requestBody: Data, urlPath: String, privateKey: KeyData) {
         self.requestDate = CKServerRequestAuth.ISO8601DateFormatter.string(from: Date())
-        if let signature = CKServerRequestAuth.signature(requestDate: requestDate,requestBody: requestBody, urlSubpath: urlPath, privateKey: privateKey) {
+        if let signature = CKServerRequestAuth.signature(requestDate: requestDate, requestBody: requestBody, urlSubpath: urlPath, privateKey: privateKey) {
             self.signature = signature
         } else {
             return nil
@@ -78,7 +78,8 @@ struct CKServerRequestAuth {
 
     static func authenticateServer(forRequest request: URLRequest, serverKeyID: String, privateKey: KeyData) -> URLRequest? {
         var request = request
-        guard let requestBody = request.httpBody, let path = request.url?.path, let auth = CKServerRequestAuth(requestBody: requestBody, urlPath: path, privateKey: privateKey) else {
+        let requestBody = request.httpBody ?? Data()
+        guard let path = request.url?.path, let auth = CKServerRequestAuth(requestBody: requestBody, urlPath: path, privateKey: privateKey) else {
             return nil
         }
 

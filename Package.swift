@@ -4,17 +4,17 @@ import PackageDescription
 let package = Package(
     name: "OpenCloudKit",
     platforms: [
-        .macOS(.v10_15),
+        .macOS("12.0"),
     ],
     products: [
         .library(name: "OpenCloudKit", targets: ["OpenCloudKit"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-nio-ssl", from: "2.10.0")
+        .package(url: "https://github.com/apple/swift-crypto.git", "1.0.0" ..< "3.0.0"),
     ],
     targets: [
         .target(name: "OpenCloudKit", dependencies: [
-            .product(name: "NIOSSL", package: "swift-nio-ssl")
+            .product(name: "Crypto", package: "swift-crypto"),
         ]),
         .testTarget(
             name: "OpenCloudKitTests",

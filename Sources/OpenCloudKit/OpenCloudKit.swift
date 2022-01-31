@@ -72,59 +72,18 @@ public class CloudKit {
 
             self.delegate?.didRecieveRemoteNotification(notification)
         }
-
         pushConnections.append(connection)
     }
 
     public func registerForRemoteNotifications() {
-
-        // Setup Create Token Operation
-        let createTokenOperation = CKTokenCreateOperation(apnsEnvironment: environment)
-        createTokenOperation.createTokenCompletionBlock = {
-            (info, error) in
-
-            if let info = info {
-                // Register Token
-                let registerOperation = CKRegisterTokenOperation(apnsEnvironment: info.apnsEnvironment, apnsToken: info.apnsToken)
-                registerOperation.registerTokenCompletionBlock = {
-                    (tokenInfo, error) in
-
-                    if let error = error {
-                        // Notify delegate of error when registering for notifications
-                        self.delegate?.didFailToRegisterForRemoteNotifications(withError: error)
-                    } else if let info = tokenInfo {
-                        // Notify Delegate
-                        self.delegate?.didRegisterForRemoteNotifications(withToken: info.apnsToken)
-
-                        // Start connection with token
-                        self.createPushConnection(for: info.webcourierURL)
-
-
-                    }
-                }
-                registerOperation.start()
-
-            } else if let error = error {
-                // Notify delegate of error when registering for notifications
-                self.delegate?.didFailToRegisterForRemoteNotifications(withError: error)
-
-            }
-        }
-
-        createTokenOperation.start()
+        // TODO:
     }
-
-
 }
 
 public protocol OpenCloudKitDelegate: AnyObject {
-
     func didRecieveRemoteNotification(_ notification:CKNotification)
-
     func didFailToRegisterForRemoteNotifications(withError error: Error)
-
     func didRegisterForRemoteNotifications(withToken token: Data)
-
 }
 
 extension CKRecord.ID {
@@ -146,7 +105,6 @@ public class CKRecordZoneID: NSObject, NSSecureCoding {
         self.zoneName = zoneName
         self.ownerName = ownerName
         super.init()
-
     }
 
     public let zoneName: String
@@ -165,7 +123,6 @@ public class CKRecordZoneID: NSObject, NSSecureCoding {
         guard let other = object as? CKRecordZoneID else { return false }
         return self.zoneName == other.zoneName && self.ownerName == other.ownerName
     }
-
 
     public required convenience init?(coder: NSCoder) {
         let zoneName = coder.decodeObject(of: NSString.self, forKey: "ZoneName")

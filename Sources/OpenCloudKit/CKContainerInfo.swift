@@ -13,11 +13,6 @@ struct CKContainerInfo {
 
     let containerID: String
 
-    func publicCloudDBURL(databaseScope: CKDatabaseScope) ->  URL {
-        let baseURL = "\(CKServerInfo.path)/database/\(CKServerInfo.version)/\(containerID)/\(environment)/\(databaseScope)"
-        return URL(string: baseURL)!
-    }
-
     init(containerID: String, environment: CKEnvironment) {
         self.containerID = containerID
         self.environment = environment

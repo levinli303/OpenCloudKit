@@ -27,7 +27,9 @@ public class CKSubscription: NSObject {
         }
     }
 
-    public let subscriptionID: String
+    public typealias ID = String
+
+    public let subscriptionID: ID
     public let subscriptionType: SubscriptionType
     public var notificationInfo: NotificationInfo?
 
@@ -69,98 +71,82 @@ extension CKSubscription {
     }
 }
 
-public struct CKQuerySubscriptionOptions : OptionSet {
-    public var rawValue: UInt
-    
-    public init(rawValue: UInt) {
-        self.rawValue = rawValue
-    }
-    
-    public static var firesOnRecordCreation: CKQuerySubscriptionOptions { return CKQuerySubscriptionOptions(rawValue: 1) }
-    
-    public static var firesOnRecordUpdate: CKQuerySubscriptionOptions { return CKQuerySubscriptionOptions(rawValue: 2)  }
-    
-    public static var firesOnRecordDeletion: CKQuerySubscriptionOptions { return CKQuerySubscriptionOptions(rawValue: 4)  }
-    
-    public static var firesOnce: CKQuerySubscriptionOptions {  return CKQuerySubscriptionOptions(rawValue: 8) }
-    
-    var firesOnArray: [String] {
-        var array: [String] = []
-        if contains(CKQuerySubscriptionOptions.firesOnRecordCreation) {
-            array.append("create")
+
+extension CKQuerySubscription {
+    public struct Options : OptionSet {
+        public var rawValue: UInt
+
+        public init(rawValue: UInt) {
+            self.rawValue = rawValue
         }
-        
-        if contains(CKQuerySubscriptionOptions.firesOnRecordUpdate) {
-            array.append("update")
+
+        public static var firesOnRecordCreation: Options { return Options(rawValue: 1) }
+        public static var firesOnRecordUpdate: Options { return Options(rawValue: 2)  }
+        public static var firesOnRecordDeletion: Options { return Options(rawValue: 4)  }
+        public static var firesOnce: Options {  return Options(rawValue: 8) }
+
+        var firesOnArray: [String] {
+            var array: [String] = []
+            if contains(Options.firesOnRecordCreation) {
+                array.append("create")
+            }
+
+            if contains(Options.firesOnRecordUpdate) {
+                array.append("update")
+            }
+
+            if contains(Options.firesOnRecordDeletion) {
+                array.append("delete")
+            }
+
+            return array
         }
-        
-        if contains(CKQuerySubscriptionOptions.firesOnRecordDeletion) {
-            array.append("delete")
-        }
-        
-        return array
     }
 }
 
+
 public class CKQuerySubscription : CKSubscription {
-    
-    public convenience init(recordType: String, predicate: NSPredicate, options querySubscriptionOptions: CKQuerySubscriptionOptions) {
-        
-        let subscriptionID = NSUUID().uuidString
-        self.init(recordType: recordType, predicate: predicate, subscriptionID: subscriptionID, options: querySubscriptionOptions)
+    public convenience init(recordType: String, filters: [CKQueryFilter], options querySubscriptionOptions: Options) {
+        let subscriptionID = UUID().uuidString
+        self.init(recordType: recordType, filters: filters, subscriptionID: subscriptionID, options: querySubscriptionOptions)
     }
     
-    public init(recordType: String, predicate: NSPredicate, subscriptionID: String, options querySubscriptionOptions: CKQuerySubscriptionOptions) {
-        
-        self.predicate = predicate
-        
+    public init(recordType: String, filters: [CKQueryFilter], subscriptionID: String, options querySubscriptionOptions: Options) {
+        self.filters = filters
         self.recordType = recordType
-        
         self.querySubscriptionOptions = querySubscriptionOptions
-        
         super.init(subscriptionID: subscriptionID, subscriptionType: SubscriptionType.query)
-        
-       
     }
     
     /* The record type that this subscription watches */
     public let recordType: String
-    
-    /* A predicate that determines when the subscription fires. */
-    public var predicate: NSPredicate
-    
+    /* Filters that determines when the subscription fires. */
+    public var filters: [CKQueryFilter]
     /* Optional property.  If set, a query subscription is scoped to only record changes in the indicated zone. */
     public var zoneID: CKRecordZone.ID?
-    
-    public let querySubscriptionOptions: CKQuerySubscriptionOptions
-    
+    public let querySubscriptionOptions: Options
 }
-
 
 extension CKQuerySubscription {
      public var dictionary: [String: Any] {
-        
-        let query = CKQuery(recordType: recordType, predicate: predicate)
-       
+        let query = CKQuery(recordType: recordType, filters: filters)
         var subscription: [String: Any] =  ["subscriptionID": subscriptionID,
                 "subscriptionType": subscriptionType.description,
                 "query": query.dictionary as Any,
                 "firesOn": querySubscriptionOptions.firesOnArray]
-        if querySubscriptionOptions.contains(CKQuerySubscriptionOptions.firesOnce) {
+        if querySubscriptionOptions.contains(.firesOnce) {
             subscription["firesOnce"] = NSNumber(value: true)
         }
-        
         if let notificationInfo = notificationInfo {
             subscription["notificationInfo"] = notificationInfo.dictionary
         }
-    
         return subscription
     }
 }
 
 public class CKRecordZoneSubscription : CKSubscription {
     public convenience init(zoneID: CKRecordZone.ID) {
-        let subscriptionID = NSUUID().uuidString
+        let subscriptionID = UUID().uuidString
         self.init(zoneID: zoneID, subscriptionID: subscriptionID)
     }
     

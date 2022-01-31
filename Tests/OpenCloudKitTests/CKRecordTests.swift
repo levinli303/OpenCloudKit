@@ -9,7 +9,7 @@ import XCTest
 import Foundation
 @testable import OpenCloudKit
 
-#if os(iOS) || os(macOS)
+#if canImport(CoreLocation)
 import CoreLocation
 
 typealias CKRecord = OpenCloudKit.CKRecord
@@ -170,12 +170,22 @@ class CKRecordTests: CKTest {
         let op = CKQueryOperation(query: query)
         op.resultsLimit = resultLimit
         var records: [CKRecord] = []
-        op.recordFetchedBlock = { record in
-            records.append(record)
+        op.recordMatchedBlock = { _, result in
+            switch result {
+            case .success(let record):
+                records.append(record)
+            case .failure(let error):
+                XCTFail("Error occured on record match \(error)")
+            }
         }
         let expectation = XCTestExpectation(description: "Wait for response")
-        op.queryCompletionBlock = { _, _ in
-            expectation.fulfill()
+        op.queryResultBlock = { result in
+            switch result {
+            case .success:
+                expectation.fulfill()
+            case .failure(let error):
+                XCTFail("Error occured on completion \(error)")
+            }
         }
         db.add(op)
         wait(for: [expectation], timeout: 10)
@@ -193,12 +203,22 @@ class CKRecordTests: CKTest {
         op.resultsLimit = 1
         op.desiredKeys = ["string", "int64", "double"]
         var records: [CKRecord] = []
-        op.recordFetchedBlock = { record in
-            records.append(record)
+        op.recordMatchedBlock = { _, result in
+            switch result {
+            case .success(let record):
+                records.append(record)
+            case .failure(let error):
+                XCTFail("Error occured on record match \(error)")
+            }
         }
         let expectation = XCTestExpectation(description: "Wait for response")
-        op.queryCompletionBlock = { _, _ in
-            expectation.fulfill()
+        op.queryResultBlock = { result in
+            switch result {
+            case .success:
+                expectation.fulfill()
+            case .failure(let error):
+                XCTFail("Error occured on completion \(error)")
+            }
         }
         db.add(op)
         wait(for: [expectation], timeout: 10)
@@ -229,8 +249,8 @@ class CKRecordTests: CKTest {
         let expectation = XCTestExpectation(description: "Wait for response")
         let recordID = CKRecord.ID(recordName: "DO-NOT-CREATE")
         db.delete(withRecordID: recordID) { record, error in
-            XCTAssertNil(error)
-            XCTAssertNotNil(record)
+            XCTAssertNotNil(error)
+            XCTAssertNil(record)
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 10)
@@ -267,24 +287,44 @@ class CKRecordTests: CKTest {
         let op = CKQueryOperation(query: query)
         op.resultsLimit = resultLimit
         var records: [CKRecord] = []
-        op.recordFetchedBlock = { record in
-            records.append(record)
+        op.recordMatchedBlock = { _, result in
+            switch result {
+            case .success(let record):
+                records.append(record)
+            case .failure(let error):
+                XCTFail("Error occured on record match \(error)")
+            }
         }
         let expectation = XCTestExpectation(description: "Wait for response")
-        op.queryCompletionBlock = { cursor, _ in
-            guard let c = cursor else {
-                expectation.fulfill()
-                return
+        op.queryResultBlock = { result in
+            switch result {
+            case .success(let cursor):
+                guard let c = cursor else {
+                    XCTFail("Cursor should be returned for this operation")
+                    return
+                }
+                let continuedOperation = CKQueryOperation(cursor: c)
+                continuedOperation.resultsLimit = resultLimit
+                continuedOperation.recordMatchedBlock = { _, result in
+                    switch result {
+                    case .success(let record):
+                        records.append(record)
+                    case .failure(let error):
+                        XCTFail("Error occured on record match \(error)")
+                    }
+                }
+                continuedOperation.queryResultBlock = { result in
+                    switch result {
+                    case .success:
+                        expectation.fulfill()
+                    case .failure(let error):
+                        XCTFail("Error occured on completion \(error)")
+                    }
+                }
+                db.add(continuedOperation)
+            case .failure(let error):
+                XCTFail("Error occured on completion \(error)")
             }
-            let continuedOperation = CKQueryOperation(cursor: c)
-            continuedOperation.resultsLimit = resultLimit
-            continuedOperation.recordFetchedBlock = { record in
-                records.append(record)
-            }
-            continuedOperation.queryCompletionBlock = { _, _ in
-                expectation.fulfill()
-            }
-            db.add(continuedOperation)
         }
         db.add(op)
         wait(for: [expectation], timeout: 10)
@@ -294,25 +334,74 @@ class CKRecordTests: CKTest {
     func testNoCurosr() {
         let resultLimit = 1
         let db = CKContainer.default().publicCloudDatabase
-        let reference = CKReference(recordID: CKRecord.ID(recordName: "DO-NOT-CREATE"), action: .none)
+        let reference = CKReference(recordID: CKRecord.ID(recordName: "043BB555-EA0D-487E-BCC4-257184A5078C"), action: .none)
         let query = CKQuery(recordType: Self.recordType, filters: [
             CKQueryFilter(fieldName: "___recordID", comparator: .equals, fieldValue: reference)
         ])
         let op = CKQueryOperation(query: query)
         op.resultsLimit = resultLimit
         var records: [CKRecord] = []
-        op.recordFetchedBlock = { record in
-            records.append(record)
+        op.recordMatchedBlock = { _, result in
+            switch result {
+            case .success(let record):
+                records.append(record)
+            case .failure(let error):
+                XCTFail("Error occured on record match \(error)")
+            }
         }
-        var savedCursor: CKQueryOperation.Cursor?
         let expectation = XCTestExpectation(description: "Wait for response")
-        op.queryCompletionBlock = { cursor, _ in
-            savedCursor = cursor
-            expectation.fulfill()
+        op.queryResultBlock = { result in
+            switch result {
+            case .success(let cursor):
+                XCTAssertNil(cursor, "Cursor should not be returned for this operation")
+                expectation.fulfill()
+            case .failure(let error):
+                XCTFail("Error occured on completion \(error)")
+            }
         }
         db.add(op)
         wait(for: [expectation], timeout: 10)
-        XCTAssertNil(savedCursor)
+        XCTAssertEqual(records.count, 1)
+    }
+
+    func testFetchDefaultRecordZone() async {
+        let db = CKContainer.default().publicCloudDatabase
+        let expectation = XCTestExpectation(description: "Wait for response")
+        db.fetch(withRecordZoneID: .default) { zone, error in
+            XCTAssertNotNil(zone)
+            XCTAssertNil(error)
+            XCTAssertEqual(zone?.zoneID.zoneName, CKRecordZone.ID.defaultZoneName)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10)
+    }
+
+    func testOperationCancellation() {
+        let db = CKContainer.default().publicCloudDatabase
+        let query = CKQuery(recordType: Self.recordType, filters: [])
+        let op = CKQueryOperation(query: query)
+        let expectation = XCTestExpectation(description: "Wait for response")
+        op.queryResultBlock = { result in
+            switch result {
+            case .success:
+                XCTFail("A cancelled task should fail")
+            case .failure(let error):
+                do {
+                    throw error
+                }
+                catch CKError.cancellation {
+                    expectation.fulfill()
+                }
+                catch {
+                    XCTFail("A cancelled task should have error CKError.cancellation")
+                }
+            }
+        }
+        db.add(op)
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1)) {
+            op.cancel()
+        }
+        wait(for: [expectation], timeout: 10)
     }
 
     static var allTests = [
@@ -329,5 +418,6 @@ class CKRecordTests: CKTest {
         ("testCreateExistingRecord", testCreateExistingRecord),
         ("testCurosr", testCurosr),
         ("testNoCurosr", testNoCurosr),
+        ("testFetchDefaultRecordZone", testFetchDefaultRecordZone),
     ]
 }

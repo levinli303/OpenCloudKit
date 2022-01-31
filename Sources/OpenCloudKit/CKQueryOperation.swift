@@ -8,6 +8,10 @@
 
 import Foundation
 
+#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
+import FoundationNetworking
+#endif
+
 public class CKQueryOperation: CKDatabaseOperation {
     public class var maximumResults: Int {
         return 0
@@ -20,106 +24,99 @@ public class CKQueryOperation: CKDatabaseOperation {
     public convenience init(query: CKQuery) {
         self.init()
         self.query = query
-
     }
-    
+
     public convenience init(cursor: Cursor) {
         self.init()
         self.cursor = cursor
         self.query = cursor.query
         self.zoneID = cursor.zoneID
     }
-    
-    public var shouldFetchAssetContent = true
-    
+
     public var query: CKQuery?
-    
     public var cursor: Cursor?
-    
-    public var resultsCursor: Cursor?
-    
-    var isFinishing: Bool = false
-    
+
     public var zoneID: CKRecordZone.ID?
-
     public var resultsLimit: Int = CKQueryOperation.maximumResults
-
     public var desiredKeys: [CKRecord.FieldKey]?
 
-    public var recordFetchedBlock: ((CKRecord) -> Void)?
+    public var queryResultBlock: ((_ operationResult: Result<CKQueryOperation.Cursor?, Error>) -> Void)?
+    public var recordMatchedBlock: ((_ recordID: CKRecord.ID, _ recordResult: Result<CKRecord, Error>) -> Void)?
 
-    public var queryCompletionBlock: ((Cursor?, Error?) -> Void)?
-    
-    override func CKOperationShouldRun() throws {
-        if query == nil && cursor == nil {
-            throw CKPrettyError(code: CKErrorCode.invalidArguments, description: "either a query or query cursor must be provided for \(self)")
-        }
-    }
-    
-    override func finishOnCallbackQueue(error: Error?) {
-        // log "Operation %@ has completed. Query cursor is %@.%@%@"
-        self.queryCompletionBlock?(self.resultsCursor, error)
-        
-        super.finishOnCallbackQueue(error: error)
-    }
-    
-    func fetched(record: CKRecord){
-        callbackQueue.async {
-            self.recordFetchedBlock?(record)
-        }
-    }
-    
     override func performCKOperation() {
-        let zoneID = self.zoneID
-        let query = self.query
-        let queryOperationURLRequest = CKQueryURLRequest(query: query!, cursor: cursor?.data, limit: resultsLimit, requestedFields: desiredKeys, zoneID: zoneID)
-        queryOperationURLRequest.accountInfoProvider =  CloudKit.shared.account(forContainer: operationContainer)
-        queryOperationURLRequest.databaseScope = database?.scope ?? .public
-        
-        queryOperationURLRequest.completionBlock = { [weak self] result in
-            guard let strongSelf = self else { return }
-
-            var returnError: Error?
-
-            defer {
-                strongSelf.finish(error: returnError)
+        let db = database ?? CKContainer.default().publicCloudDatabase
+        task = Task { [weak self] in
+            do {
+                let (recordResults, cursor) = try await db.records(matching: query!, inZoneWith: zoneID, desiredKeys: desiredKeys, resultsLimit: resultsLimit)
+                guard let self = self else { return }
+                for (recordID, recordResult) in recordResults {
+                    self.callbackQueue.async {
+                        self.recordMatchedBlock?(recordID, recordResult)
+                    }
+                }
+                callbackQueue.async {
+                    self.queryResultBlock?(.success(cursor))
+                    self.finishOnCallbackQueue()
+                }
             }
-
-            guard !strongSelf.isCancelled else { return }
-
-            switch result {
-            case .success(let dictionary):
-                // Process cursor
-                if let continuationMarker = dictionary["continuationMarker"] as? String {
-                    let data = Data(base64Encoded: continuationMarker, options: [])
-                    if let data = data {
-                        strongSelf.resultsCursor = Cursor(data: data, query: query, zoneID: zoneID)
-                    }
+            catch {
+                guard let self = self else { return }
+                callbackQueue.async {
+                    self.queryResultBlock?(.failure(error))
+                    self.finishOnCallbackQueue()
                 }
-                
-                // Process Records
-                if let recordsDictionary = dictionary["records"] as? [[String: Any]] {
-                    // Parse JSON into CKRecords
-                    for recordDictionary in recordsDictionary {
-                        if let record = CKRecord(recordDictionary: recordDictionary) {
-                            // Call RecordCallback
-                            strongSelf.fetched(record: record)
-                        } else {
-                            // Create Error
-                            // Invalid state to be in, this operation normally doesnt provide partial errors
-                            returnError = CKPrettyError(code: .partialFailure, description: CKErrorStringFailedToParseRecord)
-                            return
-                        }
-                    }
-                }
-            case .error(let error):
-                returnError = error.error
             }
         }
-        
-        queryOperationURLRequest.performRequest()
     }
 }
 
+extension CKDatabase {
+    public func records(continuingMatchFrom queryCursor: CKQueryOperation.Cursor, desiredKeys: [CKRecord.FieldKey]? = nil, resultsLimit: Int = CKQueryOperation.maximumResults) async throws -> (matchResults: [(CKRecord.ID, Result<CKRecord, Error>)], queryCursor: CKQueryOperation.Cursor?) {
+        return try await records(matching: queryCursor.query, inZoneWith: queryCursor.zoneID, desiredKeys: desiredKeys, resultsLimit: resultsLimit, continuationMarker: queryCursor.data)
+    }
 
+    public func records(matching query: CKQuery, inZoneWith zoneID: CKRecordZone.ID? = nil, desiredKeys: [CKRecord.FieldKey]? = nil, resultsLimit: Int = CKQueryOperation.maximumResults) async throws -> (matchResults: [(CKRecord.ID, Result<CKRecord, Error>)], queryCursor: CKQueryOperation.Cursor?) {
+        return try await records(matching: query, inZoneWith: zoneID, desiredKeys: desiredKeys, resultsLimit: resultsLimit, continuationMarker: nil)
+    }
 
+    private func records(matching query: CKQuery, inZoneWith zoneID: CKRecordZone.ID?, desiredKeys: [CKRecord.FieldKey]?, resultsLimit: Int, continuationMarker: Data? = nil) async throws -> (matchResults: [(CKRecord.ID, Result<CKRecord, Error>)], queryCursor: CKQueryOperation.Cursor?) {
+        let request = CKURLRequestBuilder(database: self, operationType: .records, path: "query")
+            .setZone(zoneID)
+            .setParameter(key: "continuationMarker", value: continuationMarker?.base64EncodedString(options: []))
+            .setParameter(key: "resultsLimit", value: resultsLimit > 0 ? resultsLimit : nil)
+            .setParameter(key: "desiredKeys", value: desiredKeys)
+            .setParameter(key: "zoneWide", value: false)
+            .setParameter(key: "query", value: query.dictionary)
+            .build()
+
+        let dictionary = try await CKURLRequestHelper.performURLRequest(request)
+
+        // Process cursor
+        var cursor: CKQueryOperation.Cursor? = nil
+        if let base64ContinuationMarker = dictionary["continuationMarker"] as? String {
+            if let continuationMarker = Data(base64Encoded: base64ContinuationMarker, options: []) {
+                cursor = CKQueryOperation.Cursor(data: continuationMarker, query: query, zoneID: zoneID)
+            }
+        }
+
+        var records = [(CKRecord.ID, Result<CKRecord, Error>)]()
+        // Process records
+        guard let recordsDictionary = dictionary["records"] as? [[String: Any]] else {
+            throw CKError.conversionError
+        }
+
+        // Parse JSON into CKRecords
+        for recordDictionary in recordsDictionary {
+            if let record = CKRecord(recordDictionary: recordDictionary) {
+                records.append((record.recordID, .success(record)))
+            } else if let fetchError = CKRecordFetchError(dictionary: recordDictionary) {
+                // Partial error
+                records.append((CKRecord.ID(recordName: fetchError.recordName), .failure(CKError.recordFetchError(error: fetchError))))
+            }  else {
+                // Unknown error
+                throw CKError.conversionError
+            }
+        }
+        return (records, cursor)
+    }
+}

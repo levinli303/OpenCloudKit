@@ -8,7 +8,7 @@
 
 import Foundation
 
-#if os(Linux)
+#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
 import FoundationNetworking
 #endif
 

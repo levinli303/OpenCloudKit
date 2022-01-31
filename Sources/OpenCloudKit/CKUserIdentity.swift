@@ -12,7 +12,7 @@ public class CKUserIdentity : NSObject {
     
     
     // This is the lookupInfo you passed in to CKDiscoverUserIdentitiesOperation or CKFetchShareParticipantsOperation
-    public let lookupInfo: CKUserIdentityLookupInfo?
+    public let lookupInfo: CKUserIdentity.LookupInfo?
     
     public let nameComponents: CKPersonNameComponentsType?
     
@@ -40,7 +40,7 @@ public class CKUserIdentity : NSObject {
     
     init?(dictionary: [String: Any]) {
         
-        if let lookUpInfoDictionary = dictionary["lookupInfo"] as? [String: Any],let  lookupInfo = CKUserIdentityLookupInfo(dictionary: lookUpInfoDictionary) {
+        if let lookUpInfoDictionary = dictionary["lookupInfo"] as? [String: Any],let  lookupInfo = CKUserIdentity.LookupInfo(dictionary: lookUpInfoDictionary) {
             self.lookupInfo = lookupInfo
         } else {
             self.lookupInfo = nil

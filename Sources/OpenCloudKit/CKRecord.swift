@@ -47,7 +47,7 @@ public class CKRecord: NSObject, NSSecureCoding {
     public var parent: CKReference?
 
     public convenience init(recordType: String) {
-        let UUID = NSUUID().uuidString
+        let UUID = UUID().uuidString
         self.init(recordType: recordType, recordID: ID(recordName: UUID))
     }
 
@@ -106,11 +106,8 @@ public class CKRecord: NSObject, NSSecureCoding {
     }
 
     init?(recordDictionary: [String: Any], recordID: ID? = nil) {
-
-        guard let recordName = recordDictionary[CKRecordDictionary.recordName] as? String,
-            let recordType = recordDictionary[CKRecordDictionary.recordType] as? String
-            else {
-                return nil
+        guard let recordName = recordDictionary[CKRecordDictionary.recordName] as? String, let recordType = recordDictionary[CKRecordDictionary.recordType] as? String else {
+            return nil
         }
 
         // Parse ZoneID Dictionary into CKRecordZone.ID
@@ -233,26 +230,7 @@ struct CKRecordLog {
 }
 
 extension CKRecord {
-
-    func fieldsDictionary(forKeys keys: [String]) -> [String: Any] {
-
-        var fieldsDictionary: [String: Any] = [:]
-
-        for key in keys {
-            if let value = object(forKey: key) {
-                fieldsDictionary[key] = value.recordFieldDictionary
-            }
-        }
-
-        CloudKit.debugPrint(fieldsDictionary)
-
-
-        return fieldsDictionary
-
-    }
-
     var dictionary: [String: Any] {
-
         // Add Fields
         var fieldsDictionary: [String: Any] = [:]
         for (key, value) in values {
@@ -260,9 +238,9 @@ extension CKRecord {
         }
 
         var recordDictionary: [String: Any] = [
-        "fields": fieldsDictionary,
-        "recordType": recordType,
-        "recordName": recordID.recordName
+            "fields": fieldsDictionary,
+            "recordType": recordType,
+            "recordName": recordID.recordName
         ]
 
         if let parent = parent {
