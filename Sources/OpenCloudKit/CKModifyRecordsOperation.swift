@@ -19,7 +19,7 @@ struct CKSubscriptionFetchErrorDictionary {
     static let redirectURLKey = "redirectURL"
 
     let subscriptionID: String
-    let reason: String
+    let reason: String?
     let serverErrorCode: String
     let redirectURL: String?
 
@@ -179,6 +179,19 @@ extension CKDatabase {
         let url: URL
     }
 
+    private struct RecordDeleteResponse {
+        let recordID: CKRecord.ID
+        let deleted: Bool
+
+        init?(dictionary: [String: Any]) {
+            guard let recordName = dictionary["recordName"] as? String, let deleted = dictionary["deleted"] as? Bool else {
+                return nil
+            }
+            self.recordID = CKRecord.ID(recordName: recordName)
+            self.deleted = deleted
+        }
+    }
+
     private struct AssetUploadResponse: Decodable {
         let singleFile: CKAsset.UploadInfo
     }
@@ -209,20 +222,19 @@ extension CKDatabase {
         var saveResults = [CKRecord.ID: Result<CKRecord, Error>]()
         var deleteResults = [CKRecord.ID: Result<Void, Error>]()
         for (index, recordDictionary) in recordsDictionary.enumerated() {
-            let isSave = index < recordsToSave.count
             if let record = CKRecord(recordDictionary: recordDictionary) {
-                if isSave {
-                    saveResults[record.recordID] = .success(record)
-                } else {
-                    deleteResults[record.recordID] = .success(())
-                }
+                saveResults[record.recordID] = .success(record)
+            } else if let deleteResponse = RecordDeleteResponse(dictionary: recordDictionary) {
+                // Can deleted be false here?
+                deleteResults[deleteResponse.recordID] = .success(())
             } else if let fetchError = CKRecordFetchError(dictionary: recordDictionary) {
                 // Partial error
                 let recordID = CKRecord.ID(recordName: fetchError.recordName)
-                if isSave {
-                    saveResults[recordID] = .failure(CKError.recordFetchError(error: fetchError))
+                let error = CKError.recordFetchError(error: fetchError)
+                if index < recordsToSave.count {
+                    saveResults[recordID] = .failure(error)
                 } else {
-                    deleteResults[recordID] = .failure(CKError.recordFetchError(error: fetchError))
+                    deleteResults[recordID] = .failure(error)
                 }
             }  else {
                 // Unknown error

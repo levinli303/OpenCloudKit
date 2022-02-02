@@ -21,7 +21,7 @@ struct CKSubscriptionFetchError {
     static let redirectURLKey = "redirectURL"
 
     let subscriptionID: CKSubscription.ID
-    let reason: String
+    let reason: String?
     let serverErrorCode: CKServerError
     let retryAfter: TimeInterval?
     let uuid: String?

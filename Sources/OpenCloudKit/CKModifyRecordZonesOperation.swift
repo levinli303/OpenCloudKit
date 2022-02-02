@@ -21,7 +21,7 @@ struct CKRecordZoneFetchError {
     static let redirectURLKey = "redirectURL"
 
     let zoneID: CKRecordZone.ID
-    let reason: String
+    let reason: String?
     let serverErrorCode: CKServerError
     let retryAfter: TimeInterval?
     let uuid: String?

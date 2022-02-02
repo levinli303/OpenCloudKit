@@ -32,7 +32,7 @@ public struct CKContainerConfig {
     public let apiTokenAuth: String?
     public var serverToServerKeyAuth: CKServerToServerKeyAuth?
 
-    public init(containerIdentifier: String, environment: CKEnvironment,apiTokenAuth: String, apnsEnvironment: CKEnvironment? = nil) {
+    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, apnsEnvironment: CKEnvironment? = nil) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
         if let apnsEnvironment = apnsEnvironment {

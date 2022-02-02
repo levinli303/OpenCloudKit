@@ -9,7 +9,7 @@
 import Foundation
 
 struct CKRequestError: Decodable {
-    let reason: String
+    let reason: String?
     let serverErrorCode: CKServerError
     let retryAfter: TimeInterval?
     let uuid: String?
