@@ -97,7 +97,7 @@ extension CKDatabase {
 
         // Process records
         guard let zonesDictionary = dictionary["zones"] as? [[String: Any]] else {
-            throw CKError.conversionError
+            throw CKError.keyMissing(key: "zones")
         }
 
         // Parse JSON into CKRecordZone
@@ -125,7 +125,7 @@ extension CKDatabase {
 
         // Process record zones
         guard let zonesDictionary = dictionary["zones"] as? [[String: Any]] else {
-            throw CKError.conversionError
+            throw CKError.keyMissing(key: "zones")
         }
 
         // Parse JSON into CKRecordZone

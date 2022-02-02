@@ -8,6 +8,10 @@
 
 import Foundation
 
+#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
+import FoundationNetworking
+#endif
+
 public var CKCurrentUserDefaultName: String {
     return "__defaultOwner__"
 }
@@ -54,29 +58,85 @@ public class CKContainer {
 
     func registerForNotifications() {}
 
-    func accountStatus(completionHandler: @escaping (CKAccountStatus, Error?) -> Void) {
-        guard let _ = CloudKit.shared.account(forContainerConfig: CloudKit.shared.containers.first!)!.iCloudAuthToken else {
-            completionHandler(.noAccount, nil)
-            return
+    public func accountStatus() async throws -> CKAccountStatus {
+        guard let account = CloudKit.shared.account(forContainer: self) else {
+            return .couldNotDetermine
         }
 
-        // Verify the account is valid
-        completionHandler(.available, nil)
+        if account.isServerAccount {
+            // Server account always available
+            return .available
+        }
+
+        if account.webAuthToken == nil {
+            // Anonymous account with no web auth token
+            return .noAccount
+        }
+
+        // Web auth token available, still need to verify if it is valid
+        return .available
     }
 
-    func schedule(convenienceOperation: CKOperation) {
+    public func accountStatus(completionHandler: @escaping (CKAccountStatus, Error?) -> Void) {
+        Task {
+            do {
+                completionHandler(try await accountStatus(), nil)
+            } catch {
+                completionHandler(.couldNotDetermine, error)
+            }
+        }
+    }
+
+    public func database(with databaseScope: CKDatabase.Scope) -> CKDatabase {
+        switch databaseScope {
+        case .public:
+            return publicCloudDatabase
+        case .private:
+            return privateCloudDatabase
+        case .shared:
+            return sharedCloudDatabase
+        }
+    }
+
+    private func schedule(convenienceOperation: CKOperation) {
         convenienceOperation.queuePriority = .veryHigh
-        convenienceOperation.qualityOfService = .utility
+        convenienceOperation.qualityOfService = .userInitiated
 
         add(convenienceOperation)
     }
 
     public func add(_ operation: CKOperation) {
-        if !(operation is CKDatabaseOperation) {
+        if operation is CKDatabaseOperation {
+            fatalError("CKDatabaseOperations must be submitted to a CKDatabase")
+        } else {
             operation.container = self
             convenienceOperationQueue.addOperation(operation)
-        } else {
-            fatalError("CKDatabaseOperations must be submitted to a CKDatabase")
         }
+    }
+}
+
+extension CKContainer {
+    public func fetchUserRecordID(completionHandler: @escaping (CKRecord.ID?, Error?) -> Void) {
+        Task {
+            do {
+                completionHandler(try await userRecordID(), nil)
+            } catch {
+                completionHandler(nil, error)
+            }
+        }
+    }
+
+    public func userRecordID() async throws -> CKRecord.ID {
+        let request = CKURLRequestBuilder(database: publicCloudDatabase, operationType: .users, path: "caller")
+            .setHTTPMethod("GET")
+            .build()
+
+        let dictionary = try await CKURLRequestHelper.performURLRequest(request)
+
+        // Process records
+        guard let recordName = dictionary["userRecordName"] as? String else {
+            throw CKError.keyMissing(key: "userRecordName")
+        }
+        return CKRecord.ID(recordName: recordName)
     }
 }

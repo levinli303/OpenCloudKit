@@ -9,7 +9,7 @@
 import Foundation
 
 public class CKDatabaseNotification : CKNotification {
-    public var databaseScope: CKDatabaseScope = .public
+    public var databaseScope: CKDatabase.Scope = .public
 
     override init(fromRemoteNotificationDictionary notificationDictionary: [AnyHashable : Any]) {
         super.init(fromRemoteNotificationDictionary: notificationDictionary)
@@ -19,7 +19,7 @@ public class CKDatabaseNotification : CKNotification {
         if let ckDictionary = notificationDictionary["ck"] as? [String: Any] {
             if let metDictionary = ckDictionary["met"] as? [String: Any] {
                 // Set database scope
-                if let dbs = metDictionary["dbs"] as? NSNumber, let scope = CKDatabaseScope(rawValue: dbs.intValue)  {
+                if let dbs = metDictionary["dbs"] as? NSNumber, let scope = CKDatabase.Scope(rawValue: dbs.intValue)  {
                     databaseScope = scope
                 }
 

@@ -21,7 +21,7 @@ struct CKSubscriptionFetchErrorDictionary {
     let subscriptionID: String
     let reason: String?
     let serverErrorCode: String
-    let redirectURL: String?
+    let redirectURL: URL?
 
     init?(dictionary: [String: Any]) {
         guard
@@ -34,11 +34,15 @@ struct CKSubscriptionFetchErrorDictionary {
         self.subscriptionID = subscriptionID
         self.reason = reason
         self.serverErrorCode = serverErrorCode
-        self.redirectURL = dictionary[CKSubscriptionFetchErrorDictionary.redirectURLKey] as? String
+        if let urlString = dictionary[CKSubscriptionFetchErrorDictionary.redirectURLKey] as? String {
+            self.redirectURL = URL(string: urlString)
+        } else {
+            self.redirectURL = nil
+        }
     }
 }
 
-struct CKRecordFetchError {
+public struct CKRecordFetchError {
     static let recordNameKey = "recordName"
     static let reasonKey = "reason"
     static let serverErrorCodeKey = "serverErrorCode"
@@ -46,12 +50,12 @@ struct CKRecordFetchError {
     static let uuidKey = "uuid"
     static let redirectURLKey = "redirectURL"
 
-    let recordName: String
-    let reason: String
-    let serverErrorCode: CKServerError
-    let retryAfter: TimeInterval?
-    let uuid: String?
-    let redirectURL: String?
+    public let recordName: String
+    public let reason: String
+    public let serverErrorCode: CKServerError
+    public let retryAfter: TimeInterval?
+    public let uuid: String?
+    public let redirectURL: URL?
 
     init?(dictionary: [String: Any]) {
         guard let recordName = dictionary[CKRecordFetchError.recordNameKey] as? String,
@@ -68,7 +72,11 @@ struct CKRecordFetchError {
         self.uuid = dictionary[CKRecordFetchError.uuidKey] as? String
 
         self.retryAfter = dictionary[CKRecordFetchError.retryAfterKey] as? TimeInterval
-        self.redirectURL = dictionary[CKRecordFetchError.redirectURLKey] as? String
+        if let urlString = dictionary[CKRecordFetchError.redirectURLKey] as? String {
+            self.redirectURL = URL(string: urlString)
+        } else {
+            self.redirectURL = nil
+        }
     }
 }
 
@@ -222,21 +230,21 @@ extension CKDatabase {
         var saveResults = [CKRecord.ID: Result<CKRecord, Error>]()
         var deleteResults = [CKRecord.ID: Result<Void, Error>]()
         for (index, recordDictionary) in recordsDictionary.enumerated() {
-            if let record = CKRecord(recordDictionary: recordDictionary) {
-                saveResults[record.recordID] = .success(record)
+            if let fetchError = CKRecordFetchError(dictionary: recordDictionary) {
+               // Partial error
+               let recordID = CKRecord.ID(recordName: fetchError.recordName)
+               let error = CKError.recordFetchError(error: fetchError)
+               if index < recordsToSave.count {
+                   saveResults[recordID] = .failure(error)
+               } else {
+                   deleteResults[recordID] = .failure(error)
+               }
             } else if let deleteResponse = RecordDeleteResponse(dictionary: recordDictionary) {
                 // Can deleted be false here?
                 deleteResults[deleteResponse.recordID] = .success(())
-            } else if let fetchError = CKRecordFetchError(dictionary: recordDictionary) {
-                // Partial error
-                let recordID = CKRecord.ID(recordName: fetchError.recordName)
-                let error = CKError.recordFetchError(error: fetchError)
-                if index < recordsToSave.count {
-                    saveResults[recordID] = .failure(error)
-                } else {
-                    deleteResults[recordID] = .failure(error)
-                }
-            }  else {
+            } else if let record = CKRecord(recordDictionary: recordDictionary) {
+                saveResults[record.recordID] = .success(record)
+            } else {
                 // Unknown error
                 throw CKError.conversionError
             }

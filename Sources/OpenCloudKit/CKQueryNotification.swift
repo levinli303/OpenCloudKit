@@ -32,7 +32,7 @@ public class CKQueryNotification : CKNotification {
             }
             
             // Set database scope
-            if let dbs = queryDictionary["dbs"] as? NSNumber, let scope = CKDatabaseScope(rawValue: dbs.intValue)  {
+            if let dbs = queryDictionary["dbs"] as? NSNumber, let scope = CKDatabase.Scope(rawValue: dbs.intValue)  {
                 databaseScope = scope
             }
             
@@ -62,5 +62,5 @@ public class CKQueryNotification : CKNotification {
         return databaseScope == .public
     }
     
-    public var databaseScope: CKDatabaseScope = .public
+    public var databaseScope: CKDatabase.Scope = .public
 }

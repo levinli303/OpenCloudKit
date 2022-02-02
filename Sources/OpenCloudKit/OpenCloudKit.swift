@@ -47,7 +47,7 @@ public class CloudKit {
             return CKServerAccount(containerInfo: containerConfig.containerInfo, keyID: serverAuth.keyID, privateKey: serverAuth.privateKey)
         } else if let apiTokenAuth = containerConfig.apiTokenAuth {
             // Anoymous Account
-            return CKAccount(type: .anoymous, containerInfo: containerConfig.containerInfo, cloudKitAuthToken: apiTokenAuth)
+            return CKAccount(type: .anoymous, containerInfo: containerConfig.containerInfo, cloudKitAuthToken: apiTokenAuth, webAuthToken: containerConfig.webAuthToken)
         }
         return nil
     }
@@ -112,10 +112,11 @@ public class CKRecordZoneID: NSObject, NSSecureCoding {
     public let ownerName: String
 
     convenience public required init?(dictionary: [String: Any]) {
-        guard let zoneName = dictionary["zoneName"] as? String, let ownerName = dictionary["ownerRecordName"] as? String else {
+        guard let zoneName = dictionary["zoneName"] as? String else {
             return nil
         }
 
+        let ownerName = dictionary["ownerRecordName"] as? String ?? CKCurrentUserDefaultName
         self.init(zoneName: zoneName, ownerName: ownerName)
     }
 
@@ -125,13 +126,13 @@ public class CKRecordZoneID: NSObject, NSSecureCoding {
     }
 
     public required convenience init?(coder: NSCoder) {
-        let zoneName = coder.decodeObject(of: NSString.self, forKey: "ZoneName")
+        let zoneName = coder.decodeObject(of: NSString.self, forKey: "zoneName")
         let ownerName = coder.decodeObject(of: NSString.self, forKey: "ownerName")
         self.init(zoneName: zoneName! as String, ownerName: ownerName! as String)
     }
 
     public func encode(with coder: NSCoder) {
-        coder.encode(zoneName, forKey: "ZoneName")
+        coder.encode(zoneName, forKey: "zoneName")
         coder.encode(ownerName, forKey: "ownerName")
     }
 

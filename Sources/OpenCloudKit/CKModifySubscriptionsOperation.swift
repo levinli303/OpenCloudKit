@@ -12,7 +12,7 @@ import Foundation
 import FoundationNetworking
 #endif
 
-struct CKSubscriptionFetchError {
+public struct CKSubscriptionFetchError {
     static let subscriptionIDKey = "subscriptionID"
     static let reasonKey = "reason"
     static let serverErrorCodeKey = "serverErrorCode"
@@ -20,12 +20,12 @@ struct CKSubscriptionFetchError {
     static let uuidKey = "uuid"
     static let redirectURLKey = "redirectURL"
 
-    let subscriptionID: CKSubscription.ID
-    let reason: String?
-    let serverErrorCode: CKServerError
-    let retryAfter: TimeInterval?
-    let uuid: String?
-    let redirectURL: String?
+    public let subscriptionID: CKSubscription.ID
+    public let reason: String?
+    public let serverErrorCode: CKServerError
+    public let retryAfter: TimeInterval?
+    public let uuid: String?
+    public let redirectURL: URL?
 
     init?(dictionary: [String: Any]) {
         guard let subscriptionID = dictionary[CKSubscriptionFetchError.subscriptionIDKey] as? CKSubscription.ID,
@@ -42,7 +42,11 @@ struct CKSubscriptionFetchError {
         self.uuid = dictionary[CKSubscriptionFetchError.uuidKey] as? String
 
         self.retryAfter = dictionary[CKSubscriptionFetchError.retryAfterKey] as? TimeInterval
-        self.redirectURL = dictionary[CKSubscriptionFetchError.redirectURLKey] as? String
+        if let urlString = dictionary[CKSubscriptionFetchError.redirectURLKey] as? String {
+            self.redirectURL = URL(string: urlString)
+        } else {
+            self.redirectURL = nil
+        }
     }
 }
 
@@ -98,6 +102,19 @@ public class CKModifySubscriptionsOperation : CKDatabaseOperation {
 }
 
 extension CKDatabase {
+    private struct SubscriptionDeleteResponse {
+        let subscriptionID: CKSubscription.ID
+        let deleted: Bool
+
+        init?(dictionary: [String: Any]) {
+            guard let subscriptionID = dictionary["subscriptionID"] as? CKSubscription.ID, let deleted = dictionary["deleted"] as? Bool else {
+                return nil
+            }
+            self.subscriptionID = subscriptionID
+            self.deleted = deleted
+        }
+    }
+
     public func modifySubscriptions(saving subscriptionsToSave: [CKSubscription], deleting subscriptionIDsToDelete: [CKSubscription.ID]) async throws -> (saveResults: [CKSubscription.ID : Result<CKSubscription, Error>], deleteResults: [CKSubscription.ID : Result<Void, Error>]) {
         let modifyOperationDictionaryArray = modifySubscriptionOperationsDictionary(subscriptionsToSave: subscriptionsToSave, subscriptionIDsToDelete: subscriptionIDsToDelete)
         let request = CKURLRequestBuilder(database: self, operationType: .subscriptions, path: "modify")
@@ -113,22 +130,20 @@ extension CKDatabase {
         var saveResults = [CKSubscription.ID: Result<CKSubscription, Error>]()
         var deleteResults = [CKSubscription.ID: Result<Void, Error>]()
         for (index, subscriptionDictionary) in subscriptionsDictionary.enumerated() {
-            let isSave = index < subscriptionsToSave.count
-            if let subscription = CKSubscription(dictionary: subscriptionDictionary) {
-                if isSave {
-                    saveResults[subscription.subscriptionID] = .success(subscription)
-                } else {
-                    deleteResults[subscription.subscriptionID] = .success(())
-                }
-            } else if let fetchError = CKSubscriptionFetchError(dictionary: subscriptionDictionary) {
+            if let fetchError = CKSubscriptionFetchError(dictionary: subscriptionDictionary) {
                 // Partial error
                 let subscriptionID = fetchError.subscriptionID
-                if isSave {
+                if index < subscriptionsToSave.count {
                     saveResults[subscriptionID] = .failure(CKError.subscriptionFetchError(error: fetchError))
                 } else {
                     deleteResults[subscriptionID] = .failure(CKError.subscriptionFetchError(error: fetchError))
                 }
-            }  else {
+            } else if let deleteResponse = SubscriptionDeleteResponse(dictionary: subscriptionDictionary) {
+                // Can deleted be false here?
+                deleteResults[deleteResponse.subscriptionID] = .success(())
+            } else if let subscription = CKSubscription(dictionary: subscriptionDictionary) {
+                saveResults[subscription.subscriptionID] = .success(subscription)
+            } else {
                 // Unknown error
                 throw CKError.conversionError
             }

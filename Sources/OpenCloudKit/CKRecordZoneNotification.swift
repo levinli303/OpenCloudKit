@@ -10,7 +10,7 @@ import Foundation
 
 public class CKRecordZoneNotification : CKNotification {
     public var recordZoneID: CKRecordZone.ID?
-    public var databaseScope: CKDatabaseScope = .public
+    public var databaseScope: CKDatabase.Scope = .public
     
     override init(fromRemoteNotificationDictionary notificationDictionary: [AnyHashable : Any]) {
         super.init(fromRemoteNotificationDictionary: notificationDictionary)
@@ -26,7 +26,7 @@ public class CKRecordZoneNotification : CKNotification {
                 }
                 
                 // Set Database Scope
-                if let dbs = zoneDictionary["dbs"] as? NSNumber, let scope = CKDatabaseScope(rawValue: dbs.intValue) {
+                if let dbs = zoneDictionary["dbs"] as? NSNumber, let scope = CKDatabase.Scope(rawValue: dbs.intValue) {
                     databaseScope = scope
                 }
                 

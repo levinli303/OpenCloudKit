@@ -34,7 +34,7 @@ class CKURLRequestBuilder {
     var requestHTTPMethod: String = "POST"
     var requestData: Data?
 
-    init(account: CKAccount, serverType: CKServerType, scope: CKDatabaseScope?, operationType: CKOperationRequestType, path: String) {
+    init(account: CKAccount, serverType: CKServerType, scope: CKDatabase.Scope?, operationType: CKOperationRequestType, path: String) {
         var baseURL = URL(string: CKServerInfo.path)!
         baseURL.appendPathComponent(serverType.urlComponent)
         baseURL.appendPathComponent(CKServerInfo.version)
@@ -46,21 +46,22 @@ class CKURLRequestBuilder {
         baseURL.appendPathComponent(operationType.rawValue)
         baseURL.appendPathComponent(path)
 
-        var urlComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
+        var queryItems = [String]()
         switch account.accountType {
         case .server:
             break
         case .anoymous, .primary:
-            var queryItems = [URLQueryItem(name: "ckAPIToken", value: account.cloudKitAuthToken ?? "")]
-
-            if let icloudAuthToken = account.iCloudAuthToken {
-                let encodedWebAuthToken = icloudAuthToken.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!.replacingOccurrences(of: "+", with: "%2B")
-                queryItems.append(URLQueryItem(name: "ckWebAuthToken", value: encodedWebAuthToken))
+            queryItems.append("ckAPIToken=\(account.cloudKitAuthToken ?? "")")
+            // https://developer.apple.com/library/archive/documentation/DataManagement/Conceptual/CloudKitWebServicesReference/SettingUpWebServices.html#//apple_ref/doc/uid/TP40015240-CH24-SW1
+            if let icloudAuthToken = account.webAuthToken {
+                queryItems.append("ckWebAuthToken=\(icloudAuthToken.replacingOccurrences(of: "+", with: "%2B").replacingOccurrences(of: "/", with: "%2F").replacingOccurrences(of: "=", with: "%3D"))")
             }
-            urlComponents.queryItems = queryItems
+        }
+        if !queryItems.isEmpty {
+            baseURL = URL(string: "\(baseURL.absoluteString)?\(queryItems.joined(separator: "&"))")!
         }
         self.account = account
-        self.url = urlComponents.url!
+        self.url = baseURL
     }
 
     convenience init(database: CKDatabase, operationType: CKOperationRequestType, path: String) {

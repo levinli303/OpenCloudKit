@@ -6,9 +6,10 @@
 //
 //
 
-enum CKAccountStatus : Int {
+public enum CKAccountStatus : Int {
     case couldNotDetermine
     case available
     case restricted
     case noAccount
+    case temporarilyUnavailable
 }

@@ -92,7 +92,7 @@ extension CKDatabase {
 
         // Process subscriptions
         guard let subscriptionsDictionary = dictionary["subscriptions"] as? [[String: Any]] else {
-            throw CKError.conversionError
+            throw CKError.keyMissing(key: "subscriptions")
         }
 
         // Parse JSON into CKSubscription
@@ -120,7 +120,7 @@ extension CKDatabase {
 
         // Process subscriptions
         guard let subscriptionsDictionary = dictionary["subscriptions"] as? [[String: Any]] else {
-            throw CKError.conversionError
+            throw CKError.keyMissing(key: "subscriptions")
         }
 
         // Parse JSON into CKSubscription

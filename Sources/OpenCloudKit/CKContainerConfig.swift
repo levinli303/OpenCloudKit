@@ -30,9 +30,10 @@ public struct CKContainerConfig {
     public let environment: CKEnvironment
     public let apnsEnvironment: CKEnvironment
     public let apiTokenAuth: String?
+    public let webAuthToken: String?
     public var serverToServerKeyAuth: CKServerToServerKeyAuth?
 
-    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, apnsEnvironment: CKEnvironment? = nil) {
+    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, webAuthToken: String? = nil, apnsEnvironment: CKEnvironment? = nil) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
         if let apnsEnvironment = apnsEnvironment {
@@ -42,6 +43,7 @@ public struct CKContainerConfig {
         }
 
         self.apiTokenAuth = apiTokenAuth
+        self.webAuthToken = webAuthToken
         self.serverToServerKeyAuth = nil
     }
 
@@ -54,6 +56,7 @@ public struct CKContainerConfig {
             self.apnsEnvironment = environment
         }
         self.apiTokenAuth = nil
+        self.webAuthToken = nil
         self.serverToServerKeyAuth = serverToServerKeyAuth
     }
 }

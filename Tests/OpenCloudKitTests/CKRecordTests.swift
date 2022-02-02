@@ -9,27 +9,6 @@ import XCTest
 import Foundation
 @testable import OpenCloudKit
 
-#if canImport(CoreLocation)
-import CoreLocation
-
-typealias CKRecord = OpenCloudKit.CKRecord
-typealias CKContainer = OpenCloudKit.CKContainer
-typealias CKRecordValue = OpenCloudKit.CKRecordValue
-typealias CKAsset = OpenCloudKit.CKAsset
-
-extension CLLocationCoordinate2D: Equatable {
-    public static func == (lhs: CLLocationCoordinate2D, rhs: CLLocationCoordinate2D) -> Bool {
-        return lhs.longitude == rhs.longitude && lhs.latitude == rhs.latitude
-    }
-}
-
-extension CKDatabase {
-    var account: CKAccount {
-        return CloudKit.shared.account(forContainer: container)!
-    }
-}
-#endif
-
 class CKRecordTests: CKTest {
     static var recordType = "TestData"
 
@@ -552,6 +531,6 @@ class CKRecordTests: CKTest {
         ("testCreateExistingRecord", testCreateExistingRecord),
         ("testCurosr", testCurosr),
         ("testNoCurosr", testNoCurosr),
-        ("testFetchDefaultRecordZone", testFetchDefaultRecordZone),
+        ("testOperationCancellation", testOperationCancellation),
     ]
 }

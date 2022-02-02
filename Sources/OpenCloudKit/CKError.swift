@@ -8,15 +8,15 @@
 
 import Foundation
 
-struct CKRequestError: Decodable {
-    let reason: String?
-    let serverErrorCode: CKServerError
-    let retryAfter: TimeInterval?
-    let uuid: String?
-    let redirectURL: String?
+public struct CKRequestError: Decodable {
+    public let reason: String?
+    public let serverErrorCode: CKServerError
+    public let retryAfter: TimeInterval?
+    public let uuid: String?
+    public let redirectURL: URL?
 }
 
-enum CKError: Error {
+public enum CKError: Error {
     case cancellation
     case networkError(error: Error)
     case jsonError(error: Error)

@@ -18,7 +18,7 @@ public class CKAccount {
     let accountType: CKAccountType
 
     var isAnonymousAccount: Bool {
-        return accountType == .anoymous
+        return accountType == .anoymous && webAuthToken == nil
     }
 
     var isServerAccount: Bool {
@@ -27,21 +27,15 @@ public class CKAccount {
 
     var containerInfo: CKContainerInfo
 
-    public var iCloudAuthToken: String?
+    var webAuthToken: String?
 
     let cloudKitAuthToken: String?
 
-    init(type: CKAccountType, containerInfo: CKContainerInfo, cloudKitAuthToken: String?) {
+    init(type: CKAccountType, containerInfo: CKContainerInfo, cloudKitAuthToken: String?, webAuthToken: String?) {
         self.accountType = type
         self.containerInfo = containerInfo
         self.cloudKitAuthToken = cloudKitAuthToken
-    }
-
-    init(containerInfo: CKContainerInfo,cloudKitAuthToken: String, iCloudAuthToken: String) {
-        self.accountType = .primary
-        self.containerInfo = containerInfo
-        self.iCloudAuthToken = iCloudAuthToken
-        self.cloudKitAuthToken = cloudKitAuthToken
+        self.webAuthToken = webAuthToken
     }
 }
 
@@ -50,7 +44,7 @@ public class CKServerAccount: CKAccount {
 
     init(containerInfo: CKContainerInfo, serverToServerAuth: CKServerToServerKeyAuth) {
         self.serverToServerAuth = serverToServerAuth
-        super.init(type: .server, containerInfo: containerInfo, cloudKitAuthToken: nil)
+        super.init(type: .server, containerInfo: containerInfo, cloudKitAuthToken: nil, webAuthToken: nil)
     }
 
     convenience init(containerInfo: CKContainerInfo, keyID: String, privateKeyFile: String, passPhrase: String? = nil) throws {

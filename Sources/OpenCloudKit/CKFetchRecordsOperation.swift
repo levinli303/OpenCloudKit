@@ -70,7 +70,7 @@ extension CKDatabase {
 
         // Process records
         guard let recordsDictionary = dictionary["records"] as? [[String: Any]] else {
-            throw CKError.conversionError
+            throw CKError.keyMissing(key: "records")
         }
 
         // Parse JSON into CKRecords

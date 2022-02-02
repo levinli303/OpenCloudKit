@@ -79,6 +79,22 @@ extension CKDatabase {
         return try await records(matching: query, inZoneWith: zoneID, desiredKeys: desiredKeys, resultsLimit: resultsLimit, continuationMarker: nil)
     }
 
+    public func perform(_ query: CKQuery, inZoneWith zoneID: CKRecordZone.ID?) async throws -> [CKRecord] {
+        // Ignoring cursor
+        let (results, _) = try await records(matching: query, inZoneWith: zoneID)
+        var records = [CKRecord]()
+        for (_, result) in results {
+            switch result {
+            case .success(let record):
+                records.append(record)
+            case .failure(let error):
+                // Should we just fail on partial failure?
+                throw error
+            }
+        }
+        return records
+    }
+
     private func records(matching query: CKQuery, inZoneWith zoneID: CKRecordZone.ID?, desiredKeys: [CKRecord.FieldKey]?, resultsLimit: Int, continuationMarker: Data? = nil) async throws -> (matchResults: [(CKRecord.ID, Result<CKRecord, Error>)], queryCursor: CKQueryOperation.Cursor?) {
         let request = CKURLRequestBuilder(database: self, operationType: .records, path: "query")
             .setZone(zoneID)
@@ -102,7 +118,7 @@ extension CKDatabase {
         var records = [(CKRecord.ID, Result<CKRecord, Error>)]()
         // Process records
         guard let recordsDictionary = dictionary["records"] as? [[String: Any]] else {
-            throw CKError.conversionError
+            throw CKError.keyMissing(key: "records")
         }
 
         // Parse JSON into CKRecords
@@ -118,5 +134,15 @@ extension CKDatabase {
             }
         }
         return (records, cursor)
+    }
+
+    public func perform(_ query: CKQuery, inZoneWith zoneID: CKRecordZone.ID?, completionHandler: @escaping ([CKRecord]?, Error?) -> Void) {
+        Task {
+            do {
+                completionHandler(try await perform(query, inZoneWith: zoneID), nil)
+            } catch {
+                completionHandler(nil, error)
+            }
+        }
     }
 }

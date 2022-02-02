@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "OpenCloudKit",
     platforms: [
-        .macOS("12.0"),
+        .macOS("12.0"), .iOS("15.0"), .watchOS("8.0"), .tvOS("15.0")
     ],
     products: [
         .library(name: "OpenCloudKit", targets: ["OpenCloudKit"]),
@@ -19,7 +19,7 @@ let package = Package(
         .testTarget(
             name: "OpenCloudKitTests",
             dependencies: ["OpenCloudKit"],
-            resources: [.copy("eckey.pem"), .copy("asset1.txt"), .copy("asset2.txt")]
+            resources: [.copy("asset1.txt"), .copy("asset2.txt")]
         ),
     ]
 )

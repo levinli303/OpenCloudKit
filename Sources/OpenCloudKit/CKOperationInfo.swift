@@ -13,9 +13,9 @@ class CKOperationInfo {
 }
 
 class CKDatabaseOperationInfo: CKOperationInfo {
-    let databaseScope: CKDatabaseScope
+    let databaseScope: CKDatabase.Scope
 
-    init(databaseScope: CKDatabaseScope) {
+    init(databaseScope: CKDatabase.Scope) {
         self.databaseScope = databaseScope
         super.init()
     }

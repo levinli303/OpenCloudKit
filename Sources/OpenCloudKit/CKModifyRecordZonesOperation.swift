@@ -12,7 +12,7 @@ import Foundation
 import FoundationNetworking
 #endif
 
-struct CKRecordZoneFetchError {
+public struct CKRecordZoneFetchError {
     static let zoneIDKey = "zoneID"
     static let reasonKey = "reason"
     static let serverErrorCodeKey = "serverErrorCode"
@@ -20,12 +20,12 @@ struct CKRecordZoneFetchError {
     static let uuidKey = "uuid"
     static let redirectURLKey = "redirectURL"
 
-    let zoneID: CKRecordZone.ID
-    let reason: String?
-    let serverErrorCode: CKServerError
-    let retryAfter: TimeInterval?
-    let uuid: String?
-    let redirectURL: String?
+    public let zoneID: CKRecordZone.ID
+    public let reason: String?
+    public let serverErrorCode: CKServerError
+    public let retryAfter: TimeInterval?
+    public let uuid: String?
+    public let redirectURL: URL?
 
     init?(dictionary: [String: Any]) {
         guard let zoneIDDictionary = dictionary[CKRecordZoneFetchError.zoneIDKey] as? [String: Any],
@@ -43,7 +43,11 @@ struct CKRecordZoneFetchError {
         self.uuid = dictionary[CKRecordZoneFetchError.uuidKey] as? String
 
         self.retryAfter = dictionary[CKRecordZoneFetchError.retryAfterKey] as? TimeInterval
-        self.redirectURL = dictionary[CKRecordZoneFetchError.redirectURLKey] as? String
+        if let urlString = dictionary[CKRecordZoneFetchError.redirectURLKey] as? String {
+            self.redirectURL = URL(string: urlString)
+        } else {
+            self.redirectURL = nil
+        }
     }
 }
 
@@ -102,6 +106,19 @@ public class CKModifyRecordZonesOperation : CKDatabaseOperation {
 }
 
 extension CKDatabase {
+    private struct RecordZoneDeleteResponse {
+        let zoneID: CKRecordZone.ID
+        let deleted: Bool
+
+        init?(dictionary: [String: Any]) {
+            guard let zoneIDDictionary = dictionary["zoneID"] as? [String: Any], let zoneID = CKRecordZone.ID(dictionary: zoneIDDictionary), let deleted = dictionary["deleted"] as? Bool else {
+                return nil
+            }
+            self.zoneID = zoneID
+            self.deleted = deleted
+        }
+    }
+
     public func modifyRecordZones(saving recordZonesToSave: [CKRecordZone], deleting recordZoneIDsToDelete: [CKRecordZone.ID]) async throws -> (saveResults: [CKRecordZone.ID : Result<CKRecordZone, Error>], deleteResults: [CKRecordZone.ID : Result<Void, Error>]) {
         let modifyOperationDictionaryArray = modifyZoneOperationsDictionary(recordZonesToSave: recordZonesToSave, recordZoneIDsToDelete: recordZoneIDsToDelete)
         let request = CKURLRequestBuilder(database: self, operationType: .zones, path: "modify")
@@ -117,22 +134,20 @@ extension CKDatabase {
         var saveResults = [CKRecordZone.ID: Result<CKRecordZone, Error>]()
         var deleteResults = [CKRecordZone.ID: Result<Void, Error>]()
         for (index, zoneDictionary) in zonesDictionary.enumerated() {
-            let isSave = index < recordZonesToSave.count
-            if let zone = CKRecordZone(dictionary: zoneDictionary) {
-                if isSave {
-                    saveResults[zone.zoneID] = .success(zone)
-                } else {
-                    deleteResults[zone.zoneID] = .success(())
-                }
-            } else if let fetchError = CKRecordZoneFetchError(dictionary: zoneDictionary) {
+            if let fetchError = CKRecordZoneFetchError(dictionary: zoneDictionary) {
                 // Partial error
                 let zoneID = fetchError.zoneID
-                if isSave {
+                if index < recordZonesToSave.count {
                     saveResults[zoneID] = .failure(CKError.recordZoneFetchError(error: fetchError))
                 } else {
                     deleteResults[zoneID] = .failure(CKError.recordZoneFetchError(error: fetchError))
                 }
-            }  else {
+            } else if let deleteResponse = RecordZoneDeleteResponse(dictionary: zoneDictionary) {
+                // Can deleted be false here?
+                deleteResults[deleteResponse.zoneID] = .success(())
+            } else if let zone = CKRecordZone(dictionary: zoneDictionary) {
+                saveResults[zone.zoneID] = .success(zone)
+            } else {
                 // Unknown error
                 throw CKError.conversionError
             }

@@ -8,7 +8,7 @@
 import Foundation
 
 // https://developer.apple.com/library/archive/documentation/DataManagement/Conceptual/CloudKitWebServicesReference/ErrorCodes.html#//apple_ref/doc/uid/TP40015240-CH4-SW1
-enum CKServerError: String, Error, Decodable {
+public enum CKServerError: String, Error, Decodable {
     case accessDenied = "ACCESS_DENIED"
     case atomicError = "ATOMIC_ERROR"
     case authenticationFailed = "AUTHENTICATION_FAILED"
@@ -26,7 +26,7 @@ enum CKServerError: String, Error, Decodable {
 }
 
 extension CKServerError: LocalizedError {
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .accessDenied:
             return "You don’t have permission to access the endpoint, record, zone, or database."

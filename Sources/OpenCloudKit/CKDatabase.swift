@@ -8,19 +8,21 @@
 
 import Foundation
 
-public enum CKDatabaseScope: Int, CustomStringConvertible {
-    case `public` = 1
-    case `private`
-    case  shared
+extension CKDatabase {
+    public enum Scope: Int, CustomStringConvertible {
+        case `public` = 1
+        case `private`
+        case  shared
 
-    public var description: String {
-        switch(self) {
-        case .private:
-            return "private"
-        case .public:
-            return "public"
-        case .shared:
-            return "shared"
+        public var description: String {
+            switch(self) {
+            case .private:
+                return "private"
+            case .public:
+                return "public"
+            case .shared:
+                return "shared"
+            }
         }
     }
 }
@@ -47,11 +49,11 @@ enum CKModifyOperation: String {
 public class CKDatabase {
     weak var container: CKContainer!
 
-    public let scope: CKDatabaseScope
+    public let scope: Scope
 
     let operationQueue = OperationQueue()
 
-    init(container: CKContainer, scope: CKDatabaseScope) {
+    init(container: CKContainer, scope: Scope) {
         self.container = container
         self.scope = scope
     }
@@ -63,10 +65,10 @@ public class CKDatabase {
         operationQueue.addOperation(operation)
     }
 
-    func schedule(operation: CKDatabaseOperation) {
+    private func schedule(operation: CKDatabaseOperation) {
         operation.database = self
         operation.queuePriority = .veryHigh
-        operation.qualityOfService = .default
+        operation.qualityOfService = .userInitiated
         operationQueue.addOperation(operation)
     }
 }
