@@ -73,18 +73,18 @@ public class CKModifySubscriptionsOperation : CKDatabaseOperation {
                 guard let self = self else { return }
 
                 for (subscriptionID, result) in saveResults {
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.perSubscriptionSaveBlock?(subscriptionID, result)
                     }
                 }
 
                 for (subscriptionID, result) in deleteResults {
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.perSubscriptionDeleteBlock?(subscriptionID, result)
                     }
                 }
 
-                callbackQueue.async {
+                self.callbackQueue.async {
                     self.modifySubscriptionsResultBlock?(.success(()))
                     self.finishOnCallbackQueue()
                 }
@@ -92,7 +92,7 @@ public class CKModifySubscriptionsOperation : CKDatabaseOperation {
             catch {
                 guard let self = self else { return }
 
-                callbackQueue.async {
+                self.callbackQueue.async {
                     self.modifySubscriptionsResultBlock?(.failure(error))
                     self.finishOnCallbackQueue()
                 }

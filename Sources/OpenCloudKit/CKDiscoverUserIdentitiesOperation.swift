@@ -33,12 +33,12 @@ public class CKDiscoverUserIdentitiesOperation: CKOperation {
                 guard let self = self else { return }
 
                 for result in results {
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.userIdentityDiscoveredBlock?(result.userIdentity, result.lookupInfo)
                     }
                 }
 
-                callbackQueue.async {
+                self.callbackQueue.async {
                     self.discoverUserIdentitiesResultBlock?(.success(()))
                     self.finishOnCallbackQueue()
                 }
@@ -46,7 +46,7 @@ public class CKDiscoverUserIdentitiesOperation: CKOperation {
             catch {
                 guard let self = self else { return }
 
-                callbackQueue.async {
+                self.callbackQueue.async {
                     self.discoverUserIdentitiesResultBlock?(.failure(error))
                     self.finishOnCallbackQueue()
                 }

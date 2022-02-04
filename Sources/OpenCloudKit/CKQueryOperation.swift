@@ -54,14 +54,14 @@ public class CKQueryOperation: CKDatabaseOperation {
                         self.recordMatchedBlock?(recordID, recordResult)
                     }
                 }
-                callbackQueue.async {
+                self.callbackQueue.async {
                     self.queryResultBlock?(.success(cursor))
                     self.finishOnCallbackQueue()
                 }
             }
             catch {
                 guard let self = self else { return }
-                callbackQueue.async {
+                self.callbackQueue.async {
                     self.queryResultBlock?(.failure(error))
                     self.finishOnCallbackQueue()
                 }

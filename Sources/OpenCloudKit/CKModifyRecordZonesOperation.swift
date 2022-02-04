@@ -77,18 +77,18 @@ public class CKModifyRecordZonesOperation : CKDatabaseOperation {
                 guard let self = self else { return }
 
                 for (zoneID, result) in saveResults {
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.perRecordZoneSaveBlock?(zoneID, result)
                     }
                 }
 
                 for (zoneID, result) in deleteResults {
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.perRecordZoneDeleteBlock?(zoneID, result)
                     }
                 }
 
-                callbackQueue.async {
+                self.callbackQueue.async {
                     self.modifyRecordZonesResultBlock?(.success(()))
                     self.finishOnCallbackQueue()
                 }
@@ -96,7 +96,7 @@ public class CKModifyRecordZonesOperation : CKDatabaseOperation {
             catch {
                 guard let self = self else { return }
 
-                callbackQueue.async {
+                self.callbackQueue.async {
                     self.modifyRecordZonesResultBlock?(.failure(error))
                     self.finishOnCallbackQueue()
                 }

@@ -120,18 +120,18 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
                 guard let self = self else { return }
 
                 for (recordID, result) in saveResults {
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.perRecordSaveBlock?(recordID, result)
                     }
                 }
 
                 for (recordID, result) in deleteResults {
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.perRecordDeleteBlock?(recordID, result)
                     }
                 }
 
-                callbackQueue.async {
+                self.callbackQueue.async {
                     self.modifyRecordsResultBlock?(.success(()))
                     self.finishOnCallbackQueue()
                 }
@@ -139,7 +139,7 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
             catch {
                 guard let self = self else { return }
 
-                callbackQueue.async {
+                self.callbackQueue.async {
                     self.modifyRecordsResultBlock?(.failure(error))
                     self.finishOnCallbackQueue()
                 }

@@ -44,14 +44,14 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
                             self.perRecordZoneResultBlock?(zoneID, zoneResult)
                         }
                     }
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.fetchRecordZonesResultBlock?(.success(()))
                         self.finishOnCallbackQueue()
                     }
                 }
                 catch {
                     guard let self = self else { return }
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.fetchRecordZonesResultBlock?(.failure(error))
                         self.finishOnCallbackQueue()
                     }
@@ -66,14 +66,14 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
                             self.perRecordZoneResultBlock?(zone.zoneID, .success(zone))
                         }
                     }
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.fetchRecordZonesResultBlock?(.success(()))
                         self.finishOnCallbackQueue()
                     }
                 }
                 catch {
                     guard let self = self else { return }
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.fetchRecordZonesResultBlock?(.failure(error))
                         self.finishOnCallbackQueue()
                     }

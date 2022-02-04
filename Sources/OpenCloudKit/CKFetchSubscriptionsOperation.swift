@@ -42,14 +42,14 @@ public class CKFetchSubscriptionsOperation : CKDatabaseOperation {
                             self.perSubscriptionResultBlock?(subscriptionID, subscriptionResult)
                         }
                     }
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.fetchSubscriptionsResultBlock?(.success(()))
                         self.finishOnCallbackQueue()
                     }
                 }
                 catch {
                     guard let self = self else { return }
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.fetchSubscriptionsResultBlock?(.failure(error))
                         self.finishOnCallbackQueue()
                     }
@@ -64,14 +64,14 @@ public class CKFetchSubscriptionsOperation : CKDatabaseOperation {
                             self.perSubscriptionResultBlock?(subscription.subscriptionID, .success(subscription))
                         }
                     }
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.fetchSubscriptionsResultBlock?(.success(()))
                         self.finishOnCallbackQueue()
                     }
                 }
                 catch {
                     guard let self = self else { return }
-                    callbackQueue.async {
+                    self.callbackQueue.async {
                         self.fetchSubscriptionsResultBlock?(.failure(error))
                         self.finishOnCallbackQueue()
                     }

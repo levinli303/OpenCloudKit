@@ -46,13 +46,13 @@ public class CKOperation: Operation {
         isExecuting = true
 
         if isCancelled {
-            callbackQueue.async {
+            self.callbackQueue.async {
                 self.finishOnCallbackQueue()
             }
             return
         }
 
-        callbackQueue.async {
+        self.callbackQueue.async {
             self.main()
         }
     }
@@ -71,6 +71,7 @@ public class CKOperation: Operation {
     func finishOnCallbackQueue() {
         isExecuting = false
         isFinished = true
+        task = nil
     }
 
     func performCKOperation() {

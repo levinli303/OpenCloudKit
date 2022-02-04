@@ -39,14 +39,14 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
                         self.perRecordResultBlock?(recordID, recordResult)
                     }
                 }
-                callbackQueue.async {
+                self.callbackQueue.async {
                     self.fetchRecordsResultBlock?(.success(()))
                     self.finishOnCallbackQueue()
                 }
             }
             catch {
                 guard let self = self else { return }
-                callbackQueue.async {
+                self.callbackQueue.async {
                     self.fetchRecordsResultBlock?(.failure(error))
                     self.finishOnCallbackQueue()
                 }
