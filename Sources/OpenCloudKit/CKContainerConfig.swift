@@ -33,7 +33,7 @@ public struct CKContainerConfig {
     public var serverToServerKeyAuth: CKServerToServerKeyAuth?
     public var requestTimeOut: TimeInterval?
 
-    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, webAuthToken: String? = nil, apnsEnvironment: CKEnvironment? = nil, requestTimeOut: TimeInterval? = nil) {
+    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, webAuthToken: String? = nil, requestTimeOut: TimeInterval? = nil) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
         self.apiTokenAuth = apiTokenAuth
