@@ -32,8 +32,9 @@ public struct CKContainerConfig {
     public let apiTokenAuth: String?
     public let webAuthToken: String?
     public var serverToServerKeyAuth: CKServerToServerKeyAuth?
+    public var requestTimeOut: TimeInterval?
 
-    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, webAuthToken: String? = nil, apnsEnvironment: CKEnvironment? = nil) {
+    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, webAuthToken: String? = nil, apnsEnvironment: CKEnvironment? = nil, requestTimeOut: TimeInterval? = nil) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
         if let apnsEnvironment = apnsEnvironment {
@@ -45,9 +46,10 @@ public struct CKContainerConfig {
         self.apiTokenAuth = apiTokenAuth
         self.webAuthToken = webAuthToken
         self.serverToServerKeyAuth = nil
+        self.requestTimeOut = requestTimeOut
     }
 
-    public init(containerIdentifier: String, environment: CKEnvironment, serverToServerKeyAuth: CKServerToServerKeyAuth, apnsEnvironment: CKEnvironment? = nil) {
+    public init(containerIdentifier: String, environment: CKEnvironment, serverToServerKeyAuth: CKServerToServerKeyAuth, apnsEnvironment: CKEnvironment? = nil, requestTimeOut: TimeInterval? = nil) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
         if let apnsEnvironment = apnsEnvironment {
@@ -58,6 +60,7 @@ public struct CKContainerConfig {
         self.apiTokenAuth = nil
         self.webAuthToken = nil
         self.serverToServerKeyAuth = serverToServerKeyAuth
+        self.requestTimeOut = requestTimeOut
     }
 }
 

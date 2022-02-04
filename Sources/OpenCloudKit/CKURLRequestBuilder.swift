@@ -33,8 +33,9 @@ class CKURLRequestBuilder {
     var requestContentType: String = "application/json; charset=utf-8"
     var requestHTTPMethod: String = "POST"
     var requestData: Data?
+    let requestTimeout: TimeInterval?
 
-    init(account: CKAccount, serverType: CKServerType, scope: CKDatabase.Scope?, operationType: CKOperationRequestType, path: String) {
+    init(account: CKAccount, serverType: CKServerType, scope: CKDatabase.Scope?, operationType: CKOperationRequestType, path: String, requestTimeout: TimeInterval?) {
         var baseURL = URL(string: CKServerInfo.path)!
         baseURL.appendPathComponent(serverType.urlComponent)
         baseURL.appendPathComponent(CKServerInfo.version)
@@ -62,15 +63,17 @@ class CKURLRequestBuilder {
         }
         self.account = account
         self.url = baseURL
+        self.requestTimeout = requestTimeout
     }
 
     convenience init(database: CKDatabase, operationType: CKOperationRequestType, path: String) {
-        self.init(account: CloudKit.shared.account(forContainer: database.container)!, serverType: .database, scope: database.scope, operationType: operationType, path: path)
+        self.init(account: CloudKit.shared.account(forContainer: database.container)!, serverType: .database, scope: database.scope, operationType: operationType, path: path, requestTimeout: CloudKit.shared.containerConfig(forContainer: database.container)?.requestTimeOut)
     }
 
     init(url: URL, database: CKDatabase) {
         self.url = url
         self.account = CloudKit.shared.account(forContainer: database.container)!
+        self.requestTimeout = CloudKit.shared.containerConfig(forContainer: database.container)?.requestTimeOut
     }
 
     func setZone(_ zoneID: CKRecordZoneID?) -> CKURLRequestBuilder {
@@ -113,15 +116,20 @@ class CKURLRequestBuilder {
                 urlRequest = signedRequest
             }
         }
+        if let requestTimeout = requestTimeout {
+            urlRequest.timeoutInterval = requestTimeout
+        }
         return urlRequest
     }
 }
 
 class CKURLRequestHelper {
+    private static var shareURLSession = URLSession(configuration: .default)
+
     private static func _performURLRequest(_ request: URLRequest) async throws -> Data {
         var dataResponseTuple: (data: Data, response: URLResponse)!
         do {
-            dataResponseTuple = try await URLSession.shared.data(for: request, delegate: nil)
+            dataResponseTuple = try await shareURLSession.data(for: request, delegate: nil)
         } catch {
             if Task.isCancelled {
                 throw CKError.cancellation

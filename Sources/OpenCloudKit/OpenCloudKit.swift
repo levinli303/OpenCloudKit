@@ -15,9 +15,6 @@ enum CKOperationType {
 }
 
 public class CloudKit {
-
-    public var environment: CKEnvironment = .development
-
     public private(set) var containers: [CKContainerConfig] = []
 
     public static let shared = CloudKit()
