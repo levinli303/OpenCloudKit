@@ -138,8 +138,7 @@ extension CKDatabase {
                 } else {
                     deleteResults[subscriptionID] = .failure(CKError.subscriptionFetchError(error: fetchError))
                 }
-            } else if let deleteResponse = SubscriptionDeleteResponse(dictionary: subscriptionDictionary) {
-                // Can deleted be false here?
+            } else if let deleteResponse = SubscriptionDeleteResponse(dictionary: subscriptionDictionary), deleteResponse.deleted {
                 deleteResults[deleteResponse.subscriptionID] = .success(())
             } else if let subscription = CKSubscription(dictionary: subscriptionDictionary) {
                 saveResults[subscription.subscriptionID] = .success(subscription)

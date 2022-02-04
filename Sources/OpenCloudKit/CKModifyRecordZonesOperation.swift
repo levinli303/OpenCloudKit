@@ -142,8 +142,7 @@ extension CKDatabase {
                 } else {
                     deleteResults[zoneID] = .failure(CKError.recordZoneFetchError(error: fetchError))
                 }
-            } else if let deleteResponse = RecordZoneDeleteResponse(dictionary: zoneDictionary) {
-                // Can deleted be false here?
+            } else if let deleteResponse = RecordZoneDeleteResponse(dictionary: zoneDictionary), deleteResponse.deleted {
                 deleteResults[deleteResponse.zoneID] = .success(())
             } else if let zone = CKRecordZone(dictionary: zoneDictionary) {
                 saveResults[zone.zoneID] = .success(zone)

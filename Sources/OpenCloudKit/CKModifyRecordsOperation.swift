@@ -239,8 +239,7 @@ extension CKDatabase {
                } else {
                    deleteResults[recordID] = .failure(error)
                }
-            } else if let deleteResponse = RecordDeleteResponse(dictionary: recordDictionary) {
-                // Can deleted be false here?
+            } else if let deleteResponse = RecordDeleteResponse(dictionary: recordDictionary), deleteResponse.deleted {
                 deleteResults[deleteResponse.recordID] = .success(())
             } else if let record = CKRecord(recordDictionary: recordDictionary) {
                 saveResults[record.recordID] = .success(record)

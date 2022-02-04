@@ -1,4 +1,4 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.5
 import PackageDescription
 
 let package = Package(
@@ -8,6 +8,7 @@ let package = Package(
     ],
     products: [
         .library(name: "OpenCloudKit", targets: ["OpenCloudKit"]),
+        .library(name: "CloudKitCodable", targets: ["CloudKitCodable"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-crypto.git", "1.0.0" ..< "3.0.0"),
@@ -15,6 +16,9 @@ let package = Package(
     targets: [
         .target(name: "OpenCloudKit", dependencies: [
             .product(name: "Crypto", package: "swift-crypto"),
+        ]),
+        .target(name: "CloudKitCodable", dependencies: [
+            .target(name: "OpenCloudKit"),
         ]),
         .testTarget(
             name: "OpenCloudKitTests",
