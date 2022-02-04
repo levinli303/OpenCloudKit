@@ -8,6 +8,15 @@
 
 import Foundation
 
+public class CKServerChangeToken : NSObject {
+    let token: String
+
+    init(token: String) {
+        self.token = token
+        super.init()
+    }
+}
+
 extension CKRecordZone {
     public struct Capabilities : OptionSet {
         public let rawValue: UInt
@@ -37,12 +46,18 @@ public class CKRecordZone : NSObject {
         self.init(zoneID: zoneID)
     }
 
-    public init(zoneID: CKRecordZone.ID) {
+    public convenience init(zoneID: CKRecordZone.ID) {
+        self.init(zoneID: zoneID, serverChangeToken: nil)
+    }
+
+    public init(zoneID: CKRecordZone.ID, serverChangeToken: CKServerChangeToken?) {
         self.zoneID = zoneID
+        self.changeToken = serverChangeToken
         super.init()
     }
 
     public let zoneID: CKRecordZone.ID
+    let changeToken: CKServerChangeToken?
 
     /* Capabilities are not set until a record zone is saved */
     public var capabilities: CKRecordZone.Capabilities = CKRecordZone.Capabilities(rawValue: 0)
@@ -54,14 +69,31 @@ extension CKRecordZone {
             return nil
         }
 
-        self.init(zoneID: zoneID)
+        let changeToken: CKServerChangeToken?
+        if let syncToken = dictionary["syncToken"] as? String {
+            changeToken = CKServerChangeToken(token: syncToken)
+        } else {
+            changeToken = nil
+        }
+
+        self.init(zoneID: zoneID, serverChangeToken: changeToken)
 
         if let isAtomic = dictionary["atomic"] as? Bool , isAtomic {
-            capabilities = CKRecordZone.Capabilities.atomic
+            capabilities.formUnion(.atomic)
+        }
+        if let isEligibleForZoneShare = dictionary["isEligibleForZoneShare"] as? Bool, isEligibleForZoneShare {
+            capabilities.formUnion(.sharing)
+        }
+        if changeToken != nil {
+            capabilities.formUnion(.fetchChanges)
         }
     }
 
     var dictionary: [String: Any] {
-        return ["zoneID": zoneID.dictionary]
+        var dictionary: [String: Any] = ["zoneID": zoneID.dictionary]
+        if let token = changeToken {
+            dictionary["syncToken"] = token.token
+        }
+        return dictionary
     }
 }

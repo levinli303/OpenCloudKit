@@ -231,14 +231,14 @@ extension CKDatabase {
         var deleteResults = [CKRecord.ID: Result<Void, Error>]()
         for (index, recordDictionary) in recordsDictionary.enumerated() {
             if let fetchError = CKRecordFetchError(dictionary: recordDictionary) {
-               // Partial error
-               let recordID = CKRecord.ID(recordName: fetchError.recordName)
-               let error = CKError.recordFetchError(error: fetchError)
-               if index < recordsToSave.count {
-                   saveResults[recordID] = .failure(error)
-               } else {
-                   deleteResults[recordID] = .failure(error)
-               }
+                // Partial error
+                let recordID = CKRecord.ID(recordName: fetchError.recordName)
+                let error = CKError.recordFetchError(error: fetchError)
+                if index < recordsToSave.count {
+                    saveResults[recordID] = .failure(error)
+                } else {
+                    deleteResults[recordID] = .failure(error)
+                }
             } else if let deleteResponse = RecordDeleteResponse(dictionary: recordDictionary), deleteResponse.deleted {
                 deleteResults[deleteResponse.recordID] = .success(())
             } else if let record = CKRecord(recordDictionary: recordDictionary) {

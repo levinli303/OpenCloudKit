@@ -28,7 +28,7 @@ extension CKUserIdentity {
             self.userRecordID = userRecordID
         }
 
-        public init(emailAddress: String, phoneNumber: String, userRecordID: CKRecord.ID) {
+        public init(emailAddress: String?, phoneNumber: String?, userRecordID: CKRecord.ID?) {
             self.emailAddress = emailAddress
             self.phoneNumber = phoneNumber
             self.userRecordID = userRecordID
@@ -58,17 +58,18 @@ extension CKUserIdentity {
     }
 }
 
-
 extension CKUserIdentity.LookupInfo: CKCodable {
     convenience init?(dictionary: [String: Any]) {
-        
-        guard let emailAddress = dictionary["emailAddress"] as? String,
-        let phoneNumber = dictionary["phoneNumber"] as? String,
-        let userRecordName = dictionary["userRecordName"] as? String else {
-                return nil
+        let emailAddress = dictionary["emailAddress"] as? String
+        let phoneNumber = dictionary["phoneNumber"] as? String
+        let userRecordID: CKRecord.ID?
+        if let userRecordName = dictionary["userRecordName"] as? String {
+            userRecordID = CKRecord.ID(recordName: userRecordName)
+        } else {
+            userRecordID = nil
         }
-        
-        self.init(emailAddress: emailAddress, phoneNumber: phoneNumber, userRecordID: CKRecord.ID(recordName: userRecordName))
+
+        self.init(emailAddress: emailAddress, phoneNumber: phoneNumber, userRecordID: userRecordID)
     }
     
     var dictionary: [String: Any] {
@@ -76,7 +77,6 @@ extension CKUserIdentity.LookupInfo: CKCodable {
         lookupInfo["emailAddress"] = emailAddress
         lookupInfo["phoneNumber"] = phoneNumber
         lookupInfo["userRecordName"] = userRecordID?.recordName
-        
         return lookupInfo
     }
 }

@@ -123,12 +123,12 @@ extension CKDatabase {
 
         // Parse JSON into CKRecords
         for recordDictionary in recordsDictionary {
-            if let record = CKRecord(recordDictionary: recordDictionary) {
-                records.append((record.recordID, .success(record)))
-            } else if let fetchError = CKRecordFetchError(dictionary: recordDictionary) {
+            if let fetchError = CKRecordFetchError(dictionary: recordDictionary) {
                 // Partial error
                 records.append((CKRecord.ID(recordName: fetchError.recordName), .failure(CKError.recordFetchError(error: fetchError))))
-            }  else {
+            } else if let record = CKRecord(recordDictionary: recordDictionary) {
+                records.append((record.recordID, .success(record)))
+            } else {
                 // Unknown error
                 throw CKError.conversionError
             }

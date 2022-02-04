@@ -19,6 +19,7 @@ enum CKOperationRequestType: String {
     case lookup
     case subscriptions
     case tokens
+    case changes
 }
 
 struct CKServerInfo {

@@ -97,12 +97,12 @@ extension CKDatabase {
 
         // Parse JSON into CKSubscription
         for subscriptionDictionary in subscriptionsDictionary {
-            if let subscription = CKSubscription(dictionary: subscriptionDictionary) {
-                subscriptions[subscription.subscriptionID] = .success(subscription)
-            } else if let fetchError = CKSubscriptionFetchError(dictionary: subscriptionDictionary) {
+            if let fetchError = CKSubscriptionFetchError(dictionary: subscriptionDictionary) {
                 // Partial error
                 subscriptions[fetchError.subscriptionID] = .failure(CKError.subscriptionFetchError(error: fetchError))
-            }  else {
+            } else if let subscription = CKSubscription(dictionary: subscriptionDictionary) {
+                subscriptions[subscription.subscriptionID] = .success(subscription)
+            } else {
                 // Unknown error
                 throw CKError.conversionError
             }

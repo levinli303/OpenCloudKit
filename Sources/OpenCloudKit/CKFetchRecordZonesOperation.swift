@@ -102,12 +102,12 @@ extension CKDatabase {
 
         // Parse JSON into CKRecordZone
         for zoneDictionary in zonesDictionary {
-            if let zone = CKRecordZone(dictionary: zoneDictionary) {
-                zones[zone.zoneID] = .success(zone)
-            } else if let fetchError = CKRecordZoneFetchError(dictionary: zoneDictionary) {
+            if let fetchError = CKRecordZoneFetchError(dictionary: zoneDictionary) {
                 // Partial error
                 zones[fetchError.zoneID] = .failure(CKError.recordZoneFetchError(error: fetchError))
-            }  else {
+            } else if let zone = CKRecordZone(dictionary: zoneDictionary) {
+                zones[zone.zoneID] = .success(zone)
+            } else {
                 // Unknown error
                 throw CKError.conversionError
             }
