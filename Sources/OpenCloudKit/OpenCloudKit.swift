@@ -16,15 +16,7 @@ enum CKOperationType {
 
 public class CloudKit {
     public private(set) var containers: [CKContainerConfig] = []
-
     public static let shared = CloudKit()
-
-    // Temporary property to allow for debugging via console
-    public var verbose: Bool = false
-
-    public weak var delegate: OpenCloudKitDelegate?
-
-    var pushConnections: [CKPushConnection] = []
 
     private init() {}
 
@@ -54,38 +46,6 @@ public class CloudKit {
             return nil
         }
         return account(forContainerConfig: containerConfig)
-    }
-
-    static func debugPrint(_ items: Any...) {
-        if shared.verbose {
-            print(items)
-        }
-    }
-
-    func createPushConnection(for url: URL) {
-        let connection = CKPushConnection(url: url)
-        connection.callBack = {
-            (notification) in
-
-            self.delegate?.didRecieveRemoteNotification(notification)
-        }
-        pushConnections.append(connection)
-    }
-
-    public func registerForRemoteNotifications() {
-        // TODO:
-    }
-}
-
-public protocol OpenCloudKitDelegate: AnyObject {
-    func didRecieveRemoteNotification(_ notification:CKNotification)
-    func didFailToRegisterForRemoteNotifications(withError error: Error)
-    func didRegisterForRemoteNotifications(withToken token: Data)
-}
-
-extension CKRecord.ID {
-    var isDefaultName: Bool {
-        return recordName == CKRecordZone.ID.defaultZoneName
     }
 }
 
@@ -151,15 +111,3 @@ extension CKRecordZoneID: CKCodable {
         return zoneIDDictionary
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-

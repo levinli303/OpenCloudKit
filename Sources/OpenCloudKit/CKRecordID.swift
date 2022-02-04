@@ -12,17 +12,20 @@ public extension CKRecord {
     typealias ID = CKRecordID
 }
 
-public class CKRecordID: NSObject, NSSecureCoding {
+extension CKRecord.ID {
+    var isDefaultName: Bool {
+        return recordName == CKRecordZone.ID.defaultZoneName
+    }
+}
 
+public class CKRecordID: NSObject, NSSecureCoding {
     public convenience init(recordName: String) {
         self.init(recordName: recordName, zoneID: CKRecordZoneID.default)
     }
 
     public init(recordName: String, zoneID: CKRecordZone.ID) {
-
         self.recordName = recordName
         self.zoneID = zoneID
-
     }
 
     public let recordName: String
@@ -51,9 +54,7 @@ public class CKRecordID: NSObject, NSSecureCoding {
 }
 
 extension CKRecordID {
-
     convenience init?(recordDictionary: [String: Any]) {
-
         guard let recordName = recordDictionary[CKRecordDictionary.recordName] as? String,
             let zoneIDDictionary = recordDictionary[CKRecordDictionary.zoneID] as? [String: Any]
             else {
@@ -64,5 +65,4 @@ extension CKRecordID {
         let zoneID = CKRecordZone.ID(dictionary: zoneIDDictionary)!
         self.init(recordName: recordName, zoneID: zoneID)
     }
-
 }

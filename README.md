@@ -30,42 +30,19 @@ let package = Package(
 # Getting Started
 ## Configure OpenCloudKit
 Configuring OpenCloudKit is similar to configuring CloudKitJS. Use the `CloudKit.shared.configure(with: CKConfig)` method to config OpenCloudKit with a `CKConfig` instance.
-### JSON configuration file
-You can store CloudKit configuration in a JSON file
-```javascript
-// API Token Config
-{
-    "containers": [{
-        "containerIdentifier": "[insert your container ID here]",
-        "apiTokenAuth": {
-            "apiToken": "[insert your API token and other authentication properties here]"
-      },
-        "environment": "development"
-    }]
-}
-
-// Server-to-Server Config
-{
-    "containers": [{
-        "containerIdentifier": "[Container ID]",
-        "serverToServerKeyAuth": {
-            "keyID": "[Key ID]",
-            "privateKeyFile":"eckey.pem"
-      },
-        "environment": "development"
-    }]
-}
-```
-Initialize a CKConfig from JSON file, OpenCloudKit supports the same structure as [CloudKit JS](https://developer.apple.com/library/ios/documentation/CloudKitJS/Reference/CloudKitJSTypesReference/index.html#//apple_ref/javascript/struct/CloudKit.CloudKitConfig)
+### Configuration
+Server to Server
 ```swift
-let config = CKConfig(contentsOfFile: "config.json")
-```
-### Manual Configuration
-Below is an example of building a CKConfig manually
-```swift
-let serverKeyAuth = CKServerToServerKeyAuth(keyID: "[KEY ID]",privateKeyFile: "eckey.pem")
+let serverKeyAuth = CKServerToServerKeyAuth(keyID: "[KEY ID]", privateKeyFile: "eckey.pem")
 let defaultContainerConfig = CKContainerConfig(containerIdentifier: "[CONTAINER ID]", environment: .development, serverToServerKeyAuth: serverKeyAuth)
 let config = CKConfig(containers: [defaultContainerConfig])
+
+CloudKit.shared.configure(with: config)
+```
+API Token
+```swift
+let serverKeyAuth = CKServerToServerKeyAuth(keyID: "[KEY ID]", privateKeyFile: "eckey.pem")
+let defaultContainerConfig = CKContainerConfig(containerIdentifier: "[CONTAINER ID]", environment: .development, apiTokenAuth: "[API TOKEN]", webAuthToken: "[WEB AUTH TOKEN]")
 
 CloudKit.shared.configure(with: config)
 ```
@@ -80,7 +57,7 @@ let database = container.publicCloudDatabase
 ```swift
 let movieRecord = CKRecord(recordType: "Movie")
 movieRecord["title"] = "Finding Dory"
-movieRecord["directors"] = NSArray(array: ["Andrew Stanton", "Angus MacLane"])
+movieRecord["directors"] = ["Andrew Stanton", "Angus MacLane"]
 ```
 ### Saving a record
 ```swift

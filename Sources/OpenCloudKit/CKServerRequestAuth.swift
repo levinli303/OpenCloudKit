@@ -50,8 +50,8 @@ struct CKServerRequestAuth {
             try digestContext.update(data)
 
             finalData = try digestContext.sign(keyData: privateKey)
-        } catch let error {
-            CloudKit.debugPrint(error)
+        } catch {
+            print("Error signing request: \(error)")
         }
         globalLock.unlock()
         return finalData
