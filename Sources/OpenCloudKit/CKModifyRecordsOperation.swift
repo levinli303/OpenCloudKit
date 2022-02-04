@@ -106,7 +106,6 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
     /* Determines whether the batch should fail atomically or not. YES by default.
      This only applies to zones that support CKRecordZoneCapabilityAtomic. */
     public var isAtomic: Bool = false
-    public var zoneID: CKRecordZone.ID?
 
     public var modifyRecordsResultBlock: ((_ operationResult: Result<Void, Error>) -> Void)?
     public var perRecordSaveBlock: ((_ recordID: CKRecord.ID, _ saveResult: Result<CKRecord, Error>) -> Void)?
@@ -116,7 +115,7 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
         let db = database ?? CKContainer.default().publicCloudDatabase
         task = Task { [weak self] in
             do {
-                let (saveResults, deleteResults) = try await db.modifyRecords(saving: recordsToSave ?? [], deleting: recordIDsToDelete ?? [], savePolicy: savePolicy, atomically: isAtomic, inZoneWith: zoneID)
+                let (saveResults, deleteResults) = try await db.modifyRecords(saving: recordsToSave ?? [], deleting: recordIDsToDelete ?? [], savePolicy: savePolicy, atomically: isAtomic)
                 guard let self = self else { return }
 
                 for (recordID, result) in saveResults {
@@ -204,7 +203,57 @@ extension CKDatabase {
         let singleFile: CKAsset.UploadInfo
     }
 
-    public func modifyRecords(saving recordsToSave: [CKRecord], deleting recordIDsToDelete: [CKRecord.ID], savePolicy: CKModifyRecordsOperation.RecordSavePolicy = .ifServerRecordUnchanged, atomically: Bool = true, inZoneWith zoneID: CKRecordZone.ID? = nil) async throws -> (saveResults: [CKRecord.ID : Result<CKRecord, Error>], deleteResults: [CKRecord.ID : Result<Void, Error>]) {
+    private class ModifyOperation {
+        var recordsToSave: [CKRecord] = []
+        var recordIDsToDelete: [CKRecord.ID] = []
+    }
+
+    public func modifyRecords(saving recordsToSave: [CKRecord], deleting recordIDsToDelete: [CKRecord.ID], savePolicy: CKModifyRecordsOperation.RecordSavePolicy = .ifServerRecordUnchanged, atomically: Bool = true) async throws -> (saveResults: [CKRecord.ID : Result<CKRecord, Error>], deleteResults: [CKRecord.ID : Result<Void, Error>]) {
+        var sorted = [CKRecordZone.ID: ModifyOperation]()
+        for recordToSave in recordsToSave {
+            let zoneID = recordToSave.recordID.zoneID
+            if let existing = sorted[zoneID] {
+                existing.recordsToSave.append(recordToSave)
+            } else {
+                let operation = ModifyOperation()
+                operation.recordsToSave = [recordToSave]
+                sorted[zoneID] = operation
+            }
+        }
+
+        for recordIDToDelete in recordIDsToDelete {
+            let zoneID = recordIDToDelete.zoneID
+            if let existing = sorted[zoneID] {
+                existing.recordIDsToDelete.append(recordIDToDelete)
+            } else {
+                let operation = ModifyOperation()
+                operation.recordIDsToDelete = [recordIDToDelete]
+                sorted[zoneID] = operation
+            }
+        }
+
+        weak var weakSelf = self
+
+        var saveResults = [CKRecord.ID: Result<CKRecord, Error>]()
+        var deleteResults = [CKRecord.ID: Result<Void, Error>]()
+        for (zoneID, operation) in sorted {
+            guard let self = weakSelf else {
+                throw CKError.cancellation
+            }
+
+            let (newSaveResults, newDeleteResults) = try await self.modifyRecords(saving: operation.recordsToSave, deleting: operation.recordIDsToDelete, savePolicy: savePolicy, atomically: atomically, inZoneWith: zoneID)
+            for (recordID, saveResult) in newSaveResults {
+                saveResults[recordID] = saveResult
+            }
+            for (recordID, deleteResult) in newDeleteResults {
+                deleteResults[recordID] = deleteResult
+            }
+        }
+
+        return (saveResults, deleteResults)
+    }
+
+    private func modifyRecords(saving recordsToSave: [CKRecord], deleting recordIDsToDelete: [CKRecord.ID], savePolicy: CKModifyRecordsOperation.RecordSavePolicy, atomically: Bool, inZoneWith zoneID: CKRecordZone.ID) async throws -> (saveResults: [CKRecord.ID : Result<CKRecord, Error>], deleteResults: [CKRecord.ID : Result<Void, Error>]) {
         let assetsInfo = assetsInfoForUpload(recordsToSave: recordsToSave, savePolicy: savePolicy)
 
         try await uploadAssets(assetsInfo: assetsInfo, inZoneWith: zoneID)
@@ -215,7 +264,7 @@ extension CKDatabase {
         let modifyOperationDictionaryArray = modifyRecordOperationsDictionary(recordsToSave: recordsToSave, savePolicy: savePolicy, recordIDsToDelete: recordIDsToDelete)
 
         // Only custom zones support atomic action
-        let atomicSupported = (zoneID ?? .default).zoneName != CKRecordZone.ID.defaultZoneName
+        let atomicSupported = zoneID.zoneName != CKRecordZone.ID.defaultZoneName
         let request = CKURLRequestBuilder(database: self, operationType: .records, path: "modify")
             .setZone(zoneID)
             .setParameter(key: "atomic", value: atomicSupported && atomically)
@@ -241,7 +290,7 @@ extension CKDatabase {
                 }
             } else if let deleteResponse = RecordDeleteResponse(dictionary: recordDictionary), deleteResponse.deleted {
                 deleteResults[deleteResponse.recordID] = .success(())
-            } else if let record = CKRecord(recordDictionary: recordDictionary) {
+            } else if let record = CKRecord(recordDictionary: recordDictionary, zoneID: zoneID) {
                 saveResults[record.recordID] = .success(record)
             } else {
                 // Unknown error
@@ -251,7 +300,7 @@ extension CKDatabase {
         return (saveResults, deleteResults)
     }
 
-    private func uploadAssets(assetsInfo: [AssetToUpload], inZoneWith zoneID: CKRecordZone.ID?) async throws {
+    private func uploadAssets(assetsInfo: [AssetToUpload], inZoneWith zoneID: CKRecordZone.ID) async throws {
         guard !assetsInfo.isEmpty else { return }
 
         // If there is a non local URL in assets, then fails
@@ -330,7 +379,7 @@ extension CKDatabase {
         uploadURL.asset.uploadInfo = uploadResponse.singleFile
     }
 
-    private func getAssetUploadToken(tokens: [AssetUploadToken], inZoneWith zoneID: CKRecordZone.ID?) async throws -> [AssetUploadTokenResponse] {
+    private func getAssetUploadToken(tokens: [AssetUploadToken], inZoneWith zoneID: CKRecordZone.ID) async throws -> [AssetUploadTokenResponse] {
         // Request asset upload tokens...
         let request = CKURLRequestBuilder(database: self, operationType: .assets, path: "upload")
             .setZone(zoneID)
@@ -375,6 +424,8 @@ extension CKDatabase {
                 }
             }
 
+            recordDictionary["zoneID"] = record.recordID.zoneID.dictionary
+
             recordDictionary["fields"] = fieldsDictionary
             if let parent = record.parent {
                 recordDictionary["createShortGUID"] = NSNumber(value: 1)
@@ -389,7 +440,10 @@ extension CKDatabase {
         let deleteOperations = recordIDsToDelete.map({ (recordID) -> [String: Any] in
             let operationDictionary: [String: Any] = [
                 "operationType": "forceDelete",
-                "record": ["recordName": recordID.recordName]
+                "record": [
+                    "recordName": recordID.recordName,
+                    "zoneID": recordID.zoneID.dictionary
+                ]
             ]
 
             return operationDictionary

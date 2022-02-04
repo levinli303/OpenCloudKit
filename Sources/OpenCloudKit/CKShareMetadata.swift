@@ -105,7 +105,7 @@ open class CKShareMetadata  {
         
         // Set root record if available
         if let rootRecordDictionary = dictionary["rootRecord"] as? [String: Any] {
-            rootRecord = CKRecord(recordDictionary: rootRecordDictionary)
+            rootRecord = CKRecord(recordDictionary: rootRecordDictionary, zoneID: zoneID)
         }
         
     }

@@ -26,11 +26,11 @@ public class CKShare : CKRecord {
         
     }
     
-    public init?(dictionary: [String: Any]) {
+    public init?(dictionary: [String: Any], zoneID: CKRecordZone.ID?) {
         
         shortGUID = dictionary["shortGUID"] as? String
         
-        super.init(recordDictionary: dictionary)
+        super.init(recordDictionary: dictionary, zoneID: zoneID)
         
         if let rawPublicPermission = dictionary["publicPermission"] as? String, let permission = CKShareParticipantPermission(string: rawPublicPermission) {
             publicPermission = permission

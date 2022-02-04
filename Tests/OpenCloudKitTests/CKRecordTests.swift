@@ -59,7 +59,7 @@ class CKRecordTests: CKTest {
         record["location"] = Constant.locationValue
         record["locationList"] = Constant.locationListValue
         let expectation = XCTestExpectation(description: "Wait for response")
-        db.save(record: record) { record, error in
+        db.save(record) { record, error in
             XCTAssertNil(error)
             XCTAssertNotNil(record)
 
@@ -134,7 +134,7 @@ class CKRecordTests: CKTest {
         record["asset"] = CKAsset(fileURL: URL(fileURLWithPath: "asset1.txt"))
         record["assetList"] = [CKAsset(fileURL: URL(fileURLWithPath: "asset1.txt")), CKAsset(fileURL: URL(fileURLWithPath: "asset2.txt"))]
         let expectation = XCTestExpectation(description: "Wait for response")
-        db.save(record: record) { record, error in
+        db.save(record) { record, error in
             XCTAssertNil(error)
             XCTAssertNotNil(record)
 
@@ -158,7 +158,7 @@ class CKRecordTests: CKTest {
         let record = CKRecord(recordType: Self.recordType, recordID: recordID)
         record["string"] = Constant.stringValue
         let expectation = XCTestExpectation(description: "Wait for response")
-        db.save(record: record) { record, error in
+        db.save(record) { record, error in
             XCTAssertNil(record)
             XCTAssertNotNil(error)
 
@@ -347,7 +347,7 @@ class CKRecordTests: CKTest {
         if db.account.isAnonymousAccount { return }
         let expectation = XCTestExpectation(description: "Wait for response")
         let recordID = CKRecord.ID(recordName: "qrqwsnjjfsfsdf")
-        db.save(record: CKRecord(recordType: "blah blah", recordID: recordID)) { record, error in
+        db.save(CKRecord(recordType: "blah blah", recordID: recordID)) { record, error in
             XCTAssertNil(record)
             XCTAssertNotNil(error)
             guard let error = error as? CKError else {
@@ -371,7 +371,7 @@ class CKRecordTests: CKTest {
         if db.account.isAnonymousAccount { return }
         let expectation = XCTestExpectation(description: "Wait for response")
         let recordID = CKRecord.ID(recordName: "08099BD9-ED8C-4175-B528-3CFD363ECA2E")
-        db.save(record: CKRecord(recordType: Self.recordType, recordID: recordID)) { record, error in
+        db.save(CKRecord(recordType: Self.recordType, recordID: recordID)) { record, error in
             XCTAssertNil(record)
             XCTAssertNotNil(error)
             guard let error = error as? CKError else {

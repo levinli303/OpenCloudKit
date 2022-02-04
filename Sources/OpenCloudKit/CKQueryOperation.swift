@@ -101,7 +101,7 @@ extension CKDatabase {
             .setParameter(key: "continuationMarker", value: continuationMarker?.base64EncodedString(options: []))
             .setParameter(key: "resultsLimit", value: resultsLimit > 0 ? resultsLimit : nil)
             .setParameter(key: "desiredKeys", value: desiredKeys)
-            .setParameter(key: "zoneWide", value: false)
+            .setParameter(key: "zoneWide", value: zoneID == nil)
             .setParameter(key: "query", value: query.dictionary)
             .build()
 
@@ -126,7 +126,7 @@ extension CKDatabase {
             if let fetchError = CKRecordFetchError(dictionary: recordDictionary) {
                 // Partial error
                 records.append((CKRecord.ID(recordName: fetchError.recordName), .failure(CKError.recordFetchError(error: fetchError))))
-            } else if let record = CKRecord(recordDictionary: recordDictionary) {
+            } else if let record = CKRecord(recordDictionary: recordDictionary, zoneID: zoneID) {
                 records.append((record.recordID, .success(record)))
             } else {
                 // Unknown error

@@ -105,25 +105,22 @@ public class CKRecord: NSObject, NSSecureCoding {
         return"<\(type(of: self)); recordType = \(recordType);recordID = \(recordID); values = \(values)>"
     }
 
-    init?(recordDictionary: [String: Any], recordID: ID? = nil) {
+    init?(recordDictionary: [String: Any], zoneID: CKRecordZone.ID?) {
         guard let recordName = recordDictionary[CKRecordDictionary.recordName] as? String, let recordType = recordDictionary[CKRecordDictionary.recordType] as? String else {
             return nil
         }
 
-        // Parse ZoneID Dictionary into CKRecordZone.ID
-        let zoneID: CKRecordZone.ID
-        if let zoneIDDictionary = recordDictionary[CKRecordDictionary.zoneID] as? [String: Any] {
-            zoneID = CKRecordZone.ID(dictionary: zoneIDDictionary)!
+        let recordZoneID: CKRecordZone.ID
+        if let zoneID = zoneID {
+            recordZoneID = zoneID
+        } else if let zoneIDDictionary = recordDictionary[CKRecordDictionary.zoneID] as? [String: Any] {
+            // Parse ZoneID Dictionary into CKRecordZone.ID
+            recordZoneID = CKRecordZone.ID(dictionary: zoneIDDictionary)!
         } else {
-            zoneID = CKRecordZone.ID.default
+            recordZoneID = .default
         }
 
-        if let recordID = recordID {
-            self.recordID = recordID
-        } else {
-            let recordID = ID(recordName: recordName, zoneID: zoneID)
-            self.recordID = recordID
-        }
+        self.recordID = ID(recordName: recordName, zoneID: recordZoneID)
 
         self.recordType = recordType
 
@@ -154,7 +151,7 @@ public class CKRecord: NSObject, NSSecureCoding {
 
         if let parentReferenceDictionary = recordDictionary["parent"] as? [String: Any], let recordName = parentReferenceDictionary["parent"] as? String {
 
-            let recordID = ID(recordName: recordName, zoneID: zoneID)
+            let recordID = ID(recordName: recordName, zoneID: recordZoneID)
             let reference = CKReference(recordID: recordID, action: .none)
             parent = reference
         }

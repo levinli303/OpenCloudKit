@@ -9,10 +9,10 @@
 import Foundation
 
 public class CKServerChangeToken : NSObject {
-    let token: String
+    let data: Data
 
-    init(token: String) {
-        self.token = token
+    init(base64EncodedString: String) {
+        self.data = Data(base64Encoded: base64EncodedString)!
         super.init()
     }
 }
@@ -71,7 +71,7 @@ extension CKRecordZone {
 
         let changeToken: CKServerChangeToken?
         if let syncToken = dictionary["syncToken"] as? String {
-            changeToken = CKServerChangeToken(token: syncToken)
+            changeToken = CKServerChangeToken(base64EncodedString: syncToken)
         } else {
             changeToken = nil
         }
@@ -92,7 +92,7 @@ extension CKRecordZone {
     var dictionary: [String: Any] {
         var dictionary: [String: Any] = ["zoneID": zoneID.dictionary]
         if let token = changeToken {
-            dictionary["syncToken"] = token.token
+            dictionary["syncToken"] = token.data.base64EncodedString(options: [])
         }
         return dictionary
     }
