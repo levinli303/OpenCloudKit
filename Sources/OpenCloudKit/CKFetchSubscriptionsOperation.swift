@@ -8,7 +8,7 @@
 
 import Foundation
 
-#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
+#if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
 

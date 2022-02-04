@@ -8,7 +8,7 @@
 
 import Foundation
 
-#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
+#if canImport(FoundationNetworking)
     public typealias NSSortDescriptor = SortDescriptor
 
     open class SortDescriptor: NSObject, NSSecureCoding, NSCopying {

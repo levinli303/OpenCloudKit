@@ -9,7 +9,7 @@
 import Foundation
 import Dispatch
 
-#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
+#if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
 
@@ -82,7 +82,7 @@ public class CKOperation: Operation {
         set {
             guard _finished != newValue else { return }
             // Linux doesn't support KVO
-            #if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
+            #if canImport(FoundationNetworking)
             _finished = newValue
             #else
             willChangeValue(forKey: "isFinished")
@@ -98,7 +98,7 @@ public class CKOperation: Operation {
             guard _executing != newValue else { return }
 
             // Linux doesn't support KVO
-            #if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
+            #if canImport(FoundationNetworking)
             _executing = newValue
             #else
             willChangeValue(forKey: "isExecuting")

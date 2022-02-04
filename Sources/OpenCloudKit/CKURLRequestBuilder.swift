@@ -7,7 +7,7 @@
 
 import Foundation
 
-#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
+#if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
 
@@ -178,7 +178,7 @@ class CKURLRequestHelper {
     }
 }
 
-#if !os(iOS) && !os(macOS) && os(watchOS) && !os(tvOS)
+#if canImport(FoundationNetworking)
 // swift-corelibs-foundation still has not integrated concurrency support for Linux yet...
 extension URLSession {
     func data(for request: URLRequest, delegate: URLSessionDelegate?) async throws -> (data: Data, response: URLResponse) {
