@@ -99,7 +99,7 @@ extension CKDatabase {
         schedule(operation: fetchRecordOperation)
     }
 
-    public func save(record: CKRecord, completionHandler: @escaping (CKRecord?, Error?) -> Void) {
+    public func save(_ record: CKRecord, completionHandler: @escaping (CKRecord?, Error?) -> Void) {
         let operation = CKModifyRecordsOperation(recordsToSave: [record], recordIDsToDelete: nil)
         operation.database = self
         var recordResult: Result<CKRecord, Error>?
