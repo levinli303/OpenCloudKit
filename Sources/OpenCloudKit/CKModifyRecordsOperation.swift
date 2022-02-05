@@ -458,8 +458,27 @@ extension CKDatabase {
 
             recordDictionary["fields"] = fieldsDictionary
             if let parent = record.parent {
-                recordDictionary["createShortGUID"] = NSNumber(value: 1)
                 recordDictionary["parent"] = ["recordName": parent.recordID.recordName]
+            }
+
+            if let share = record.share {
+                if let shortGUID = record.shortGUID {
+                    recordDictionary["shortGUID"] = shortGUID
+                } else {
+                    recordDictionary["createShortGUID"] = true
+                }
+                recordDictionary["share"] = ["recordName": share.recordID.recordName]
+            }
+
+            if let shareRecord = record as? CKShare {
+                if let forRecord = shareRecord.forRecord {
+                    var dictionary = [String: Any]()
+                    dictionary["recordName"] = forRecord.recordID.recordName
+                    dictionary["recordChangeTag"] = forRecord.recordChangeTag
+                    recordDictionary["forRecord"] = dictionary
+                }
+                recordDictionary["publicPermission"] = "\(shareRecord.publicPermission)"
+                recordDictionary["participants"] = shareRecord.participants.map({ $0.dictionary })
             }
 
             let operationDictionary: [String: Any] = ["operationType": operationType, "record": recordDictionary]

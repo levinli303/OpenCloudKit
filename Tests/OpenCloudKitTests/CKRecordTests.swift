@@ -210,7 +210,7 @@ class CKRecordTests: CKTest {
     func testDesiredKeys() {
         let db = CKContainer.default().publicCloudDatabase
         let recordID = CKRecord.ID(recordName: "043BB555-EA0D-487E-BCC4-257184A5078C")
-        let reference = CKReference(recordID: recordID, action: .none)
+        let reference = CKRecord.Reference(recordID: recordID, action: .none)
         let query = CKQuery(recordType: Self.recordType, filters: [
             CKQueryFilter(fieldName: "___recordID", comparator: .equals, fieldValue: reference)
         ])
@@ -444,7 +444,7 @@ class CKRecordTests: CKTest {
     func testNoCurosr() {
         let resultLimit = 1
         let db = CKContainer.default().publicCloudDatabase
-        let reference = CKReference(recordID: CKRecord.ID(recordName: "043BB555-EA0D-487E-BCC4-257184A5078C"), action: .none)
+        let reference = CKRecord.Reference(recordID: CKRecord.ID(recordName: "043BB555-EA0D-487E-BCC4-257184A5078C"), action: .none)
         let query = CKQuery(recordType: Self.recordType, filters: [
             CKQueryFilter(fieldName: "___recordID", comparator: .equals, fieldValue: reference)
         ])

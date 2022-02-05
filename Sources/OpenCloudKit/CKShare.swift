@@ -12,35 +12,48 @@ public let CKShareRecordType = "cloudkit.share"
 
 // TODO: Not implemented
 public class CKShare : CKRecord {
-    let shortGUID: String?
-    
+    var forRecord: CKRecord?
+
     /* When saving a newly created CKShare, you must save the share and its rootRecord in the same CKModifyRecordsOperation batch. */
     public convenience init(rootRecord: CKRecord) {
         self.init(rootRecord: rootRecord, share: CKRecord.ID(recordName: UUID().uuidString, zoneID: rootRecord.recordID.zoneID))
     }
     
     public init(rootRecord: CKRecord, share shareID: CKRecord.ID) {
-        shortGUID = nil
-
+        let owner = CKShareParticipant(userIdentity: CKUserIdentity(userRecordID: CKRecord.ID(recordName: CKCurrentUserDefaultName, zoneID: CKRecordZoneID.default)))
+        owner.permission = .readWrite
+        owner.acceptanceStatus = .accepted
+        owner.type = .owner
+        self.forRecord = rootRecord
+        self.owner = owner
         super.init(recordType: CKShareRecordType, recordID: shareID)
+        self.participants = [owner]
+        rootRecord.share = CKRecord.Reference(recordID: shareID, action: .none)
     }
     
     public init?(dictionary: [String: Any], zoneID: CKRecordZone.ID?) {
-        shortGUID = dictionary["shortGUID"] as? String
-        
+        guard let rawPublicPermission = dictionary["publicPermission"] as? String, let permission = CKShareParticipantPermission(string: rawPublicPermission) else {
+            return nil
+        }
+
+        guard let rawPerticipants = dictionary["participants"] as? [[String: Any]] else { return nil }
+        guard let rawOwner = dictionary["owner"] as? [String: Any], let ownerParticipant = CKShareParticipant(dictionary: rawOwner) else { return nil }
+
+        self.owner = ownerParticipant
+        self.forRecord = nil
+
         super.init(recordDictionary: dictionary, zoneID: zoneID)
-        
-        if let rawPublicPermission = dictionary["publicPermission"] as? String, let permission = CKShareParticipantPermission(string: rawPublicPermission) {
-            publicPermission = permission
-        }
-        
-        if let rawPerticipants = dictionary["participants"] as? [[String: Any]] {
-            for rawParticipant in rawPerticipants {
-                if let participant = CKShareParticipant(dictionary: rawParticipant) {
-                    participants.append(participant)
-                }
+
+        var participants = [CKShareParticipant]()
+        for rawParticipant in rawPerticipants {
+            guard let participant = CKShareParticipant(dictionary: rawParticipant) else {
+                return nil
             }
+            participants.append(participant)
         }
+
+        self.participants = participants
+        self.publicPermission = permission
     }
     
     /*
@@ -55,10 +68,8 @@ public class CKShare : CKRecord {
     /* A URL that can be used to invite participants to this share. Only available after share record has been saved to the server.  This url is stable, and is tied to the rootRecord.  That is, if you share a rootRecord, delete the share, and re-share the same rootRecord via a newly created share, that newly created share's url will be identical to the prior share's url */
     public var url: URL? {
         if let shortGUID = shortGUID {
-            
             let CKShareBaseURL = URL(string: "https://www.icloud.com/share/")!
             return CKShareBaseURL.appendingPathComponent("\(shortGUID)#\(recordID.zoneID.zoneName)")
-            
         } else {
             return nil
         }
@@ -69,11 +80,7 @@ public class CKShare : CKRecord {
     public var participants: [CKShareParticipant]  = []
     
     /* Convenience methods for fetching special users from the participant array */
-    public var owner: CKShareParticipant {
-        return participants.first { (participant) -> Bool in
-            return participant.type == .owner
-        }!
-    }
+    public let owner: CKShareParticipant
 
     public var currentUserParticipant: CKShareParticipant? {
         return nil
@@ -104,9 +111,8 @@ public class CKShare : CKRecord {
     }
 
     public required init?(coder: NSCoder) {
-        // TODO: participants
-        shortGUID = nil
-        super.init(coder: coder)
+        // TODO: implement
+        fatalError()
     }
 
     public override func encode(with coder: NSCoder) {

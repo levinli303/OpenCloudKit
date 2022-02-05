@@ -8,29 +8,6 @@
 
 import Foundation
 
-
-public protocol CKPersonNameComponentsType {
-
-    var namePrefix: String? { get set }
-
-    /* Name bestowed upon an individual by one's parents, e.g. Johnathan */
-    var givenName: String? { get set }
-
-    /* Secondary given name chosen to differentiate those with the same first name, e.g. Maple  */
-    var middleName: String? { get set }
-
-    /* Name passed from one generation to another to indicate lineage, e.g. Appleseed  */
-    var familyName: String? { get set }
-
-    /* Post-nominal letters denoting degree, accreditation, or other honor, e.g. Esq., Jr., Ph.D. */
-    var nameSuffix: String? { get set }
-
-    /* Name substituted for the purposes of familiarity, e.g. "Johnny"*/
-    var nickname: String? { get set }
-
-    init?(dictionary: [String: Any])
-}
-
 public struct CKPersonNameComponents {
 
     /* Pre-nominal letters denoting title, salutation, or honorific, e.g. Dr., Mr. */
@@ -56,7 +33,7 @@ public struct CKPersonNameComponents {
      */
 }
 
-extension CKPersonNameComponents: CKPersonNameComponentsType {
+extension CKPersonNameComponents {
     public init?(dictionary: [String: Any]) {
 
         namePrefix = dictionary["namePrefix"] as? String
@@ -66,5 +43,18 @@ extension CKPersonNameComponents: CKPersonNameComponentsType {
         nameSuffix = dictionary["nameSuffix"] as? String
         middleName = dictionary["middleName"] as? String
         // phoneticRepresentation
+    }
+
+    var dictionary: [String: Any] {
+        var dictionary = [String: Any]()
+
+        dictionary["namePrefix"] = namePrefix
+        dictionary["givenName"] = givenName
+        dictionary["familyName"] = familyName
+        dictionary["nickname"] = nickname
+        dictionary["nameSuffix"] = nameSuffix
+        dictionary["middleName"] = middleName
+
+        return dictionary
     }
 }

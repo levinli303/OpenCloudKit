@@ -11,7 +11,7 @@ import Foundation
 public class CKUserIdentity : NSObject {
     // This is the lookupInfo you passed in to CKDiscoverUserIdentitiesOperation or CKFetchShareParticipantsOperation
     public let lookupInfo: CKUserIdentity.LookupInfo?
-    public let nameComponents: CKPersonNameComponentsType?
+    public let nameComponents: CKPersonNameComponents?
     public let userRecordID: CKRecord.ID?
     public let hasiCloudAccount: Bool
 
@@ -44,5 +44,13 @@ public class CKUserIdentity : NSObject {
         self.hasiCloudAccount = false
         
         super.init()
+    }
+
+    var dictionary: [String: Any] {
+        var dictionary = [String: Any]()
+        dictionary["userRecordName"] = userRecordID?.recordName
+        dictionary["lookupInfo"] = lookupInfo?.dictionary
+        dictionary["nameComponents"] = nameComponents?.dictionary
+        return dictionary
     }
 }
