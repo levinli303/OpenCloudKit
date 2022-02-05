@@ -191,10 +191,10 @@ extension _CloudKitRecordEncoder.KeyedContainer: KeyedEncodingContainerProtocol 
         }
     }
 
-    private func produceReference(for value: CustomCloudKitEncodable) throws -> CKReference {
+    private func produceReference(for value: CustomCloudKitEncodable) throws -> CKRecord.Reference {
         let childRecord = try CloudKitRecordEncoder().encode(value)
 
-        return CKReference(record: childRecord, action: .deleteSelf)
+        return CKRecord.Reference(record: childRecord, action: .deleteSelf)
     }
 
     private func prepareMetaRecord(with systemFields: Data) {

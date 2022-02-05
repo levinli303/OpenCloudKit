@@ -43,7 +43,11 @@ public class CKRecord: NSObject, NSSecureCoding {
 
     private var changedKeysSet = NSMutableSet()
 
-    public var parent: CKReference?
+    public var parent: CKRecord.Reference?
+
+    public internal(set) var share: CKRecord.Reference?
+
+    var shortGUID: String?
 
     public convenience init(recordType: String) {
         let UUID = UUID().uuidString
@@ -60,7 +64,6 @@ public class CKRecord: NSObject, NSSecureCoding {
     }
 
     public func setObject(_ object: CKRecordValue?, forKey key: String) {
-
         let containsKey = changedKeysSet.contains(key)
 
 
@@ -148,13 +151,18 @@ public class CKRecord: NSObject, NSSecureCoding {
             }
         }
 
-        if let parentReferenceDictionary = recordDictionary["parent"] as? [String: Any], let recordName = parentReferenceDictionary["parent"] as? String {
-
-            let recordID = ID(recordName: recordName, zoneID: recordZoneID)
-            let reference = CKReference(recordID: recordID, action: .none)
-            parent = reference
+        if let parentReferenceDictionary = recordDictionary["parent"] as? [String: Any] {
+            parent = CKRecord.Reference(dictionary: parentReferenceDictionary)
         }
+
+        if let shareReferenceDictionary = recordDictionary["share"] as? [String: Any] {
+            share = CKRecord.Reference(dictionary: shareReferenceDictionary)
+        }
+
+        shortGUID = recordDictionary["shortGUID"] as? String
     }
+
+    public static var supportsSecureCoding: Bool { return true }
 
     public required init?(coder: NSCoder) {
         recordType = coder.decodeObject(of: NSString.self, forKey: "RecordType")! as String
@@ -164,8 +172,10 @@ public class CKRecord: NSObject, NSSecureCoding {
         creationDate = coder.decodeObject(of: NSDate.self, forKey: "RecordCtime")! as Date
         lastModifiedUserRecordID = coder.decodeObject(of: ID.self, forKey: "LastModifiedUserRecordID")
         modificationDate = coder.decodeObject(of: NSDate.self, forKey: "RecordMtime") as Date?
-        parent = coder.decodeObject(of: CKReference.self, forKey: "ParentReference")
-        // TODO: changed keys set
+        parent = coder.decodeObject(of: Reference.self, forKey: "ParentReference")
+        share = coder.decodeObject(of: Reference.self, forKey: "ShareReference")
+        shortGUID = coder.decodeObject(of: NSString.self, forKey: "ShortGUID") as String?
+        changedKeysSet = coder.decodeObject(of: NSMutableSet.self, forKey: "ChangedKeySet") ?? NSMutableSet()
     }
 
     public func encode(with coder: NSCoder) {
@@ -177,11 +187,9 @@ public class CKRecord: NSObject, NSSecureCoding {
         coder.encode(lastModifiedUserRecordID, forKey: "LastModifiedUserRecordID")
         coder.encode(modificationDate, forKey: "RecordMtime")
         coder.encode(parent, forKey: "ParentReference")
-        // TODO: changed keys set
-    }
-
-    public static var supportsSecureCoding: Bool {
-        return true
+        coder.encode(share, forKey: "ShareReference")
+        coder.encode(shortGUID, forKey: "ShortGUID")
+        coder.encode(changedKeysSet, forKey: "ChangedKeySet")
     }
 
     public func encodeSystemFields(with coder: NSCoder) {
@@ -262,7 +270,7 @@ extension CKRecord {
                     // fileChecksum
                     return CKAsset(dictionary: dictionary)
                 case "REFERENCE":
-                    return CKReference(dictionary: dictionary)
+                    return CKRecord.Reference(dictionary: dictionary)
                 default:
                     fatalError("Type not supported")
                 }
@@ -297,8 +305,8 @@ extension CKRecord {
                         return CKLocation(dictionary: item)
                     }
                 case "REFERENCE_LIST":
-                    return (array as! [[String: Any]]).map { item -> CKReference in
-                        return CKReference(dictionary: item)!
+                    return (array as! [[String: Any]]).map { item -> CKRecord.Reference in
+                        return CKRecord.Reference(dictionary: item)!
                     }
                 case "ASSETID_LIST":
                     return (array as! [[String: Any]]).map { item -> CKAsset in
@@ -510,7 +518,7 @@ extension CKAsset: CKRecordValueAsset {
     }
 }
 
-extension CKReference: CKRecordValueReference {
+extension CKRecord.Reference: CKRecordValueReference {
     public var valueProvider: [String : Any] {
         return dictionary
     }

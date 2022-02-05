@@ -8,54 +8,70 @@
 
 import Foundation
 
-extension CKUserIdentity {
-    public class LookupInfo : NSObject {
-        public init(emailAddress: String) {
-            self.emailAddress = emailAddress
-            self.phoneNumber = nil
-            self.userRecordID = nil
-        }
-
-        public init(phoneNumber: String) {
-            self.emailAddress = nil
-            self.phoneNumber = phoneNumber
-            self.userRecordID = nil
-        }
-
-        public init(userRecordID: CKRecord.ID) {
-            self.emailAddress = nil
-            self.phoneNumber = nil
-            self.userRecordID = userRecordID
-        }
-
-        public init(emailAddress: String?, phoneNumber: String?, userRecordID: CKRecord.ID?) {
-            self.emailAddress = emailAddress
-            self.phoneNumber = phoneNumber
-            self.userRecordID = userRecordID
-        }
-
-        public class func lookupInfos(withEmails emails: [String]) -> [LookupInfo] {
-            return emails.map({ (email) -> LookupInfo in
-                return LookupInfo(emailAddress: email)
-            })
-        }
-
-        public class func lookupInfos(withPhoneNumbers phoneNumbers: [String]) -> [LookupInfo] {
-            return phoneNumbers.map({ (phoneNumber) -> LookupInfo in
-                return LookupInfo(phoneNumber: phoneNumber)
-            })
-        }
-
-        public class func lookupInfos(with recordIDs: [CKRecord.ID]) -> [LookupInfo] {
-            return recordIDs.map({ (recordID) -> LookupInfo in
-                return LookupInfo(userRecordID: recordID)
-            })
-        }
-
-        public let emailAddress: String?
-        public let phoneNumber: String?
-        public let userRecordID: CKRecord.ID?
+public class CKUserIdentityLookupInfo : NSObject, NSSecureCoding {
+    public init(emailAddress: String) {
+        self.emailAddress = emailAddress
+        self.phoneNumber = nil
+        self.userRecordID = nil
     }
+
+    public init(phoneNumber: String) {
+        self.emailAddress = nil
+        self.phoneNumber = phoneNumber
+        self.userRecordID = nil
+    }
+
+    public init(userRecordID: CKRecord.ID) {
+        self.emailAddress = nil
+        self.phoneNumber = nil
+        self.userRecordID = userRecordID
+    }
+
+    public init(emailAddress: String?, phoneNumber: String?, userRecordID: CKRecord.ID?) {
+        self.emailAddress = emailAddress
+        self.phoneNumber = phoneNumber
+        self.userRecordID = userRecordID
+    }
+
+    public class func lookupInfos(withEmails emails: [String]) -> [CKUserIdentityLookupInfo] {
+        return emails.map({ (email) -> CKUserIdentityLookupInfo in
+            return CKUserIdentityLookupInfo(emailAddress: email)
+        })
+    }
+
+    public class func lookupInfos(withPhoneNumbers phoneNumbers: [String]) -> [CKUserIdentityLookupInfo] {
+        return phoneNumbers.map({ (phoneNumber) -> CKUserIdentityLookupInfo in
+            return CKUserIdentityLookupInfo(phoneNumber: phoneNumber)
+        })
+    }
+
+    public class func lookupInfos(with recordIDs: [CKRecord.ID]) -> [CKUserIdentityLookupInfo] {
+        return recordIDs.map({ (recordID) -> CKUserIdentityLookupInfo in
+            return CKUserIdentityLookupInfo(userRecordID: recordID)
+        })
+    }
+
+    public let emailAddress: String?
+    public let phoneNumber: String?
+    public let userRecordID: CKRecord.ID?
+
+    public static var supportsSecureCoding: Bool { return true }
+
+    public required init?(coder: NSCoder) {
+        userRecordID = coder.decodeObject(of: CKRecord.ID.self, forKey: "UserRecordName")
+        phoneNumber = coder.decodeObject(of: NSString.self, forKey: "PhoneNumber") as String?
+        emailAddress = coder.decodeObject(of: NSString.self, forKey: "EmailAddress") as String?
+    }
+
+    public func encode(with coder: NSCoder) {
+        coder.encode(userRecordID, forKey: "UserRecordName")
+        coder.encode(phoneNumber, forKey: "PhoneNumber")
+        coder.encode(emailAddress, forKey: "EmailAddress")
+    }
+}
+
+extension CKUserIdentity {
+    public typealias LookupInfo = CKUserIdentityLookupInfo
 }
 
 extension CKUserIdentity.LookupInfo: CKCodable {

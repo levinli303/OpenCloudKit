@@ -8,17 +8,6 @@
 
 import Foundation
 
-extension Bool {
-    var number: NSNumber {
-        if self == true {
-            return NSNumber(value: 1)
-        } else {
-            return NSNumber(value: 0)
-
-        }
-    }
-}
-
 public struct CKShortGUID {
     
     public let value: String
@@ -28,8 +17,7 @@ public struct CKShortGUID {
     public  let rootRecordDesiredKeys: [CKRecord.FieldKey]?
     
     public var dictionary: [String: Any] {
-        let dict:[String: Any] = ["value": value, "shouldFetchRootRecord": shouldFetchRootRecord.number]
-        return dict
+        return ["value": value, "shouldFetchRootRecord": shouldFetchRootRecord]
     }
     
     public init(value: String, shouldFetchRootRecord: Bool, rootRecordDesiredKeys: [CKRecord.FieldKey]? = nil) {
@@ -55,11 +43,11 @@ open class CKShareMetadata  {
     open var rootRecordID: CKRecord.ID?
     
     /* These properties reflect the participant properties of the user invoking CKFetchShareMetadataOperation */
-    open var participantType: CKShareParticipantType = .unknown
+    open var participantRole: CKShare.ParticipantRole = .unknown
     
-    open var participantStatus: CKShareParticipantAcceptanceStatus = .unknown
+    open var participantStatus: CKShare.ParticipantAcceptanceStatus = .unknown
     
-    open var participantPermission: CKShareParticipantPermission = CKShareParticipantPermission.unknown
+    open var participantPermission: CKShare.ParticipantPermission = CKShare.ParticipantPermission.unknown
     
     
     open var ownerIdentity: CKUserIdentity?
@@ -85,16 +73,16 @@ open class CKShareMetadata  {
         
         // Set participant type
         let rawParticipantType = dictionary["participantType"] as! String
-        participantType = CKShareParticipantType(string: rawParticipantType)!
+        participantRole = CKShare.ParticipantRole(string: rawParticipantType)!
         
         // Set participant permission 
-        if let rawParticipantPermission = dictionary["participantPermission"] as? String, let permission = CKShareParticipantPermission(string: rawParticipantPermission) {
+        if let rawParticipantPermission = dictionary["participantPermission"] as? String, let permission = CKShare.ParticipantPermission(string: rawParticipantPermission) {
             participantPermission = permission
         }
         
 
         // Set status
-        if let rawParticipantStatus = dictionary["participantStatus"] as? String, let status = CKShareParticipantAcceptanceStatus(string: rawParticipantStatus) {
+        if let rawParticipantStatus = dictionary["participantStatus"] as? String, let status = CKShare.ParticipantAcceptanceStatus(string: rawParticipantStatus) {
             participantStatus = status
         }
 

@@ -83,14 +83,14 @@ public class CKRecordZoneID: NSObject, NSSecureCoding {
     }
 
     public required convenience init?(coder: NSCoder) {
-        let zoneName = coder.decodeObject(of: NSString.self, forKey: "zoneName")
-        let ownerName = coder.decodeObject(of: NSString.self, forKey: "ownerName")
+        let zoneName = coder.decodeObject(of: NSString.self, forKey: "ZoneName")
+        let ownerName = coder.decodeObject(of: NSString.self, forKey: "OwnerName")
         self.init(zoneName: zoneName! as String, ownerName: ownerName! as String)
     }
 
     public func encode(with coder: NSCoder) {
-        coder.encode(zoneName, forKey: "zoneName")
-        coder.encode(ownerName, forKey: "ownerName")
+        coder.encode(zoneName, forKey: "ZoneName")
+        coder.encode(ownerName, forKey: "OwnerName")
     }
 
     public static var supportsSecureCoding: Bool {

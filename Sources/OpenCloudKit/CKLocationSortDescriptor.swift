@@ -14,10 +14,11 @@ public class CKLocationSortDescriptor: NSSortDescriptor {
         super.init(key: key, ascending: true)
     }
 
-    required public init?(coder: NSCoder) {
+    #if !canImport(FoundationNetworking)
+    required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    #endif
 
     public var relativeLocation: CKLocation
-
 }

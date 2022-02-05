@@ -8,12 +8,22 @@
 
 import Foundation
 
-public class CKServerChangeToken : NSObject {
+public class CKServerChangeToken : NSObject, NSSecureCoding {
     let data: Data
 
     init(base64EncodedString: String) {
         self.data = Data(base64Encoded: base64EncodedString)!
         super.init()
+    }
+
+    public static var supportsSecureCoding: Bool { return true }
+
+    public func encode(with coder: NSCoder) {
+        coder.encode(data, forKey: "Data")
+    }
+
+    public required init?(coder: NSCoder) {
+        data = coder.decodeObject(of: NSData.self, forKey: "Data")! as Data
     }
 }
 
@@ -36,7 +46,7 @@ extension CKRecordZone {
     }
 }
 
-public class CKRecordZone : NSObject {
+public class CKRecordZone : NSObject, NSSecureCoding {
     public class func `default`() -> CKRecordZone {
         return CKRecordZone(zoneID: .default)
     }
@@ -61,6 +71,20 @@ public class CKRecordZone : NSObject {
 
     /* Capabilities are not set until a record zone is saved */
     public var capabilities: CKRecordZone.Capabilities = CKRecordZone.Capabilities(rawValue: 0)
+
+    public static var supportsSecureCoding: Bool { return true }
+
+    public func encode(with coder: NSCoder) {
+        coder.encode(zoneID, forKey: "ZoneID")
+        coder.encode(changeToken, forKey: "ChangeToken")
+        coder.encode(capabilities.rawValue, forKey: "Capabilities")
+    }
+
+    public required init?(coder: NSCoder) {
+        zoneID = coder.decodeObject(of: CKRecordZone.ID.self, forKey: "ZoneID")!
+        changeToken = coder.decodeObject(of: CKServerChangeToken.self, forKey: "ChangeToken")
+        capabilities = CKRecordZone.Capabilities(rawValue: UInt(coder.decodeInteger(forKey: "Capabilities")))
+    }
 }
 
 extension CKRecordZone {
