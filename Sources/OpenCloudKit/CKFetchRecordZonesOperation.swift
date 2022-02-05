@@ -41,7 +41,7 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
                     let zoneResults = try await db.recordZones(for: ids)
 
                     guard let self = weakSelf, !self.isCancelled else {
-                        throw CKError.cancellation
+                        throw CKError.operationCancelled
                     }
 
                     for (zoneID, zoneResult) in zoneResults {
@@ -69,7 +69,7 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
                     let zoneResults = try await db.allRecordZones()
 
                     guard let self = weakSelf, !self.isCancelled else {
-                        throw CKError.cancellation
+                        throw CKError.operationCancelled
                     }
 
                     for zone in zoneResults {
@@ -122,7 +122,7 @@ extension CKDatabase {
                 zones[zone.zoneID] = .success(zone)
             } else {
                 // Unknown error
-                throw CKError.conversionError
+                throw CKError.formatError(userInfo: zoneDictionary)
             }
         }
         return zones
@@ -147,7 +147,7 @@ extension CKDatabase {
                 zones.append(zone)
             } else {
                 // Unknown error
-                throw CKError.conversionError
+                throw CKError.formatError(userInfo: zoneDictionary)
             }
         }
         return zones

@@ -8,7 +8,6 @@
 
 import Foundation
 
-public let CKRecordTypeUserRecord: String = "Users"
 public protocol CKRecordFieldProvider {
     var recordFieldDictionary: [String: Any] { get }
 }
@@ -105,7 +104,7 @@ public class CKRecord: NSObject, NSSecureCoding {
         return"<\(type(of: self)); recordType = \(recordType);recordID = \(recordID); values = \(values)>"
     }
 
-    init?(recordDictionary: [String: Any], zoneID: CKRecordZone.ID?) {
+    init?(recordDictionary: [String: Any], zoneID: CKRecordZone.ID? = nil) {
         guard let recordName = recordDictionary[CKRecordDictionary.recordName] as? String, let recordType = recordDictionary[CKRecordDictionary.recordType] as? String else {
             return nil
         }
@@ -227,37 +226,6 @@ struct CKRecordLog {
 }
 
 extension CKRecord {
-    var dictionary: [String: Any] {
-        // Add Fields
-        var fieldsDictionary: [String: Any] = [:]
-        for (key, value) in values {
-            fieldsDictionary[key] = value.recordFieldDictionary
-        }
-
-        var recordDictionary: [String: Any] = [
-            "fields": fieldsDictionary,
-            "recordType": recordType,
-            "recordName": recordID.recordName
-        ]
-
-        if let parent = parent {
-            recordDictionary["createShortGUID"] = NSNumber(value: 1)
-            recordDictionary["parent"] = ["recordName": parent.recordID.recordName]
-        }
-
-        return recordDictionary
-    }
-
-    static func recordValue(forValue value: Any) -> CKRecordValue {
-        switch value {
-        case let number as NSNumber:
-           return number
-
-        default:
-            fatalError("Not Supported")
-        }
-    }
-
     static func process(number: NSNumber, type: String) -> CKRecordValue {
         switch(type) {
         case "TIMESTAMP":

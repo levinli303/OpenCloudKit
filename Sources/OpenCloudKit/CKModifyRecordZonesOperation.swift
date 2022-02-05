@@ -77,7 +77,7 @@ public class CKModifyRecordZonesOperation : CKDatabaseOperation {
                 let (saveResults, deleteResults) = try await db.modifyRecordZones(saving: recordZonesToSave ?? [], deleting: recordZoneIDsToDelete ?? [])
 
                 guard let self = weakSelf, !self.isCancelled else {
-                    throw CKError.cancellation
+                    throw CKError.operationCancelled
                 }
 
                 for (zoneID, result) in saveResults {
@@ -152,7 +152,7 @@ extension CKDatabase {
                 saveResults[zone.zoneID] = .success(zone)
             } else {
                 // Unknown error
-                throw CKError.conversionError
+                throw CKError.formatError(userInfo: zoneDictionary)
             }
         }
         return (saveResults, deleteResults)

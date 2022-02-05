@@ -51,7 +51,7 @@ public class CKQueryOperation: CKDatabaseOperation {
                 let (recordResults, cursor) = try await db.records(matching: query!, inZoneWith: zoneID, desiredKeys: desiredKeys, resultsLimit: resultsLimit)
 
                 guard let self = weakSelf, !self.isCancelled else {
-                    throw CKError.cancellation
+                    throw CKError.operationCancelled
                 }
 
                 for (recordID, recordResult) in recordResults {
@@ -137,7 +137,7 @@ extension CKDatabase {
                 records.append((record.recordID, .success(record)))
             } else {
                 // Unknown error
-                throw CKError.conversionError
+                throw CKError.formatError(userInfo: recordDictionary)
             }
         }
         return (records, cursor)

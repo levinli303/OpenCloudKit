@@ -17,24 +17,18 @@ public struct CKRequestError: Decodable {
 }
 
 public enum CKError: Error {
-    case cancellation
+    case operationCancelled
     case networkError(error: Error)
     case jsonError(error: Error)
+    case ioError(error: Error)
+    case keyMissing(key: String)
+    case formatError(userInfo: [String: Any])
+    case assetFileNotFound(url: URL)
+    case conversionError(data: Any)
 
     case requestError(error: CKRequestError)
     case recordFetchError(error: CKRecordFetchError)
     case recordZoneFetchError(error: CKRecordZoneFetchError)
     case subscriptionFetchError(error: CKSubscriptionFetchError)
-
-    case conversionError
-
-    case keyMissing(key: String)
-
     case genericHTTPError(status: Int)
-    case tokenCountIncorrect
-
-    case assetNotFound
-    case assetReadError
-
-    case noOperationNeeded
 }

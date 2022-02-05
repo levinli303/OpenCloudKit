@@ -73,7 +73,7 @@ public class CKModifySubscriptionsOperation : CKDatabaseOperation {
                 let (saveResults, deleteResults) = try await db.modifySubscriptions(saving: subscriptionsToSave ?? [], deleting: subscriptionIDsToDelete ?? [])
 
                 guard let self = weakSelf, !self.isCancelled else {
-                    throw CKError.cancellation
+                    throw CKError.operationCancelled
                 }
 
                 for (subscriptionID, result) in saveResults {
@@ -149,7 +149,7 @@ extension CKDatabase {
                 saveResults[subscription.subscriptionID] = .success(subscription)
             } else {
                 // Unknown error
-                throw CKError.conversionError
+                throw CKError.formatError(userInfo: subscriptionDictionary)
             }
         }
         return (saveResults, deleteResults)

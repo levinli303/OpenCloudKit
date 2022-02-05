@@ -501,11 +501,11 @@ class CKRecordTests: CKTest {
                 do {
                     throw error
                 }
-                catch CKError.cancellation {
+                catch CKError.operationCancelled {
                     expectation.fulfill()
                 }
                 catch {
-                    XCTFail("A cancelled task should have error CKError.cancellation")
+                    XCTFail("A cancelled task should have error CKError.operationCancelled")
                 }
             }
         }

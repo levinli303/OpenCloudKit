@@ -38,7 +38,7 @@ public class CKFetchSubscriptionsOperation : CKDatabaseOperation {
                 do {
                     let subscriptionResults = try await db.subscriptions(for: ids)
                     guard let self = weakSelf, !self.isCancelled else {
-                        throw CKError.cancellation
+                        throw CKError.operationCancelled
                     }
 
                     for (subscriptionID, subscriptionResult) in subscriptionResults {
@@ -64,7 +64,7 @@ public class CKFetchSubscriptionsOperation : CKDatabaseOperation {
                 do {
                     let subscriptionResults = try await db.allSubscriptions()
                     guard let self = weakSelf, !self.isCancelled else {
-                        throw CKError.cancellation
+                        throw CKError.operationCancelled
                     }
 
                     for subscription in subscriptionResults {
@@ -113,7 +113,7 @@ extension CKDatabase {
                 subscriptions[subscription.subscriptionID] = .success(subscription)
             } else {
                 // Unknown error
-                throw CKError.conversionError
+                throw CKError.formatError(userInfo: subscriptionDictionary)
             }
         }
         return subscriptions
@@ -138,7 +138,7 @@ extension CKDatabase {
                 subscriptions.append(subscription)
             } else {
                 // Unknown error
-                throw CKError.conversionError
+                throw CKError.formatError(userInfo: subscriptionDictionary)
             }
         }
         return subscriptions

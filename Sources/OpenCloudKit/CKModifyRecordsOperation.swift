@@ -150,7 +150,7 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
                     let (saveResults, deleteResults) = try await db.modifyRecords(saving: operation.recordsToSave, deleting: operation.recordIDsToDelete, savePolicy: savePolicy, atomically: isAtomic, inZoneWith: zoneID)
 
                     guard let self = weakSelf, !self.isCancelled else {
-                        throw CKError.cancellation
+                        throw CKError.operationCancelled
                     }
 
                     for (recordID, result) in saveResults {
@@ -268,7 +268,7 @@ extension CKDatabase {
         var deleteResults = [CKRecord.ID: Result<Void, Error>]()
         for (zoneID, operation) in sorted {
             guard let self = weakSelf else {
-                throw CKError.cancellation
+                throw CKError.operationCancelled
             }
 
             let (newSaveResults, newDeleteResults) = try await self.modifyRecords(saving: operation.recordsToSave, deleting: operation.recordIDsToDelete, savePolicy: savePolicy, atomically: atomically, inZoneWith: zoneID)
@@ -288,7 +288,7 @@ extension CKDatabase {
 
         try await uploadAssets(assetsInfo: assetsInfo, inZoneWith: zoneID)
         if Task.isCancelled {
-            throw CKError.cancellation
+            throw CKError.operationCancelled
         }
 
         let modifyOperationDictionaryArray = modifyRecordOperationsDictionary(recordsToSave: recordsToSave, savePolicy: savePolicy, recordIDsToDelete: recordIDsToDelete)
@@ -324,7 +324,7 @@ extension CKDatabase {
                 saveResults[record.recordID] = .success(record)
             } else {
                 // Unknown error
-                throw CKError.conversionError
+                throw CKError.formatError(userInfo: recordDictionary)
             }
         }
         return (saveResults, deleteResults)
@@ -334,17 +334,13 @@ extension CKDatabase {
         guard !assetsInfo.isEmpty else { return }
 
         // If there is a non local URL in assets, then fails
-        if assetsInfo.contains(where: { !$0.asset.fileURL.isFileURL }) {
-            throw CKError.assetNotFound
+        if let firstNonLocalURL = assetsInfo.first(where: { !$0.asset.fileURL.isFileURL })?.asset.fileURL {
+            throw CKError.assetFileNotFound(url: firstNonLocalURL)
         }
 
         let tokens = try await getAssetUploadToken(tokens: assetsInfo.map({ $0.uploadToken }), inZoneWith: zoneID)
         if Task.isCancelled {
-            throw CKError.cancellation
-        }
-
-        guard tokens.count == assetsInfo.count else {
-            throw CKError.tokenCountIncorrect
+            throw CKError.operationCancelled
         }
 
         var uploadURLs = [AssetUploadURL]()
@@ -357,7 +353,7 @@ extension CKDatabase {
             try await uploadAsset(uploadURL)
 
             if Task.isCancelled {
-                throw CKError.cancellation
+                throw CKError.operationCancelled
             }
         }
     }
@@ -368,7 +364,11 @@ extension CKDatabase {
             data = try Data(contentsOf: uploadURL.asset.fileURL)
         }
         catch {
-            throw CKError.assetReadError
+            throw CKError.ioError(error: error)
+        }
+
+        if Task.isCancelled {
+            throw CKError.operationCancelled
         }
 
         // Create payload for uploading
@@ -403,7 +403,7 @@ extension CKDatabase {
 
         let uploadResponse: AssetUploadResponse = try await CKURLRequestHelper.performURLRequest(request)
         if Task.isCancelled {
-            throw CKError.cancellation
+            throw CKError.operationCancelled
         }
 
         uploadURL.asset.uploadInfo = uploadResponse.singleFile

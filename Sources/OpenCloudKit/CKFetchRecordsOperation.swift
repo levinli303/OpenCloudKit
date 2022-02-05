@@ -55,7 +55,7 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
                     let recordResults = try await db.records(for: operation.recordIDs, desiredKeys: desiredKeys, inZoneWith: zoneID)
 
                     guard let self = weakSelf, !self.isCancelled else {
-                        throw CKError.cancellation
+                        throw CKError.operationCancelled
                     }
 
                     for (recordID, recordResult) in recordResults {
@@ -100,7 +100,7 @@ extension CKDatabase {
         var results = [CKRecord.ID: Result<CKRecord, Error>]()
         for (zoneID, operation) in sorted {
             guard let self = weakSelf else {
-                throw CKError.cancellation
+                throw CKError.operationCancelled
             }
 
             let newResults = try await self.records(for: operation.recordIDs, desiredKeys: desiredKeys, inZoneWith: zoneID)
@@ -139,7 +139,7 @@ extension CKDatabase {
                 records[record.recordID] = .success(record)
             } else {
                 // Unknown error
-                throw CKError.conversionError
+                throw CKError.formatError(userInfo: recordDictionary)
             }
         }
         return records

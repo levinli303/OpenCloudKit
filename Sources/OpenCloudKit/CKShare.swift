@@ -10,32 +10,28 @@ import Foundation
 
 public let CKShareRecordType = "cloudkit.share"
 
+// TODO: Not implemented
 public class CKShare : CKRecord {
-    
     let shortGUID: String?
     
     /* When saving a newly created CKShare, you must save the share and its rootRecord in the same CKModifyRecordsOperation batch. */
     public convenience init(rootRecord: CKRecord) {
-        self.init(rootRecord: rootRecord, share: CKRecord.ID(recordName: "Share-\(rootRecord.recordID)"))
+        self.init(rootRecord: rootRecord, share: CKRecord.ID(recordName: UUID().uuidString, zoneID: rootRecord.recordID.zoneID))
     }
     
     public init(rootRecord: CKRecord, share shareID: CKRecord.ID) {
         shortGUID = nil
 
-       super.init(recordType: CKShareRecordType, recordID: shareID)
-        
+        super.init(recordType: CKShareRecordType, recordID: shareID)
     }
     
     public init?(dictionary: [String: Any], zoneID: CKRecordZone.ID?) {
-        
         shortGUID = dictionary["shortGUID"] as? String
         
         super.init(recordDictionary: dictionary, zoneID: zoneID)
         
         if let rawPublicPermission = dictionary["publicPermission"] as? String, let permission = CKShareParticipantPermission(string: rawPublicPermission) {
             publicPermission = permission
-            
-            
         }
         
         if let rawPerticipants = dictionary["participants"] as? [[String: Any]] {
@@ -45,10 +41,7 @@ public class CKShare : CKRecord {
                 }
             }
         }
-        
     }
-
-    
     
     /*
      Shares with publicPermission more permissive than CKShareParticipantPermissionNone can be joined by any user with access to the share's shareURL.
@@ -69,14 +62,11 @@ public class CKShare : CKRecord {
         } else {
             return nil
         }
-      
     }
-    
-    
+
     /* The participants array will contain all participants on the share that the current user has permissions to see.
      At the minimum that will include the owner and the current user. */
     public var participants: [CKShareParticipant]  = []
-    
     
     /* Convenience methods for fetching special users from the participant array */
     public var owner: CKShareParticipant {
@@ -84,23 +74,21 @@ public class CKShare : CKRecord {
             return participant.type == .owner
         }!
     }
-    
+
     public var currentUserParticipant: CKShareParticipant? {
         return nil
     }
-    
-    
+
     /*
      If a participant with a matching userIdentity already exists, then that existing participant's properties will be updated; no new participant will be added.
      In order to modify the list of participants, a share must have publicPermission set to CKShareParticipantPermissionNone.  That is, you cannot mix-and-match private users and public users in the same share.
      Only certain participant types may be added via this API, see the comments around CKShareParticipantType
      */
     public func addParticipant(_ participant: CKShareParticipant) {
-        
         let existing = participants.first { (current) -> Bool in
             return current.userIdentity == participant.userIdentity
         }
-        
+
         if let existing = existing {
             // Update info
             existing.acceptanceStatus = participant.acceptanceStatus
@@ -113,7 +101,6 @@ public class CKShare : CKRecord {
     }
     
     public func removeParticipant(_ participant: CKShareParticipant) {
-        
     }
 
     public required init?(coder: NSCoder) {
@@ -123,6 +110,5 @@ public class CKShare : CKRecord {
     }
 
     public override func encode(with coder: NSCoder) {
-
     }
 }

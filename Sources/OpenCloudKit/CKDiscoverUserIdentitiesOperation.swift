@@ -33,7 +33,7 @@ public class CKDiscoverUserIdentitiesOperation: CKOperation {
                 let results = try await operationContainer.userIdentities(forLookupInfos: userIdentityLookupInfos)
 
                 guard let self = weakSelf, !self.isCancelled else {
-                    throw CKError.cancellation
+                    throw CKError.operationCancelled
                 }
 
                 for result in results {
@@ -124,7 +124,7 @@ extension CKContainer {
                 results.append((lookupInfo, userIdentity))
             } else {
                 // Format for partial error?
-                throw CKError.conversionError
+                throw CKError.formatError(userInfo: userIdentityDictionary)
             }
         }
         return results

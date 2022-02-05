@@ -133,7 +133,7 @@ class CKURLRequestHelper {
             dataResponseTuple = try await shareURLSession.data(for: request, delegate: nil)
         } catch {
             if Task.isCancelled {
-                throw CKError.cancellation
+                throw CKError.operationCancelled
             }
             throw CKError.networkError(error: error)
         }
@@ -162,7 +162,7 @@ class CKURLRequestHelper {
         }
 
         guard let dictionary = jsonObject as? [String: Any] else {
-            throw CKError.conversionError
+            throw CKError.conversionError(data: jsonObject!)
         }
 
         return dictionary
