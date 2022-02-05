@@ -12,6 +12,10 @@ import Foundation
 import FoundationNetworking
 #endif
 
+private class FetchOperation {
+    var recordIDs: [CKRecord.ID] = []
+}
+
 public class CKFetchRecordsOperation: CKDatabaseOperation {
     public var fetchRecordsResultBlock: ((_ operationResult: Result<Void, Error>) -> Void)?
     public var perRecordResultBlock: ((_ recordID: CKRecord.ID, _ recordResult: Result<CKRecord, Error>) -> Void)?
@@ -30,22 +34,44 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
 
     override func performCKOperation() {
         let db = database ?? CKContainer.default().publicCloudDatabase
-        task = Task { [weak self] in
+
+        task = Task {
+            var sorted = [CKRecordZone.ID: FetchOperation]()
+            for recordID in recordIDs ?? [] {
+                let zoneID = recordID.zoneID
+                if let existing = sorted[zoneID] {
+                    existing.recordIDs.append(recordID)
+                } else {
+                    let operation = FetchOperation()
+                    operation.recordIDs = [recordID]
+                    sorted[zoneID] = operation
+                }
+            }
+            let desiredKeys = self.desiredKeys
+
+            weak var weakSelf = self
             do {
-                let recordResults = try await db.records(for: recordIDs ?? [], desiredKeys: desiredKeys)
-                guard let self = self else { return }
-                for (recordID, recordResult) in recordResults {
-                    self.callbackQueue.async {
-                        self.perRecordResultBlock?(recordID, recordResult)
+                for (zoneID, operation) in sorted {
+                    let recordResults = try await db.records(for: operation.recordIDs, desiredKeys: desiredKeys, inZoneWith: zoneID)
+
+                    guard let self = weakSelf, !self.isCancelled else {
+                        throw CKError.cancellation
+                    }
+
+                    for (recordID, recordResult) in recordResults {
+                        self.callbackQueue.async {
+                            self.perRecordResultBlock?(recordID, recordResult)
+                        }
                     }
                 }
+
                 self.callbackQueue.async {
                     self.fetchRecordsResultBlock?(.success(()))
                     self.finishOnCallbackQueue()
                 }
             }
             catch {
-                guard let self = self else { return }
+                guard let self = weakSelf else { return }
                 self.callbackQueue.async {
                     self.fetchRecordsResultBlock?(.failure(error))
                     self.finishOnCallbackQueue()
@@ -56,10 +82,6 @@ public class CKFetchRecordsOperation: CKDatabaseOperation {
 }
 
 extension CKDatabase {
-    private class FetchOperation {
-        var recordIDs: [CKRecord.ID] = []
-    }
-
     public func records(for ids: [CKRecord.ID], desiredKeys: [CKRecord.FieldKey]? = nil) async throws -> [CKRecord.ID : Result<CKRecord, Error>] {
         var sorted = [CKRecordZone.ID: FetchOperation]()
         for recordID in ids {

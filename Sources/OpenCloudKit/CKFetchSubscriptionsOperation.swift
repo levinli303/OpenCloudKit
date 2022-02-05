@@ -32,23 +32,28 @@ public class CKFetchSubscriptionsOperation : CKDatabaseOperation {
 
     override func performCKOperation() {
         let db = database ?? CKContainer.default().publicCloudDatabase
-        task = Task { [weak self] in
+        task = Task {
+            weak var weakSelf = self
             if let ids = subscriptionIDs {
                 do {
                     let subscriptionResults = try await db.subscriptions(for: ids)
-                    guard let self = self else { return }
+                    guard let self = weakSelf, !self.isCancelled else {
+                        throw CKError.cancellation
+                    }
+
                     for (subscriptionID, subscriptionResult) in subscriptionResults {
                         self.callbackQueue.async {
                             self.perSubscriptionResultBlock?(subscriptionID, subscriptionResult)
                         }
                     }
+
                     self.callbackQueue.async {
                         self.fetchSubscriptionsResultBlock?(.success(()))
                         self.finishOnCallbackQueue()
                     }
                 }
                 catch {
-                    guard let self = self else { return }
+                    guard let self = weakSelf else { return }
                     self.callbackQueue.async {
                         self.fetchSubscriptionsResultBlock?(.failure(error))
                         self.finishOnCallbackQueue()
@@ -58,19 +63,23 @@ public class CKFetchSubscriptionsOperation : CKDatabaseOperation {
             else {
                 do {
                     let subscriptionResults = try await db.allSubscriptions()
-                    guard let self = self else { return }
+                    guard let self = weakSelf, !self.isCancelled else {
+                        throw CKError.cancellation
+                    }
+
                     for subscription in subscriptionResults {
                         self.callbackQueue.async {
                             self.perSubscriptionResultBlock?(subscription.subscriptionID, .success(subscription))
                         }
                     }
+
                     self.callbackQueue.async {
                         self.fetchSubscriptionsResultBlock?(.success(()))
                         self.finishOnCallbackQueue()
                     }
                 }
                 catch {
-                    guard let self = self else { return }
+                    guard let self = weakSelf else { return }
                     self.callbackQueue.async {
                         self.fetchSubscriptionsResultBlock?(.failure(error))
                         self.finishOnCallbackQueue()

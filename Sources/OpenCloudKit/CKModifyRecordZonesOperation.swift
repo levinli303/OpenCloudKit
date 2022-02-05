@@ -71,10 +71,14 @@ public class CKModifyRecordZonesOperation : CKDatabaseOperation {
 
     override func performCKOperation() {
         let db = database ?? CKContainer.default().publicCloudDatabase
-        task = Task { [weak self] in
+        task = Task {
+            weak var weakSelf = self
             do {
                 let (saveResults, deleteResults) = try await db.modifyRecordZones(saving: recordZonesToSave ?? [], deleting: recordZoneIDsToDelete ?? [])
-                guard let self = self else { return }
+
+                guard let self = weakSelf, !self.isCancelled else {
+                    throw CKError.cancellation
+                }
 
                 for (zoneID, result) in saveResults {
                     self.callbackQueue.async {
@@ -94,7 +98,7 @@ public class CKModifyRecordZonesOperation : CKDatabaseOperation {
                 }
             }
             catch {
-                guard let self = self else { return }
+                guard let self = weakSelf else { return }
 
                 self.callbackQueue.async {
                     self.modifyRecordZonesResultBlock?(.failure(error))

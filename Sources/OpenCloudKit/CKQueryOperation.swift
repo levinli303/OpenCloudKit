@@ -45,22 +45,29 @@ public class CKQueryOperation: CKDatabaseOperation {
 
     override func performCKOperation() {
         let db = database ?? CKContainer.default().publicCloudDatabase
-        task = Task { [weak self] in
+        task = Task {
+            weak var weakSelf = self
             do {
                 let (recordResults, cursor) = try await db.records(matching: query!, inZoneWith: zoneID, desiredKeys: desiredKeys, resultsLimit: resultsLimit)
-                guard let self = self else { return }
+
+                guard let self = weakSelf, !self.isCancelled else {
+                    throw CKError.cancellation
+                }
+
                 for (recordID, recordResult) in recordResults {
                     self.callbackQueue.async {
                         self.recordMatchedBlock?(recordID, recordResult)
                     }
                 }
+
                 self.callbackQueue.async {
                     self.queryResultBlock?(.success(cursor))
                     self.finishOnCallbackQueue()
                 }
             }
             catch {
-                guard let self = self else { return }
+                guard let self = weakSelf else { return }
+
                 self.callbackQueue.async {
                     self.queryResultBlock?(.failure(error))
                     self.finishOnCallbackQueue()

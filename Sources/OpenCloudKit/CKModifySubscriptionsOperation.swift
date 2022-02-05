@@ -67,16 +67,21 @@ public class CKModifySubscriptionsOperation : CKDatabaseOperation {
 
     override func performCKOperation() {
         let db = database ?? CKContainer.default().publicCloudDatabase
-        task = Task { [weak self] in
+        task = Task {
+            weak var weakSelf = self
             do {
                 let (saveResults, deleteResults) = try await db.modifySubscriptions(saving: subscriptionsToSave ?? [], deleting: subscriptionIDsToDelete ?? [])
-                guard let self = self else { return }
+
+                guard let self = weakSelf, !self.isCancelled else {
+                    throw CKError.cancellation
+                }
 
                 for (subscriptionID, result) in saveResults {
                     self.callbackQueue.async {
                         self.perSubscriptionSaveBlock?(subscriptionID, result)
                     }
                 }
+
 
                 for (subscriptionID, result) in deleteResults {
                     self.callbackQueue.async {
@@ -90,7 +95,7 @@ public class CKModifySubscriptionsOperation : CKDatabaseOperation {
                 }
             }
             catch {
-                guard let self = self else { return }
+                guard let self = weakSelf else { return }
 
                 self.callbackQueue.async {
                     self.modifySubscriptionsResultBlock?(.failure(error))

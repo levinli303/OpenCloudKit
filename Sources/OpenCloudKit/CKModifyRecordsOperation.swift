@@ -80,6 +80,11 @@ public struct CKRecordFetchError {
     }
 }
 
+private class ModifyOperation {
+    var recordsToSave: [CKRecord] = []
+    var recordIDsToDelete: [CKRecord.ID] = []
+}
+
 public class CKModifyRecordsOperation: CKDatabaseOperation {
     public enum RecordSavePolicy : Int {
         case ifServerRecordUnchanged
@@ -113,20 +118,50 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
 
     override func performCKOperation() {
         let db = database ?? CKContainer.default().publicCloudDatabase
-        task = Task { [weak self] in
+        task = Task {
+            weak var weakSelf = self
+            let isAtomic = self.isAtomic
+            let savePolicy = self.savePolicy
             do {
-                let (saveResults, deleteResults) = try await db.modifyRecords(saving: recordsToSave ?? [], deleting: recordIDsToDelete ?? [], savePolicy: savePolicy, atomically: isAtomic)
-                guard let self = self else { return }
-
-                for (recordID, result) in saveResults {
-                    self.callbackQueue.async {
-                        self.perRecordSaveBlock?(recordID, result)
+                var sorted = [CKRecordZone.ID: ModifyOperation]()
+                for recordToSave in recordsToSave ?? [] {
+                    let zoneID = recordToSave.recordID.zoneID
+                    if let existing = sorted[zoneID] {
+                        existing.recordsToSave.append(recordToSave)
+                    } else {
+                        let operation = ModifyOperation()
+                        operation.recordsToSave = [recordToSave]
+                        sorted[zoneID] = operation
                     }
                 }
 
-                for (recordID, result) in deleteResults {
-                    self.callbackQueue.async {
-                        self.perRecordDeleteBlock?(recordID, result)
+                for recordIDToDelete in recordIDsToDelete ?? [] {
+                    let zoneID = recordIDToDelete.zoneID
+                    if let existing = sorted[zoneID] {
+                        existing.recordIDsToDelete.append(recordIDToDelete)
+                    } else {
+                        let operation = ModifyOperation()
+                        operation.recordIDsToDelete = [recordIDToDelete]
+                        sorted[zoneID] = operation
+                    }
+                }
+
+                for (zoneID, operation) in sorted {
+                    let (saveResults, deleteResults) = try await db.modifyRecords(saving: operation.recordsToSave, deleting: operation.recordIDsToDelete, savePolicy: savePolicy, atomically: isAtomic, inZoneWith: zoneID)
+
+                    guard let self = weakSelf, !self.isCancelled else {
+                        throw CKError.cancellation
+                    }
+
+                    for (recordID, result) in saveResults {
+                        self.callbackQueue.async {
+                            self.perRecordSaveBlock?(recordID, result)
+                        }
+                    }
+                    for (recordID, result) in deleteResults {
+                        self.callbackQueue.async {
+                            self.perRecordDeleteBlock?(recordID, result)
+                        }
                     }
                 }
 
@@ -136,7 +171,7 @@ public class CKModifyRecordsOperation: CKDatabaseOperation {
                 }
             }
             catch {
-                guard let self = self else { return }
+                guard let self = weakSelf else { return }
 
                 self.callbackQueue.async {
                     self.modifyRecordsResultBlock?(.failure(error))
@@ -203,11 +238,6 @@ extension CKDatabase {
         let singleFile: CKAsset.UploadInfo
     }
 
-    private class ModifyOperation {
-        var recordsToSave: [CKRecord] = []
-        var recordIDsToDelete: [CKRecord.ID] = []
-    }
-
     public func modifyRecords(saving recordsToSave: [CKRecord], deleting recordIDsToDelete: [CKRecord.ID], savePolicy: CKModifyRecordsOperation.RecordSavePolicy = .ifServerRecordUnchanged, atomically: Bool = true) async throws -> (saveResults: [CKRecord.ID : Result<CKRecord, Error>], deleteResults: [CKRecord.ID : Result<Void, Error>]) {
         var sorted = [CKRecordZone.ID: ModifyOperation]()
         for recordToSave in recordsToSave {
@@ -253,7 +283,7 @@ extension CKDatabase {
         return (saveResults, deleteResults)
     }
 
-    private func modifyRecords(saving recordsToSave: [CKRecord], deleting recordIDsToDelete: [CKRecord.ID], savePolicy: CKModifyRecordsOperation.RecordSavePolicy, atomically: Bool, inZoneWith zoneID: CKRecordZone.ID) async throws -> (saveResults: [CKRecord.ID : Result<CKRecord, Error>], deleteResults: [CKRecord.ID : Result<Void, Error>]) {
+    func modifyRecords(saving recordsToSave: [CKRecord], deleting recordIDsToDelete: [CKRecord.ID], savePolicy: CKModifyRecordsOperation.RecordSavePolicy, atomically: Bool, inZoneWith zoneID: CKRecordZone.ID) async throws -> (saveResults: [CKRecord.ID : Result<CKRecord, Error>], deleteResults: [CKRecord.ID : Result<Void, Error>]) {
         let assetsInfo = assetsInfoForUpload(recordsToSave: recordsToSave, savePolicy: savePolicy)
 
         try await uploadAssets(assetsInfo: assetsInfo, inZoneWith: zoneID)

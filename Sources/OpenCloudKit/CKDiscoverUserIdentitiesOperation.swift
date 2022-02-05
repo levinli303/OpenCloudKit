@@ -27,10 +27,14 @@ public class CKDiscoverUserIdentitiesOperation: CKOperation {
     }
 
     override func performCKOperation() {
-        task = Task { [weak self] in
+        task = Task {
+            weak var weakSelf = self
             do {
                 let results = try await operationContainer.userIdentities(forLookupInfos: userIdentityLookupInfos)
-                guard let self = self else { return }
+
+                guard let self = weakSelf, !self.isCancelled else {
+                    throw CKError.cancellation
+                }
 
                 for result in results {
                     self.callbackQueue.async {
@@ -44,7 +48,7 @@ public class CKDiscoverUserIdentitiesOperation: CKOperation {
                 }
             }
             catch {
-                guard let self = self else { return }
+                guard let self = weakSelf else { return }
 
                 self.callbackQueue.async {
                     self.discoverUserIdentitiesResultBlock?(.failure(error))

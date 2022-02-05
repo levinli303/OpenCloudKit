@@ -34,23 +34,30 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
 
     override func performCKOperation() {
         let db = database ?? CKContainer.default().publicCloudDatabase
-        task = Task { [weak self] in
+        task = Task {
+            weak var weakSelf = self
             if let ids = recordZoneIDs {
                 do {
                     let zoneResults = try await db.recordZones(for: ids)
-                    guard let self = self else { return }
+
+                    guard let self = weakSelf, !self.isCancelled else {
+                        throw CKError.cancellation
+                    }
+
                     for (zoneID, zoneResult) in zoneResults {
                         self.callbackQueue.async {
                             self.perRecordZoneResultBlock?(zoneID, zoneResult)
                         }
                     }
+
                     self.callbackQueue.async {
                         self.fetchRecordZonesResultBlock?(.success(()))
                         self.finishOnCallbackQueue()
                     }
                 }
                 catch {
-                    guard let self = self else { return }
+                    guard let self = weakSelf else { return }
+
                     self.callbackQueue.async {
                         self.fetchRecordZonesResultBlock?(.failure(error))
                         self.finishOnCallbackQueue()
@@ -60,19 +67,25 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation {
             else {
                 do {
                     let zoneResults = try await db.allRecordZones()
-                    guard let self = self else { return }
+
+                    guard let self = weakSelf, !self.isCancelled else {
+                        throw CKError.cancellation
+                    }
+
                     for zone in zoneResults {
                         self.callbackQueue.async {
                             self.perRecordZoneResultBlock?(zone.zoneID, .success(zone))
                         }
                     }
+
                     self.callbackQueue.async {
                         self.fetchRecordZonesResultBlock?(.success(()))
                         self.finishOnCallbackQueue()
                     }
                 }
                 catch {
-                    guard let self = self else { return }
+                    guard let self = weakSelf else { return }
+
                     self.callbackQueue.async {
                         self.fetchRecordZonesResultBlock?(.failure(error))
                         self.finishOnCallbackQueue()
