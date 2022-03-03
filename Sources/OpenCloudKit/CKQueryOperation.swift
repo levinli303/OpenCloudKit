@@ -20,7 +20,7 @@ public class CKQueryOperation: CKDatabaseOperation {
     public override init() {
         super.init()
     }
-    
+
     public convenience init(query: CKQuery) {
         self.init()
         self.query = query
@@ -29,8 +29,6 @@ public class CKQueryOperation: CKDatabaseOperation {
     public convenience init(cursor: Cursor) {
         self.init()
         self.cursor = cursor
-        self.query = cursor.query
-        self.zoneID = cursor.zoneID
     }
 
     public var query: CKQuery?
@@ -48,20 +46,25 @@ public class CKQueryOperation: CKDatabaseOperation {
         task = Task {
             weak var weakSelf = self
             do {
-                let (recordResults, cursor) = try await db.records(matching: query!, inZoneWith: zoneID, desiredKeys: desiredKeys, resultsLimit: resultsLimit)
+                let result: (matchResults: [(CKRecord.ID, Result<CKRecord, Error>)], queryCursor: CKQueryOperation.Cursor?)
+                if let queryCursor = cursor {
+                    result = try await db.records(continuingMatchFrom: queryCursor, desiredKeys: desiredKeys, resultsLimit: resultsLimit)
+                } else {
+                    result = try await db.records(matching: query!, inZoneWith: zoneID, desiredKeys: desiredKeys, resultsLimit: resultsLimit)
+                }
 
                 guard let self = weakSelf, !self.isCancelled else {
                     throw CKError.operationCancelled
                 }
 
-                for (recordID, recordResult) in recordResults {
+                for (recordID, recordResult) in result.matchResults {
                     self.callbackQueue.async {
                         self.recordMatchedBlock?(recordID, recordResult)
                     }
                 }
 
                 self.callbackQueue.async {
-                    self.queryResultBlock?(.success(cursor))
+                    self.queryResultBlock?(.success(result.queryCursor))
                     self.finishOnCallbackQueue()
                 }
             }
