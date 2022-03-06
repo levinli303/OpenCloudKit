@@ -32,6 +32,13 @@ public class CKRecordID: NSObject, NSSecureCoding {
 
     public var zoneID: CKRecordZone.ID
 
+    public override var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(recordName)
+        hasher.combine(zoneID)
+        return hasher.finalize()
+    }
+
     public override func isEqual(_ object: Any?) -> Bool {
         guard let other = object as? CKRecordID else { return false }
         return self.recordName == other.recordName && self.zoneID == other.zoneID
@@ -53,7 +60,7 @@ public class CKRecordID: NSObject, NSSecureCoding {
     }
 }
 
-extension CKRecordID {
+extension CKRecord.ID {
     convenience init?(recordDictionary: [String: Any]) {
         guard let recordName = recordDictionary[CKRecordDictionary.recordName] as? String,
             let zoneIDDictionary = recordDictionary[CKRecordDictionary.zoneID] as? [String: Any]

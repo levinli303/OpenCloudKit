@@ -77,6 +77,13 @@ public class CKRecordZoneID: NSObject, NSSecureCoding {
         self.init(zoneName: zoneName, ownerName: ownerName)
     }
 
+    public override var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(zoneName)
+        hasher.combine(ownerName)
+        return hasher.finalize()
+    }
+
     public override func isEqual(_ object: Any?) -> Bool {
         guard let other = object as? CKRecordZoneID else { return false }
         return self.zoneName == other.zoneName && self.ownerName == other.ownerName

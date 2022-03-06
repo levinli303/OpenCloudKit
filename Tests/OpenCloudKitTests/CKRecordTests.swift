@@ -41,6 +41,13 @@ class CKRecordTests: CKTest {
     }
 
     func testCreateRecord() {
+        let id1 = CKRecord.ID(recordName: "A")
+        let id2 = CKRecord.ID(recordName: "A")
+        var dic = [CKRecord.ID: Int]()
+        dic[id1] = 1
+        print("\(dic[id1])")
+        print("\(dic[id2])")
+        print("\(id1 == id2)")
         let db = CKContainer.default().publicCloudDatabase
         if db.account.isAnonymousAccount { return }
         let id = UUID().uuidString
