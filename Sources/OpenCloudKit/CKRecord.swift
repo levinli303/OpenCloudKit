@@ -148,6 +148,10 @@ public class CKRecord: NSObject, NSSecureCoding {
             for (key, fieldValue) in fields  {
                 let value = CKRecord.getValue(forRecordField: fieldValue)
                 values[key] = value
+                if value == nil {
+                    print("Type not recognized, field: \(key), recordName: \(recordName)")
+                    fflush(stdout)
+                }
             }
         }
 
@@ -316,6 +320,10 @@ extension CKRecord {
                     return (array as! [String]).map { item -> Data in
                         return Data(base64Encoded: item)!
                     }
+                case "UNKNOWN_LIST":
+                    print("Unknown list found, content: \(array)")
+                    fflush(stdout)
+                    return nil
                 default:
                     fatalError("List type of \(type) not supported")
                 }
