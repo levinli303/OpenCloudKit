@@ -150,7 +150,6 @@ public class CKRecord: NSObject, NSSecureCoding {
                 values[key] = value
                 if value == nil {
                     print("Type not recognized, field: \(key), recordName: \(recordName)")
-                    fflush(stdout)
                 }
             }
         }
@@ -321,9 +320,10 @@ extension CKRecord {
                         return Data(base64Encoded: item)!
                     }
                 case "UNKNOWN_LIST":
-                    print("Unknown list found, content: \(array)")
-                    fflush(stdout)
-                    return nil
+                    // UNKNOWN_LIST is an empty list, but here we cannot be sure
+                    // what we should give back to the caller, return an empty
+                    // array of any type will suffice
+                    return [String]()
                 default:
                     fatalError("List type of \(type) not supported")
                 }
