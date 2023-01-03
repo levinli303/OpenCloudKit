@@ -451,6 +451,9 @@ extension CKDatabase {
             for key in fields {
                 if let value = record.object(forKey: key) {
                     fieldsDictionary[key] = value.recordFieldDictionary
+                } else {
+                    // Provide empty value for nil cases
+                    fieldsDictionary[key] = [String: String]()
                 }
             }
 
