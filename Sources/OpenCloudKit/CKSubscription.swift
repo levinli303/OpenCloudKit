@@ -13,7 +13,7 @@ public protocol CustomDictionaryConvertible {
 }
 
 public class CKSubscription: NSObject {
-    public enum SubscriptionType : Int, CustomStringConvertible {
+    public enum SubscriptionType : Int, CustomStringConvertible, Sendable {
         case query
         case recordZone
 
@@ -176,17 +176,17 @@ public extension CKRecordZoneSubscription {
 }
 
 public extension CKSubscription {
-    class NotificationInfo : NSObject {
-        public var alertBody: String?
-        public var alertLocalizationKey: String?
-        public var alertLocalizationArgs: [String]?
-        public var alertActionLocalizationKey: String?
-        public var alertLaunchImage: String?
-        public var soundName: String?
-        public var desiredKeys: [CKRecord.FieldKey]?
-        public var shouldBadge: Bool = false
-        public var shouldSendContentAvailable: Bool = false
-        public var category: String?
+    struct NotificationInfo {
+        public let alertBody: String?
+        public let alertLocalizationKey: String?
+        public let alertLocalizationArgs: [String]?
+        public let alertActionLocalizationKey: String?
+        public let alertLaunchImage: String?
+        public let soundName: String?
+        public let desiredKeys: [CKRecord.FieldKey]?
+        public let shouldBadge: Bool = false
+        public let shouldSendContentAvailable: Bool = false
+        public let category: String?
     }
 }
 

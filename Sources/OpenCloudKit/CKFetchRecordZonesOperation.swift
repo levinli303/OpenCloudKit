@@ -12,7 +12,7 @@ import Foundation
 import FoundationNetworking
 #endif
 
-public class CKFetchRecordZonesOperation : CKDatabaseOperation {
+public class CKFetchRecordZonesOperation : CKDatabaseOperation, @unchecked Sendable {
     public static func fetchAllRecordZonesOperation() -> CKFetchRecordZonesOperation {
         return CKFetchRecordZonesOperation()
     }

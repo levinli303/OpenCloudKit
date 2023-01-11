@@ -11,7 +11,7 @@ import Foundation
 import FoundationNetworking
 #endif
 
-public class CKDiscoverUserIdentitiesOperation: CKOperation {
+public class CKDiscoverUserIdentitiesOperation: CKOperation, @unchecked Sendable {
     public var userIdentityDiscoveredBlock: ((CKUserIdentity, CKUserIdentity.LookupInfo) -> Void)?
     public var discoverUserIdentitiesResultBlock: ((_ operationResult: Result<Void, Error>) -> Void)?
 

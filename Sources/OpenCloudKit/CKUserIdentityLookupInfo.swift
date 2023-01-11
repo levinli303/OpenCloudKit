@@ -8,7 +8,7 @@
 
 import Foundation
 
-public class CKUserIdentityLookupInfo : NSObject, NSSecureCoding {
+public final class CKUserIdentityLookupInfo : NSObject, NSSecureCoding, Sendable {
     public init(emailAddress: String) {
         self.emailAddress = emailAddress
         self.phoneNumber = nil

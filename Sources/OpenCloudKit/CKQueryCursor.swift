@@ -9,7 +9,7 @@
 import Foundation
 
 public extension CKQueryOperation {
-    class Cursor: NSObject {
+    final class Cursor: NSObject {
         let data: Data
         let query: CKQuery
         let zoneID: CKRecordZone.ID?

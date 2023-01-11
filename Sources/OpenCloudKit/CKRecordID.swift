@@ -18,7 +18,7 @@ extension CKRecord.ID {
     }
 }
 
-public class CKRecordID: NSObject, NSSecureCoding {
+public final class CKRecordID: NSObject, NSSecureCoding, Sendable {
     public convenience init(recordName: String) {
         self.init(recordName: recordName, zoneID: CKRecordZoneID.default)
     }
@@ -29,8 +29,7 @@ public class CKRecordID: NSObject, NSSecureCoding {
     }
 
     public let recordName: String
-
-    public var zoneID: CKRecordZone.ID
+    public let zoneID: CKRecordZone.ID
 
     public override var hash: Int {
         var hasher = Hasher()

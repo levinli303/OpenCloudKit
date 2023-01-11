@@ -8,7 +8,7 @@
 
 import Foundation
 
-public struct CKRequestError: Decodable {
+public struct CKRequestError: Decodable, Sendable {
     public let reason: String?
     public let serverErrorCode: CKServerError
     public let retryAfter: TimeInterval?
@@ -16,7 +16,7 @@ public struct CKRequestError: Decodable {
     public let redirectURL: URL?
 }
 
-public enum CKError: Error {
+public enum CKError: Error, @unchecked Sendable {
     case operationCancelled
     case networkError(error: Error)
     case jsonError(error: Error)

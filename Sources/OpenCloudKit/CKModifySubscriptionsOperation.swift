@@ -12,7 +12,7 @@ import Foundation
 import FoundationNetworking
 #endif
 
-public struct CKSubscriptionFetchError {
+public struct CKSubscriptionFetchError: Sendable {
     static let subscriptionIDKey = "subscriptionID"
     static let reasonKey = "reason"
     static let serverErrorCodeKey = "serverErrorCode"
@@ -50,7 +50,7 @@ public struct CKSubscriptionFetchError {
     }
 }
 
-public class CKModifySubscriptionsOperation : CKDatabaseOperation {
+public class CKModifySubscriptionsOperation : CKDatabaseOperation, @unchecked Sendable {
     public init(subscriptionsToSave: [CKSubscription]?, subscriptionIDsToDelete: [String]?) {
         super.init()
 

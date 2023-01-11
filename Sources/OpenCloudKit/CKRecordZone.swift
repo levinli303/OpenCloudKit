@@ -8,7 +8,7 @@
 
 import Foundation
 
-public class CKServerChangeToken : NSObject, NSSecureCoding {
+public final class CKServerChangeToken : NSObject, NSSecureCoding, Sendable {
     let data: Data
 
     init(base64EncodedString: String) {
@@ -28,7 +28,7 @@ public class CKServerChangeToken : NSObject, NSSecureCoding {
 }
 
 extension CKRecordZone {
-    public struct Capabilities : OptionSet {
+    public struct Capabilities : OptionSet, Sendable {
         public let rawValue: UInt
 
         public init(rawValue: UInt) {
@@ -36,17 +36,17 @@ extension CKRecordZone {
         }
 
         /* This zone supports CKFetchRecordChangesOperation */
-        public static var fetchChanges: Capabilities = Capabilities(rawValue: 1)
+        public static let fetchChanges: Capabilities = Capabilities(rawValue: 1)
 
         /* Batched changes to this zone happen atomically */
-        public static var atomic: Capabilities = Capabilities(rawValue: 2)
+        public static let atomic: Capabilities = Capabilities(rawValue: 2)
 
         /* Records in this zone can be shared */
-        public static var sharing: Capabilities = Capabilities(rawValue: 4)
+        public static let sharing: Capabilities = Capabilities(rawValue: 4)
     }
 }
 
-public class CKRecordZone : NSObject, NSSecureCoding {
+public final class CKRecordZone : NSObject, NSSecureCoding, Sendable {
     public class func `default`() -> CKRecordZone {
         return CKRecordZone(zoneID: .default)
     }
@@ -57,12 +57,13 @@ public class CKRecordZone : NSObject, NSSecureCoding {
     }
 
     public convenience init(zoneID: CKRecordZone.ID) {
-        self.init(zoneID: zoneID, serverChangeToken: nil)
+        self.init(zoneID: zoneID, serverChangeToken: nil, capabilities: Capabilities(rawValue: 0))
     }
 
-    public init(zoneID: CKRecordZone.ID, serverChangeToken: CKServerChangeToken?) {
+    init(zoneID: CKRecordZone.ID, serverChangeToken: CKServerChangeToken?, capabilities: CKRecordZone.Capabilities) {
         self.zoneID = zoneID
         self.changeToken = serverChangeToken
+        self.capabilities = capabilities
         super.init()
     }
 
@@ -70,7 +71,7 @@ public class CKRecordZone : NSObject, NSSecureCoding {
     let changeToken: CKServerChangeToken?
 
     /* Capabilities are not set until a record zone is saved */
-    public var capabilities: CKRecordZone.Capabilities = CKRecordZone.Capabilities(rawValue: 0)
+    public let capabilities: CKRecordZone.Capabilities
 
     public static var supportsSecureCoding: Bool { return true }
 
@@ -100,8 +101,7 @@ extension CKRecordZone {
             changeToken = nil
         }
 
-        self.init(zoneID: zoneID, serverChangeToken: changeToken)
-
+        var capabilities = Capabilities(rawValue: 0)
         if let isAtomic = dictionary["atomic"] as? Bool , isAtomic {
             capabilities.formUnion(.atomic)
         }
@@ -111,6 +111,8 @@ extension CKRecordZone {
         if changeToken != nil {
             capabilities.formUnion(.fetchChanges)
         }
+
+        self.init(zoneID: zoneID, serverChangeToken: changeToken, capabilities: capabilities)
     }
 
     var dictionary: [String: Any] {

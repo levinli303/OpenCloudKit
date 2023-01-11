@@ -12,7 +12,7 @@ import Foundation
 import FoundationNetworking
 #endif
 
-public class CKFetchSubscriptionsOperation : CKDatabaseOperation {
+public class CKFetchSubscriptionsOperation : CKDatabaseOperation, @unchecked Sendable {
     public override required init() {
         super.init()
     }

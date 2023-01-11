@@ -16,7 +16,7 @@ private class FetchOperation {
     var recordIDs: [CKRecord.ID] = []
 }
 
-public class CKFetchRecordsOperation: CKDatabaseOperation {
+public class CKFetchRecordsOperation: CKDatabaseOperation, @unchecked Sendable {
     public var fetchRecordsResultBlock: ((_ operationResult: Result<Void, Error>) -> Void)?
     public var perRecordResultBlock: ((_ recordID: CKRecord.ID, _ recordResult: Result<CKRecord, Error>) -> Void)?
 

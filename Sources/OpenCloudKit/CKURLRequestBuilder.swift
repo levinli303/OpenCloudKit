@@ -125,7 +125,7 @@ class CKURLRequestBuilder {
 }
 
 class CKURLRequestHelper {
-    private static var shareURLSession = URLSession(configuration: .default)
+    private static let shareURLSession = URLSession(configuration: .default)
 
     private static func _performURLRequest(_ request: URLRequest) async throws -> Data {
         var dataResponseTuple: (data: Data, response: URLResponse)!
@@ -162,7 +162,7 @@ class CKURLRequestHelper {
         }
 
         guard let dictionary = jsonObject as? [String: Any] else {
-            throw CKError.conversionError(data: jsonObject!)
+            throw CKError.conversionError(data: jsonObject)
         }
 
         return dictionary

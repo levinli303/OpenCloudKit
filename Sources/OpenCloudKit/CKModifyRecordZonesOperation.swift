@@ -12,7 +12,7 @@ import Foundation
 import FoundationNetworking
 #endif
 
-public struct CKRecordZoneFetchError {
+public struct CKRecordZoneFetchError: Sendable {
     static let zoneIDKey = "zoneID"
     static let reasonKey = "reason"
     static let serverErrorCodeKey = "serverErrorCode"
@@ -51,7 +51,7 @@ public struct CKRecordZoneFetchError {
     }
 }
 
-public class CKModifyRecordZonesOperation : CKDatabaseOperation {
+public class CKModifyRecordZonesOperation : CKDatabaseOperation, @unchecked Sendable {
     public override init() {
         super.init()
     }

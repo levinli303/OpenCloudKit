@@ -16,7 +16,7 @@ public var CKCurrentUserDefaultName: String {
     return "__defaultOwner__"
 }
 
-public class CKContainer {
+public class CKContainer: @unchecked Sendable {
     static var containerFactories = [String: CKContainer]()
 
     private let convenienceOperationQueue = OperationQueue()
@@ -77,7 +77,7 @@ public class CKContainer {
         return .available
     }
 
-    public func accountStatus(completionHandler: @escaping (CKAccountStatus, Error?) -> Void) {
+    public func accountStatus(completionHandler: @Sendable @escaping (CKAccountStatus, Error?) -> Void) {
         Task {
             do {
                 completionHandler(try await accountStatus(), nil)
@@ -116,7 +116,7 @@ public class CKContainer {
 }
 
 extension CKContainer {
-    public func fetchUserRecordID(completionHandler: @escaping (CKRecord.ID?, Error?) -> Void) {
+    public func fetchUserRecordID(completionHandler: @Sendable @escaping (CKRecord.ID?, Error?) -> Void) {
         Task {
             do {
                 completionHandler(try await userRecordID(), nil)

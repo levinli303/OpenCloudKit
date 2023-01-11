@@ -42,7 +42,7 @@ struct CKSubscriptionFetchErrorDictionary {
     }
 }
 
-public struct CKRecordFetchError {
+public struct CKRecordFetchError: Sendable {
     static let recordNameKey = "recordName"
     static let reasonKey = "reason"
     static let serverErrorCodeKey = "serverErrorCode"
@@ -85,7 +85,7 @@ private class ModifyOperation {
     var recordIDsToDelete: [CKRecord.ID] = []
 }
 
-public class CKModifyRecordsOperation: CKDatabaseOperation {
+public class CKModifyRecordsOperation: CKDatabaseOperation, @unchecked Sendable {
     public enum RecordSavePolicy : Int {
         case ifServerRecordUnchanged
         case changedKeys

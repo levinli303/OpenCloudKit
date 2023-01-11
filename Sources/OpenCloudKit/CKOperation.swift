@@ -13,7 +13,7 @@ import Dispatch
 import FoundationNetworking
 #endif
 
-public class CKOperation: Operation {
+public class CKOperation: Operation, @unchecked Sendable {
     public var container: CKContainer?
     public var requestUUIDs: [String] = []
 

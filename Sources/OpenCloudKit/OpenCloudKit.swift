@@ -53,7 +53,7 @@ public extension CKRecordZone {
     typealias ID = CKRecordZoneID
 }
 
-public class CKRecordZoneID: NSObject, NSSecureCoding {
+public final class CKRecordZoneID: NSObject, NSSecureCoding, Sendable {
     /* The default zone has no capabilities */
     public static let `default`: CKRecordZone.ID = CKRecordZoneID(zoneName: defaultZoneName, ownerName: CKCurrentUserDefaultName)
     public static let defaultZoneName: String = "_defaultZone"

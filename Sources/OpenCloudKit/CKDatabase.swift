@@ -46,7 +46,7 @@ enum CKModifyOperation: String {
     case forceDelete
 }
 
-public class CKDatabase {
+public class CKDatabase: @unchecked Sendable {
     weak var container: CKContainer!
 
     public let scope: Scope
