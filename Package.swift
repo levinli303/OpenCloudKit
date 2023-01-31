@@ -7,7 +7,7 @@ let dependencies: [Package.Dependency] = [
 ]
 #else
 let dependencies: [Package.Dependency] = [
-    .package(url: "https://github.com/apple/swift-crypto.git", "1.0.0" ..< "3.0.0"),
+    .package(url: "https://github.com/apple/swift-crypto.git", "2.2.4" ..< "3.0.0"),
 ]
 #endif
 

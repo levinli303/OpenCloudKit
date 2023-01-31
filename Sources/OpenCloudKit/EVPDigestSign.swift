@@ -92,7 +92,11 @@ public class KeyData: Equatable {
         var pkey: UnsafeMutablePointer<EVP_PKEY>?
         data.withUnsafeBytes { dataBytes in
             let buffer: UnsafePointer<UInt8> = dataBytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
             mem = CCryptoBoringSSL_BIO_new_mem_buf(buffer, Int32(data.count))
+            #else
+            mem = CCryptoBoringSSL_BIO_new_mem_buf(buffer, ossl_ssize_t(data.count))
+            #endif
             if mem != nil {
                 pkey = CCryptoBoringSSL_PEM_read_bio_PrivateKey(mem, nil, nil, nil)
             }
