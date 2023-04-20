@@ -51,7 +51,7 @@ public class CKPersonNameComponents: NSObject, NSSecureCoding {
         middleName = coder.decodeObject(of: NSString.self, forKey: "MiddleName") as String?
     }
 
-    public init?(dictionary: [String: Any]) {
+    public init?(dictionary: [String: Sendable]) {
 
         namePrefix = dictionary["namePrefix"] as? String
         givenName = dictionary["givenName"] as? String
@@ -62,8 +62,8 @@ public class CKPersonNameComponents: NSObject, NSSecureCoding {
         // phoneticRepresentation
     }
 
-    var dictionary: [String: Any] {
-        var dictionary = [String: Any]()
+    var dictionary: [String: Sendable] {
+        var dictionary = [String: Sendable]()
 
         dictionary["namePrefix"] = namePrefix
         dictionary["givenName"] = givenName

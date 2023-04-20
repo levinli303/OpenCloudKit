@@ -100,7 +100,7 @@ extension CKDatabase {
         var subscriptions = [CKSubscription.ID: Result<CKSubscription, Error>]()
 
         // Process subscriptions
-        guard let subscriptionsDictionary = dictionary["subscriptions"] as? [[String: Any]] else {
+        guard let subscriptionsDictionary = dictionary["subscriptions"] as? [[String: Sendable]] else {
             throw CKError.keyMissing(key: "subscriptions")
         }
 
@@ -128,7 +128,7 @@ extension CKDatabase {
         var subscriptions = [CKSubscription]()
 
         // Process subscriptions
-        guard let subscriptionsDictionary = dictionary["subscriptions"] as? [[String: Any]] else {
+        guard let subscriptionsDictionary = dictionary["subscriptions"] as? [[String: Sendable]] else {
             throw CKError.keyMissing(key: "subscriptions")
         }
 

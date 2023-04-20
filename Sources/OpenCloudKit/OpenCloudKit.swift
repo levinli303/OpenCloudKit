@@ -68,7 +68,7 @@ public final class CKRecordZoneID: NSObject, NSSecureCoding, Sendable {
 
     public let ownerName: String
 
-    convenience public required init?(dictionary: [String: Any]) {
+    convenience public required init?(dictionary: [String: Sendable]) {
         guard let zoneName = dictionary["zoneName"] as? String else {
             return nil
         }
@@ -106,8 +106,8 @@ public final class CKRecordZoneID: NSObject, NSSecureCoding, Sendable {
 }
 
 extension CKRecordZoneID: CKCodable {
-    var dictionary: [String: Any] {
-        var zoneIDDictionary: [String: Any] = [
+    var dictionary: [String: Sendable] {
+        var zoneIDDictionary: [String: Sendable] = [
             "zoneName": zoneName
         ]
 

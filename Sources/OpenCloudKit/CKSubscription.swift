@@ -9,7 +9,7 @@
 import Foundation
 
 public protocol CustomDictionaryConvertible {
-    var dictionary: [String: Any] { get }
+    var dictionary: [String: Sendable] { get }
 }
 
 public class CKSubscription: NSObject {
@@ -38,7 +38,7 @@ public class CKSubscription: NSObject {
         self.subscriptionType = subscriptionType
     }
     
-    init?(dictionary: [String: Any]) {
+    init?(dictionary: [String: Sendable]) {
         guard let subscriptionID = dictionary["subscriptionID"] as? String,
         let subscriptionTypeValue = dictionary["subscriptionType"] as? String else {
             return nil
@@ -59,7 +59,7 @@ public class CKSubscription: NSObject {
 }
 
 extension CKSubscription {
-    public var subscriptionDictionary: [String : Any] {
+    public var subscriptionDictionary: [String: Sendable] {
         switch self {
         case let querySub as CKQuerySubscription where self.subscriptionType == .query:
             return querySub.dictionary
@@ -128,11 +128,11 @@ public class CKQuerySubscription : CKSubscription {
 }
 
 extension CKQuerySubscription {
-     public var dictionary: [String: Any] {
+     public var dictionary: [String: Sendable] {
         let query = CKQuery(recordType: recordType, filters: filters)
-        var subscription: [String: Any] =  ["subscriptionID": subscriptionID,
+        var subscription: [String: Sendable] =  ["subscriptionID": subscriptionID,
                 "subscriptionType": subscriptionType.description,
-                "query": query.dictionary as Any,
+                "query": query.dictionary,
                 "firesOn": querySubscriptionOptions.firesOnArray]
         if querySubscriptionOptions.contains(.firesOnce) {
             subscription["firesOnce"] = NSNumber(value: true)
@@ -161,11 +161,11 @@ public class CKRecordZoneSubscription : CKSubscription {
 }
 
 public extension CKRecordZoneSubscription {
-    var dictionary: [String: Any] {
-        var subscription: [String: Any] =  [
+    var dictionary: [String: Sendable] {
+        var subscription: [String: Sendable] =  [
             "subscriptionID": subscriptionID,
             "subscriptionType": subscriptionType.description,
-            "zoneID": zoneID.dictionary as Any
+            "zoneID": zoneID.dictionary
         ]
 
         if let notificationInfo = notificationInfo {
@@ -191,8 +191,8 @@ public extension CKSubscription {
 }
 
 extension CKSubscription.NotificationInfo {
-    var dictionary: [String: Any] {
-        var notificationInfo: [String: Any] = [:]
+    var dictionary: [String: Sendable] {
+        var notificationInfo: [String: Sendable] = [:]
         notificationInfo[CKNotificationInfoDictionary.alertBodyKey] = alertBody
         notificationInfo[CKNotificationInfoDictionary.alertLocalizationKey] = alertLocalizationKey
         notificationInfo[CKNotificationInfoDictionary.alertLocalizationArgsKey] = alertLocalizationArgs

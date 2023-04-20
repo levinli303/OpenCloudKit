@@ -140,8 +140,8 @@ public class CKShareParticipant: NSObject, NSSecureCoding {
         self.userIdentity = userIdentity
     }
     
-    convenience init?(dictionary: [String: Any]) {
-        guard let userIdentityDictionary = dictionary["userIdentity"] as? [String: Any], let identity = CKUserIdentity(dictionary: userIdentityDictionary) else {
+    convenience init?(dictionary: [String: Sendable]) {
+        guard let userIdentityDictionary = dictionary["userIdentity"] as? [String: Sendable], let identity = CKUserIdentity(dictionary: userIdentityDictionary) else {
             return nil
         }
         
@@ -176,7 +176,7 @@ public class CKShareParticipant: NSObject, NSSecureCoding {
         permission = CKShareParticipantPermission(rawValue: coder.decodeInteger(forKey: "Permission"))!
     }
 
-    var dictionary: [String: Any] {
+    var dictionary: [String: Sendable] {
         return [
             "type": "\(role)",
             "permission": "\(permission)",

@@ -33,18 +33,18 @@ public class CKQuery: CKCodable {
     public var sortDescriptors: [NSSortDescriptor] = []
     
     // Returns a Dictionary Representation of a Query Dictionary
-    var dictionary: [String: Any] {
-        var queryDictionary: [String: Any] = ["recordType": recordType]
+    var dictionary: [String: Sendable] {
+        var queryDictionary: [String: Sendable] = ["recordType": recordType]
         
-        queryDictionary["filterBy"] = filters.map({ (filter) -> [String: Any] in
+        queryDictionary["filterBy"] = filters.map({ (filter) -> [String: Sendable] in
             return filter.dictionary
         })
         
         // Create Sort Descriptor Dictionaries
-        queryDictionary["sortBy"] = sortDescriptors.compactMap { (sortDescriptor) -> [String: Any]? in
+        queryDictionary["sortBy"] = sortDescriptors.compactMap { (sortDescriptor) -> [String: Sendable]? in
             
             if let fieldName = sortDescriptor.key {
-                var sortDescriptionDictionary: [String: Any] =  [:]
+                var sortDescriptionDictionary: [String: Sendable] =  [:]
                 sortDescriptionDictionary[CKSortDescriptorDictionary.fieldName] = fieldName
                 sortDescriptionDictionary[CKSortDescriptorDictionary.ascending] = NSNumber(value: sortDescriptor.ascending)
 

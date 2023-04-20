@@ -12,13 +12,13 @@ public class CKRecordZoneNotification : CKNotification {
     public var recordZoneID: CKRecordZone.ID?
     public var databaseScope: CKDatabase.Scope = .public
     
-    override init(fromRemoteNotificationDictionary notificationDictionary: [AnyHashable : Any]) {
+    override init(fromRemoteNotificationDictionary notificationDictionary: [AnyHashable: Sendable]) {
         super.init(fromRemoteNotificationDictionary: notificationDictionary)
 
         notificationType = CKNotificationType.recordZone
 
-        if let cloudDictionary = notificationDictionary["ck"] as? [String: Any] {
-            if let zoneDictionary = cloudDictionary["fet"] as? [String: Any] {
+        if let cloudDictionary = notificationDictionary["ck"] as? [String: Sendable] {
+            if let zoneDictionary = cloudDictionary["fet"] as? [String: Sendable] {
                 // Set RecordZoneID
                 if let zoneName = zoneDictionary["zid"] as? String {
                     let zoneID = CKRecordZone.ID(zoneName: zoneName, ownerName: CKCurrentUserDefaultName)

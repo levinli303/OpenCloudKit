@@ -30,13 +30,13 @@ public class CKShare : CKRecord {
         rootRecord.share = CKRecord.Reference(recordID: shareID, action: .none)
     }
     
-    public init?(dictionary: [String: Any], zoneID: CKRecordZone.ID?) {
+    public init?(dictionary: [String: Sendable], zoneID: CKRecordZone.ID?) {
         guard let rawPublicPermission = dictionary["publicPermission"] as? String, let permission = CKShare.ParticipantPermission(string: rawPublicPermission) else {
             return nil
         }
 
-        guard let rawPerticipants = dictionary["participants"] as? [[String: Any]] else { return nil }
-        guard let rawOwner = dictionary["owner"] as? [String: Any], let ownerParticipant = CKShare.Participant(dictionary: rawOwner) else { return nil }
+        guard let rawPerticipants = dictionary["participants"] as? [[String: Sendable]] else { return nil }
+        guard let rawOwner = dictionary["owner"] as? [String: Sendable], let ownerParticipant = CKShare.Participant(dictionary: rawOwner) else { return nil }
 
         self.owner = ownerParticipant
         self.forRecord = nil

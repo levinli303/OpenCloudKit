@@ -27,7 +27,7 @@ public struct CKSubscriptionFetchError: Sendable {
     public let uuid: String?
     public let redirectURL: URL?
 
-    init?(dictionary: [String: Any]) {
+    init?(dictionary: [String: Sendable]) {
         guard let subscriptionID = dictionary[CKSubscriptionFetchError.subscriptionIDKey] as? CKSubscription.ID,
               let reason = dictionary[CKSubscriptionFetchError.reasonKey] as? String,
               let serverErrorCode = dictionary[CKSubscriptionFetchError.serverErrorCodeKey] as? String,
@@ -111,7 +111,7 @@ extension CKDatabase {
         let subscriptionID: CKSubscription.ID
         let deleted: Bool
 
-        init?(dictionary: [String: Any]) {
+        init?(dictionary: [String: Sendable]) {
             guard let subscriptionID = dictionary["subscriptionID"] as? CKSubscription.ID, let deleted = dictionary["deleted"] as? Bool else {
                 return nil
             }
@@ -128,7 +128,7 @@ extension CKDatabase {
         let dictionary = try await CKURLRequestHelper.performURLRequest(request)
 
         // Process subscriptions
-        guard let subscriptionsDictionary = dictionary["subscriptions"] as? [[String: Any]] else {
+        guard let subscriptionsDictionary = dictionary["subscriptions"] as? [[String: Sendable]] else {
             throw CKError.keyMissing(key: "subscriptions")
         }
 
@@ -155,11 +155,11 @@ extension CKDatabase {
         return (saveResults, deleteResults)
     }
 
-    private func modifySubscriptionOperationsDictionary(subscriptionsToSave: [CKSubscription], subscriptionIDsToDelete: [CKSubscription.ID]) -> [[String: Any]] {
+    private func modifySubscriptionOperationsDictionary(subscriptionsToSave: [CKSubscription], subscriptionIDsToDelete: [CKSubscription.ID]) -> [[String: Sendable]] {
 
-        var operationDictionaryArray: [[String: Any]] = []
-        let saveOperations = subscriptionsToSave.map({ (subscription) -> [String: Any] in
-            let operation: [String: Any] = [
+        var operationDictionaryArray: [[String: Sendable]] = []
+        let saveOperations = subscriptionsToSave.map({ (subscription) -> [String: Sendable] in
+            let operation: [String: Sendable] = [
                 "operationType": "create",
                 "subscription": ["subscriptionID": subscription.subscriptionID]
             ]
@@ -168,8 +168,8 @@ extension CKDatabase {
         })
         operationDictionaryArray += saveOperations
 
-        let deleteOperations = subscriptionIDsToDelete.map({ (subscriptionID) -> [String: Any] in
-            let operation: [String: Any] = [
+        let deleteOperations = subscriptionIDsToDelete.map({ (subscriptionID) -> [String: Sendable] in
+            let operation: [String: Sendable] = [
                 "operationType": "delete",
                 "subscription": ["subscriptionID": subscriptionID]
             ]

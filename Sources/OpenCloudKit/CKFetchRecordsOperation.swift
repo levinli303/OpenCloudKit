@@ -113,7 +113,7 @@ extension CKDatabase {
     }
 
     public func records(for ids: [CKRecord.ID], desiredKeys: [CKRecord.FieldKey]?, inZoneWith zoneID: CKRecordZone.ID) async throws -> [CKRecord.ID : Result<CKRecord, Error>] {
-        let lookupRecords = ids.map { recordID -> [String: Any] in
+        let lookupRecords = ids.map { recordID -> [String: Sendable] in
             return ["recordName": recordID.recordName]
         }
         let request = CKURLRequestBuilder(database: self, operationType: .records, path: "lookup")
@@ -126,7 +126,7 @@ extension CKDatabase {
         var records = [CKRecord.ID: Result<CKRecord, Error>]()
 
         // Process records
-        guard let recordsDictionary = dictionary["records"] as? [[String: Any]] else {
+        guard let recordsDictionary = dictionary["records"] as? [[String: Sendable]] else {
             throw CKError.keyMissing(key: "records")
         }
 

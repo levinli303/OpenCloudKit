@@ -75,7 +75,7 @@ extension CKUserIdentity {
 }
 
 extension CKUserIdentity.LookupInfo: CKCodable {
-    convenience init?(dictionary: [String: Any]) {
+    convenience init?(dictionary: [String: Sendable]) {
         let emailAddress = dictionary["emailAddress"] as? String
         let phoneNumber = dictionary["phoneNumber"] as? String
         let userRecordID: CKRecord.ID?
@@ -88,8 +88,8 @@ extension CKUserIdentity.LookupInfo: CKCodable {
         self.init(emailAddress: emailAddress, phoneNumber: phoneNumber, userRecordID: userRecordID)
     }
     
-    var dictionary: [String: Any] {
-        var lookupInfo: [String: Any] = [:]
+    var dictionary: [String: Sendable] {
+        var lookupInfo: [String: Sendable] = [:]
         lookupInfo["emailAddress"] = emailAddress
         lookupInfo["phoneNumber"] = phoneNumber
         lookupInfo["userRecordName"] = userRecordID?.recordName

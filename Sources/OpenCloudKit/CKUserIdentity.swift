@@ -23,8 +23,8 @@ public final class CKUserIdentity : NSObject, NSSecureCoding {
         super.init()
     }
 
-    init?(dictionary: [String: Any]) {
-        if let lookUpInfoDictionary = dictionary["lookupInfo"] as? [String: Any], let lookupInfo = LookupInfo(dictionary: lookUpInfoDictionary) {
+    init?(dictionary: [String: Sendable]) {
+        if let lookUpInfoDictionary = dictionary["lookupInfo"] as? [String: Sendable], let lookupInfo = LookupInfo(dictionary: lookUpInfoDictionary) {
             self.lookupInfo = lookupInfo
         } else {
             self.lookupInfo = nil
@@ -36,7 +36,7 @@ public final class CKUserIdentity : NSObject, NSSecureCoding {
             self.userRecordID = nil
         }
 
-        if let nameComponentsDictionary = dictionary["nameComponents"] as? [String: Any] {
+        if let nameComponentsDictionary = dictionary["nameComponents"] as? [String: Sendable] {
             self.nameComponents = CKPersonNameComponents(dictionary: nameComponentsDictionary)
         } else {
             self.nameComponents = nil
@@ -62,8 +62,8 @@ public final class CKUserIdentity : NSObject, NSSecureCoding {
         hasiCloudAccount = coder.decodeBool(forKey: "HasiCloudAccount")
     }
 
-    var dictionary: [String: Any] {
-        var dictionary = [String: Any]()
+    var dictionary: [String: Sendable] {
+        var dictionary = [String: Sendable]()
         dictionary["userRecordName"] = userRecordID?.recordName
         dictionary["lookupInfo"] = lookupInfo?.dictionary
         dictionary["nameComponents"] = nameComponents?.dictionary

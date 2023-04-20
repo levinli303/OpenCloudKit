@@ -74,7 +74,7 @@ extension CKRecord {
 }
 
 extension CKRecord.Reference {
-    convenience init?(dictionary: [String: Any]) {
+    convenience init?(dictionary: [String: Sendable]) {
         guard let recordName = dictionary["recordName"] as? String else {
             return nil
         }
@@ -87,7 +87,7 @@ extension CKRecord.Reference {
         }
 
         let recordID: CKRecord.ID
-        if let zoneDictionary = dictionary["zoneID"] as? [String: Any],
+        if let zoneDictionary = dictionary["zoneID"] as? [String: Sendable],
             let zoneID = CKRecordZone.ID(dictionary: zoneDictionary) {
             recordID = CKRecord.ID(recordName: recordName, zoneID: zoneID)
         } else {
@@ -97,8 +97,8 @@ extension CKRecord.Reference {
         self.init(recordID: recordID, action: action)
     }
 
-    var dictionary: [String: Any] {
-        let dict: [String: Any] = ["recordName": recordID.recordName, "zoneID": recordID.zoneID.dictionary, "action": referenceAction.description]
+    var dictionary: [String: Sendable] {
+        let dict: [String: Sendable] = ["recordName": recordID.recordName, "zoneID": recordID.zoneID.dictionary, "action": referenceAction.description]
         return dict
     }
 }

@@ -27,8 +27,8 @@ public struct CKRecordZoneFetchError: Sendable {
     public let uuid: String?
     public let redirectURL: URL?
 
-    init?(dictionary: [String: Any]) {
-        guard let zoneIDDictionary = dictionary[CKRecordZoneFetchError.zoneIDKey] as? [String: Any],
+    init?(dictionary: [String: Sendable]) {
+        guard let zoneIDDictionary = dictionary[CKRecordZoneFetchError.zoneIDKey] as? [String: Sendable],
               let zoneID = CKRecordZone.ID(dictionary: zoneIDDictionary),
               let reason = dictionary[CKRecordZoneFetchError.reasonKey] as? String,
               let serverErrorCode = dictionary[CKRecordZoneFetchError.serverErrorCodeKey] as? String,
@@ -114,8 +114,8 @@ extension CKDatabase {
         let zoneID: CKRecordZone.ID
         let deleted: Bool
 
-        init?(dictionary: [String: Any]) {
-            guard let zoneIDDictionary = dictionary["zoneID"] as? [String: Any], let zoneID = CKRecordZone.ID(dictionary: zoneIDDictionary), let deleted = dictionary["deleted"] as? Bool else {
+        init?(dictionary: [String: Sendable]) {
+            guard let zoneIDDictionary = dictionary["zoneID"] as? [String: Sendable], let zoneID = CKRecordZone.ID(dictionary: zoneIDDictionary), let deleted = dictionary["deleted"] as? Bool else {
                 return nil
             }
             self.zoneID = zoneID
@@ -131,7 +131,7 @@ extension CKDatabase {
         let dictionary = try await CKURLRequestHelper.performURLRequest(request)
 
         // Process zones
-        guard let zonesDictionary = dictionary["zones"] as? [[String: Any]] else {
+        guard let zonesDictionary = dictionary["zones"] as? [[String: Sendable]] else {
             throw CKError.keyMissing(key: "zones")
         }
 
@@ -158,11 +158,11 @@ extension CKDatabase {
         return (saveResults, deleteResults)
     }
 
-    private func modifyZoneOperationsDictionary(recordZonesToSave: [CKRecordZone], recordZoneIDsToDelete: [CKRecordZone.ID]) -> [[String: Any]] {
+    private func modifyZoneOperationsDictionary(recordZonesToSave: [CKRecordZone], recordZoneIDsToDelete: [CKRecordZone.ID]) -> [[String: Sendable]] {
 
-        var operationDictionaryArray: [[String: Any]] = []
-        let saveOperations = recordZonesToSave.map({ (zone) -> [String: Any] in
-            let operation: [String: Any] = [
+        var operationDictionaryArray: [[String: Sendable]] = []
+        let saveOperations = recordZonesToSave.map({ (zone) -> [String: Sendable] in
+            let operation: [String: Sendable] = [
                 "operationType": "create",
                 "zone": ["zoneID": zone.zoneID.dictionary]
             ]
@@ -171,8 +171,8 @@ extension CKDatabase {
         })
         operationDictionaryArray += saveOperations
 
-        let deleteOperations = recordZoneIDsToDelete.map({ (zoneID) -> [String: Any] in
-            let operation: [String: Any] = [
+        let deleteOperations = recordZoneIDsToDelete.map({ (zoneID) -> [String: Sendable] in
+            let operation: [String: Sendable] = [
                 "operationType": "delete",
                 "zone": ["zoneID": zoneID.dictionary]
             ]

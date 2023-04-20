@@ -16,8 +16,8 @@ public class CKAsset: NSObject {
         let referenceChecksum: String?
         let wrappingKey: String?
 
-        var dictionary: [String: Any] {
-            var results: [String: Any] = [
+        var dictionary: [String: Sendable] {
+            var results: [String: Sendable] = [
                 "size": size,
                 "receipt": receipt,
                 "fileChecksum": fileChecksum,
@@ -59,7 +59,7 @@ public class CKAsset: NSObject {
         self.fileURL = fileURL
     }
 
-    init?(dictionary: [String: Any]) {
+    init?(dictionary: [String: Sendable]) {
 
         guard
             let downloadURL = dictionary["downloadURL"] as? String,
@@ -78,7 +78,7 @@ public class CKAsset: NSObject {
 }
 
 extension CKAsset: CustomDictionaryConvertible {
-    public var dictionary: [String: Any] {
+    public var dictionary: [String: Sendable] {
         return uploadInfo?.dictionary ?? [:]
     }
 }

@@ -60,9 +60,9 @@ public final class CKRecordID: NSObject, NSSecureCoding, Sendable {
 }
 
 extension CKRecord.ID {
-    convenience init?(recordDictionary: [String: Any]) {
+    convenience init?(recordDictionary: [String: Sendable]) {
         guard let recordName = recordDictionary[CKRecordDictionary.recordName] as? String,
-            let zoneIDDictionary = recordDictionary[CKRecordDictionary.zoneID] as? [String: Any]
+            let zoneIDDictionary = recordDictionary[CKRecordDictionary.zoneID] as? [String: Sendable]
             else {
                 return nil
         }

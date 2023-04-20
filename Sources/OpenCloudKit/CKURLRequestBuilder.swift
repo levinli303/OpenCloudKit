@@ -30,7 +30,7 @@ struct CKServerInfo {
 class CKURLRequestBuilder {
     let account: CKAccount
     let url: URL
-    var requestProperties: [String: Any] = [:]
+    var requestProperties: [String: Sendable] = [:]
     var requestContentType: String = "application/json; charset=utf-8"
     var requestHTTPMethod: String = "POST"
     var requestData: Data?
@@ -97,7 +97,7 @@ class CKURLRequestBuilder {
         return self
     }
 
-    func setParameter(key: String, value: Any?) -> CKURLRequestBuilder {
+    func setParameter(key: String, value: Sendable?) -> CKURLRequestBuilder {
         requestProperties[key] = value
         return self
     }
@@ -151,7 +151,7 @@ class CKURLRequestHelper {
         return data
     }
 
-    static func performURLRequest(_ request: URLRequest) async throws -> [String: Any] {
+    static func performURLRequest(_ request: URLRequest) async throws -> [String: Sendable] {
         let data = try await _performURLRequest(request)
         var jsonObject: Any!
         do {
@@ -161,7 +161,7 @@ class CKURLRequestHelper {
             throw CKError.jsonError(error: error)
         }
 
-        guard let dictionary = jsonObject as? [String: Any] else {
+        guard let dictionary = jsonObject as? [String: Sendable] else {
             throw CKError.conversionError(data: data)
         }
 

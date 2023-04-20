@@ -11,15 +11,15 @@ import Foundation
 public class CKQueryNotification : CKNotification {
 
     
-    public override init(fromRemoteNotificationDictionary notificationDictionary: [AnyHashable : Any]) {
+    public override init(fromRemoteNotificationDictionary notificationDictionary: [AnyHashable: Sendable]) {
         
         super.init(fromRemoteNotificationDictionary: notificationDictionary)
         
-        guard let cloudDictionary = notificationDictionary[CKNotificationCKKey] as? [String: Any] else {
+        guard let cloudDictionary = notificationDictionary[CKNotificationCKKey] as? [String: Sendable] else {
             return
         }
         
-        if let queryDictionary = cloudDictionary[CKNotificationQueryNotificationKey] as? [String: Any] {
+        if let queryDictionary = cloudDictionary[CKNotificationQueryNotificationKey] as? [String: Sendable] {
             
             // Set recordID
             if
@@ -54,7 +54,7 @@ public class CKQueryNotification : CKNotification {
     
     /* A set of key->value pairs for creates and updates.  You request the server fill out this property via the
      "desiredKeys" property of CKNotificationInfo */
-    public var recordFields: [String : Any]?
+    public var recordFields: [String: Sendable]?
     
     public var recordID: CKRecord.ID?
     

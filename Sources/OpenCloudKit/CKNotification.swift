@@ -31,15 +31,15 @@ let CKNotificationContainerIDKey = "cid"
 
 public class CKNotification : NSObject {
 
-    class func notification(fromRemoteNotificationDictionary notificationDictionary: [AnyHashable : Any]) -> CKNotification? {
+    class func notification(fromRemoteNotificationDictionary notificationDictionary: [AnyHashable: Sendable]) -> CKNotification? {
 
-        if let cloudKitDictionary = notificationDictionary[CKNotificationCKKey] as? [String: Any] {
+        if let cloudKitDictionary = notificationDictionary[CKNotificationCKKey] as? [String: Sendable] {
 
-            if cloudKitDictionary[CKNotificationQueryNotificationKey] as? [String: Any] != nil {
+            if cloudKitDictionary[CKNotificationQueryNotificationKey] as? [String: Sendable] != nil {
                 return CKQueryNotification(fromRemoteNotificationDictionary: notificationDictionary)
-            } else if cloudKitDictionary[CKNotificationZoneNotificationKey] as? [String: Any] != nil {
+            } else if cloudKitDictionary[CKNotificationZoneNotificationKey] as? [String: Sendable] != nil {
                 return CKRecordZoneNotification(fromRemoteNotificationDictionary: notificationDictionary)
-            } else if cloudKitDictionary[CKNotificationDatabaseNotificationKey] as? [String: Any] != nil {
+            } else if cloudKitDictionary[CKNotificationDatabaseNotificationKey] as? [String: Sendable] != nil {
                 return CKDatabaseNotification(fromRemoteNotificationDictionary: notificationDictionary)
             }
         }
@@ -49,14 +49,14 @@ public class CKNotification : NSObject {
 
 
 
-    init(fromRemoteNotificationDictionary notificationDictionary: [AnyHashable : Any])
+    init(fromRemoteNotificationDictionary notificationDictionary: [AnyHashable: Sendable])
     {
         super.init()
 
         notificationType = .database
 
         // Check that this notification is a CloudKit notification, if not return nil
-        if let ckDictionary = notificationDictionary[CKNotificationCKKey] as? [String: Any] {
+        if let ckDictionary = notificationDictionary[CKNotificationCKKey] as? [String: Sendable] {
 
             // Get the container ID from dictionary
             if let containerID = ckDictionary[CKNotificationContainerIDKey] as? String {
@@ -76,8 +76,8 @@ public class CKNotification : NSObject {
 
         }
 
-        if let apsDictionary = notificationDictionary["aps"] as? [String: Any] {
-            if let alertDictionary = apsDictionary["alert"] as? [String: Any] {
+        if let apsDictionary = notificationDictionary["aps"] as? [String: Sendable] {
+            if let alertDictionary = apsDictionary["alert"] as? [String: Sendable] {
 
                 // Set body
                 if let body = alertDictionary[CKNotificationAPSAlertBodyKey] as? String {

@@ -89,8 +89,8 @@ public final class CKRecordZone : NSObject, NSSecureCoding, Sendable {
 }
 
 extension CKRecordZone {
-    convenience init?(dictionary: [String: Any]) {
-        guard let zoneIDDictionary = dictionary["zoneID"] as? [String: Any], let zoneID = CKRecordZone.ID(dictionary: zoneIDDictionary) else {
+    convenience init?(dictionary: [String: Sendable]) {
+        guard let zoneIDDictionary = dictionary["zoneID"] as? [String: Sendable], let zoneID = CKRecordZone.ID(dictionary: zoneIDDictionary) else {
             return nil
         }
 
@@ -115,8 +115,8 @@ extension CKRecordZone {
         self.init(zoneID: zoneID, serverChangeToken: changeToken, capabilities: capabilities)
     }
 
-    var dictionary: [String: Any] {
-        var dictionary: [String: Any] = ["zoneID": zoneID.dictionary]
+    var dictionary: [String: Sendable] {
+        var dictionary: [String: Sendable] = ["zoneID": zoneID.dictionary]
         if let token = changeToken {
             dictionary["syncToken"] = token.data.base64EncodedString(options: [])
         }

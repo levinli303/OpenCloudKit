@@ -98,7 +98,7 @@ public class CKFetchRecordZonesOperation : CKDatabaseOperation, @unchecked Senda
 
 extension CKDatabase {
     public func recordZones(for ids: [CKRecordZone.ID]) async throws -> [CKRecordZone.ID: Result<CKRecordZone, Error>] {
-        let lookupRecords = ids.map { zoneID -> [String: Any] in
+        let lookupRecords = ids.map { zoneID -> [String: Sendable] in
             return zoneID.dictionary
         }
         let request = CKURLRequestBuilder(database: self, operationType: .zones, path: "lookup")
@@ -109,7 +109,7 @@ extension CKDatabase {
         var zones = [CKRecordZone.ID: Result<CKRecordZone, Error>]()
 
         // Process records
-        guard let zonesDictionary = dictionary["zones"] as? [[String: Any]] else {
+        guard let zonesDictionary = dictionary["zones"] as? [[String: Sendable]] else {
             throw CKError.keyMissing(key: "zones")
         }
 
@@ -137,7 +137,7 @@ extension CKDatabase {
         var zones = [CKRecordZone]()
 
         // Process record zones
-        guard let zonesDictionary = dictionary["zones"] as? [[String: Any]] else {
+        guard let zonesDictionary = dictionary["zones"] as? [[String: Sendable]] else {
             throw CKError.keyMissing(key: "zones")
         }
 

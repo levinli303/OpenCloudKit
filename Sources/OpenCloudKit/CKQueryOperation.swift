@@ -127,7 +127,7 @@ extension CKDatabase {
 
         var records = [(CKRecord.ID, Result<CKRecord, Error>)]()
         // Process records
-        guard let recordsDictionary = dictionary["records"] as? [[String: Any]] else {
+        guard let recordsDictionary = dictionary["records"] as? [[String: Sendable]] else {
             throw CKError.keyMissing(key: "records")
         }
 

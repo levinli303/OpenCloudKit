@@ -9,11 +9,11 @@
 import Foundation
 
 public protocol CKRecordFieldProvider {
-    var recordFieldDictionary: [String: Any] { get }
+    var recordFieldDictionary: [String: Sendable] { get }
 }
 /*
 extension CKRecordFieldProvider where Self: CustomDictionaryConvertible {
-    public var recordFieldDictionary: [String: Any] {
+    public var recordFieldDictionary: [String: Sendable] {
         return ["value": self.dictionary]
     }
 }
@@ -107,7 +107,7 @@ public class CKRecord: NSObject, NSSecureCoding {
         return"<\(type(of: self)); recordType = \(recordType);recordID = \(recordID); values = \(values)>"
     }
 
-    init?(recordDictionary: [String: Any], zoneID: CKRecordZone.ID? = nil) {
+    init?(recordDictionary: [String: Sendable], zoneID: CKRecordZone.ID? = nil) {
         guard let recordName = recordDictionary[CKRecordDictionary.recordName] as? String, let recordType = recordDictionary[CKRecordDictionary.recordType] as? String else {
             return nil
         }
@@ -115,7 +115,7 @@ public class CKRecord: NSObject, NSSecureCoding {
         let recordZoneID: CKRecordZone.ID
         if let zoneID = zoneID {
             recordZoneID = zoneID
-        } else if let zoneIDDictionary = recordDictionary[CKRecordDictionary.zoneID] as? [String: Any] {
+        } else if let zoneIDDictionary = recordDictionary[CKRecordDictionary.zoneID] as? [String: Sendable] {
             // Parse ZoneID Dictionary into CKRecordZone.ID
             recordZoneID = CKRecordZone.ID(dictionary: zoneIDDictionary)!
         } else {
@@ -132,19 +132,19 @@ public class CKRecord: NSObject, NSSecureCoding {
         }
 
         // Parse Created Dictionary
-        if let createdDictionary = recordDictionary[CKRecordDictionary.created] as? [String: Any], let created = CKRecordLog(dictionary: createdDictionary) {
+        if let createdDictionary = recordDictionary[CKRecordDictionary.created] as? [String: Sendable], let created = CKRecordLog(dictionary: createdDictionary) {
             self.creatorUserRecordID = ID(recordName: created.userRecordName)
             self.creationDate = Date(timeIntervalSince1970: Double(created.timestamp) / 1000)
         }
 
         // Parse Modified Dictionary
-        if let modifiedDictionary = recordDictionary[CKRecordDictionary.modified] as? [String: Any], let modified = CKRecordLog(dictionary: modifiedDictionary) {
+        if let modifiedDictionary = recordDictionary[CKRecordDictionary.modified] as? [String: Sendable], let modified = CKRecordLog(dictionary: modifiedDictionary) {
             self.lastModifiedUserRecordID = ID(recordName: modified.userRecordName)
             self.modificationDate = Date(timeIntervalSince1970: Double(modified.timestamp) / 1000)
         }
 
         // Enumerate Fields
-        if let fields = recordDictionary[CKRecordDictionary.fields] as? [String: [String: Any]] {
+        if let fields = recordDictionary[CKRecordDictionary.fields] as? [String: [String: Sendable]] {
             for (key, fieldValue) in fields  {
                 let value = CKRecord.getValue(forRecordField: fieldValue)
                 values[key] = value
@@ -154,11 +154,11 @@ public class CKRecord: NSObject, NSSecureCoding {
             }
         }
 
-        if let parentReferenceDictionary = recordDictionary["parent"] as? [String: Any] {
+        if let parentReferenceDictionary = recordDictionary["parent"] as? [String: Sendable] {
             parent = CKRecord.Reference(dictionary: parentReferenceDictionary)
         }
 
-        if let shareReferenceDictionary = recordDictionary["share"] as? [String: Any] {
+        if let shareReferenceDictionary = recordDictionary["share"] as? [String: Sendable] {
             share = CKRecord.Reference(dictionary: shareReferenceDictionary)
         }
 
@@ -225,7 +225,7 @@ struct CKRecordLog {
     let userRecordName: String
     let deviceID: String
 
-    init?(dictionary: [String: Any]) {
+    init?(dictionary: [String: Sendable]) {
         guard let timestamp = (dictionary["timestamp"] as? NSNumber)?.uint64Value, let userRecordName = dictionary["userRecordName"] as? String, let deviceID =  dictionary["deviceID"] as? String else {
             return nil
         }
@@ -246,7 +246,7 @@ extension CKRecord {
         }
     }
 
-    static func getValue(forRecordField field: [String: Any]) -> CKRecordValue? {
+    static func getValue(forRecordField field: [String: Sendable]) -> CKRecordValue? {
         if  let value = field[CKRecordFieldDictionary.value],
             let type = field[CKRecordFieldDictionary.type] as? String {
 
@@ -262,7 +262,7 @@ extension CKRecord {
                 let number = NSNumber(value: doubleValue)
                 return process(number: number, type: type)
 
-            case let dictionary as [String: Any]:
+            case let dictionary as [String: Sendable]:
                 switch type {
 
                 case "LOCATION":
@@ -291,7 +291,7 @@ extension CKRecord {
                     return string
                 }
 
-            case let array as [Any]:
+            case let array as [Sendable]:
                 switch type {
                 case "INT64_LIST":
                     return array as! [Int64]
@@ -304,15 +304,15 @@ extension CKRecord {
                         return Date(timeIntervalSince1970: item / 1000)
                     }
                 case "LOCATION_LIST":
-                    return (array as! [[String: Any]]).map { item -> CKLocation in
+                    return (array as! [[String: Sendable]]).map { item -> CKLocation in
                         return CKLocation(dictionary: item)
                     }
                 case "REFERENCE_LIST":
-                    return (array as! [[String: Any]]).map { item -> CKRecord.Reference in
+                    return (array as! [[String: Sendable]]).map { item -> CKRecord.Reference in
                         return CKRecord.Reference(dictionary: item)!
                     }
                 case "ASSETID_LIST":
-                    return (array as! [[String: Any]]).map { item -> CKAsset in
+                    return (array as! [[String: Sendable]]).map { item -> CKAsset in
                         return CKAsset(dictionary: item)!
                     }
                 case "BYTES_LIST":
@@ -339,11 +339,11 @@ extension CKRecord {
 
 public protocol CKRecordValue : CKRecordFieldProvider {
     static var typeName: String? { get }
-    var dictionaryValue: Any { get }
+    var dictionaryValue: Sendable { get }
 }
 
 extension CKRecordValue {
-    public var recordFieldDictionary: [String : Any] {
+    public var recordFieldDictionary: [String: Sendable] {
         if let type = Self.typeName {
             return ["value": dictionaryValue, "type": type]
         }
@@ -360,7 +360,7 @@ private protocol CKRecordValueType: CKRecordValue {
 }
 
 extension CKRecordValueType {
-    public var dictionaryValue: Any {
+    public var dictionaryValue: Sendable {
         return transform(valueProvider)
     }
 }
@@ -415,7 +415,7 @@ extension CKRecordValueData {
     }
 }
 
-private protocol CKRecordValueAsset: CKRecordValueType where MappedType == [String: Any], TransformedType == [String: Any] {}
+private protocol CKRecordValueAsset: CKRecordValueType where MappedType == [String: Sendable], TransformedType == [String: Sendable] {}
 
 extension CKRecordValueAsset {
     public static var typeName: String? { return "ASSETID" }
@@ -425,7 +425,7 @@ extension CKRecordValueAsset {
     }
 }
 
-private protocol CKRecordValueReference: CKRecordValueType where MappedType == [String: Any], TransformedType == [String: Any] {}
+private protocol CKRecordValueReference: CKRecordValueType where MappedType == [String: Sendable], TransformedType == [String: Sendable] {}
 
 extension CKRecordValueReference {
     public static var typeName: String? { return "REFERENCE" }
@@ -435,7 +435,7 @@ extension CKRecordValueReference {
     }
 }
 
-private protocol CKRecordValueLocation: CKRecordValueType where MappedType == CKLocation, TransformedType == [String: Any] {}
+private protocol CKRecordValueLocation: CKRecordValueType where MappedType == CKLocation, TransformedType == [String: Sendable] {}
 
 extension CKRecordValueLocation {
     public static var typeName: String? { return "LOCATION" }
@@ -521,13 +521,13 @@ extension Data : CKRecordValueData {
 }
 
 extension CKAsset: CKRecordValueAsset {
-    public var valueProvider: [String : Any] {
+    public var valueProvider: [String: Sendable] {
         return dictionary
     }
 }
 
 extension CKRecord.Reference: CKRecordValueReference {
-    public var valueProvider: [String : Any] {
+    public var valueProvider: [String: Sendable] {
         return dictionary
     }
 }
@@ -540,7 +540,7 @@ extension CKLocation: CKRecordValueLocation {
 
 extension NSNumber: CKRecordValue {
     public static var typeName: String? { return nil }
-    public var dictionaryValue: Any { return self }
+    public var dictionaryValue: Sendable { return self }
 }
 
 extension Array: CKRecordFieldProvider, CKRecordValue where Element: CKRecordValue {
@@ -551,7 +551,7 @@ extension Array: CKRecordFieldProvider, CKRecordValue where Element: CKRecordVal
         return nil
     }
 
-    public var dictionaryValue: Any {
+    public var dictionaryValue: Sendable {
         return map { $0.dictionaryValue }
     }
 }

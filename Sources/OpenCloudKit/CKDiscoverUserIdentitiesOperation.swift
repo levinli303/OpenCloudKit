@@ -114,7 +114,7 @@ extension CKContainer {
         let dictionary = try await CKURLRequestHelper.performURLRequest(request)
 
         // Process user identities
-        guard let userIdentityDictionaries = dictionary["users"] as? [[String: Any]] else {
+        guard let userIdentityDictionaries = dictionary["users"] as? [[String: Sendable]] else {
             throw CKError.keyMissing(key: "users")
         }
 

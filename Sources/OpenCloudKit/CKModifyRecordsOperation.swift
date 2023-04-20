@@ -23,7 +23,7 @@ struct CKSubscriptionFetchErrorDictionary {
     let serverErrorCode: String
     let redirectURL: URL?
 
-    init?(dictionary: [String: Any]) {
+    init?(dictionary: [String: Sendable]) {
         guard
             let subscriptionID = dictionary[CKSubscriptionFetchErrorDictionary.subscriptionIDKey] as? String,
             let reason = dictionary[CKSubscriptionFetchErrorDictionary.reasonKey] as? String,
@@ -57,7 +57,7 @@ public struct CKRecordFetchError: Sendable {
     public let uuid: String?
     public let redirectURL: URL?
 
-    init?(dictionary: [String: Any]) {
+    init?(dictionary: [String: Sendable]) {
         guard let recordName = dictionary[CKRecordFetchError.recordNameKey] as? String,
               let reason = dictionary[CKRecordFetchError.reasonKey] as? String,
               let serverErrorCode = dictionary[CKRecordFetchError.serverErrorCodeKey] as? String,
@@ -199,8 +199,8 @@ extension CKDatabase {
         let fieldName: String
         let recordName: String?
 
-        var dictionary: [String: Any] {
-            var dictionary: [String: Any] = [
+        var dictionary: [String: Sendable] {
+            var dictionary: [String: Sendable] = [
                 "recordType": recordType,
                 "fieldName": fieldName
             ]
@@ -225,7 +225,7 @@ extension CKDatabase {
         let recordID: CKRecord.ID
         let deleted: Bool
 
-        init?(dictionary: [String: Any]) {
+        init?(dictionary: [String: Sendable]) {
             guard let recordName = dictionary["recordName"] as? String, let deleted = dictionary["deleted"] as? Bool else {
                 return nil
             }
@@ -302,7 +302,7 @@ extension CKDatabase {
             .build()
         let dictionary = try await CKURLRequestHelper.performURLRequest(request)
         // Process records
-        guard let recordsDictionary = dictionary["records"] as? [[String: Any]] else {
+        guard let recordsDictionary = dictionary["records"] as? [[String: Sendable]] else {
             throw CKError.keyMissing(key: "records")
         }
 
@@ -420,13 +420,13 @@ extension CKDatabase {
         return assetTokenResponse.tokens
     }
 
-    private func modifyRecordOperationsDictionary(recordsToSave: [CKRecord], savePolicy: CKModifyRecordsOperation.RecordSavePolicy, recordIDsToDelete: [CKRecord.ID]) -> [[String: Any]] {
-        var operationsDictionaryArray: [[String: Any]] = []
-        let saveOperations = recordsToSave.map({ (record) -> [String: Any] in
+    private func modifyRecordOperationsDictionary(recordsToSave: [CKRecord], savePolicy: CKModifyRecordsOperation.RecordSavePolicy, recordIDsToDelete: [CKRecord.ID]) -> [[String: Sendable]] {
+        var operationsDictionaryArray: [[String: Sendable]] = []
+        let saveOperations = recordsToSave.map({ (record) -> [String: Sendable] in
             let operationType: String
 
             let fields: [String]
-            var recordDictionary: [String: Any] = ["recordType": record.recordType, "recordName": record.recordID.recordName]
+            var recordDictionary: [String: Sendable] = ["recordType": record.recordType, "recordName": record.recordID.recordName]
             if let recordChangeTag = record.recordChangeTag {
                 if savePolicy == .ifServerRecordUnchanged {
                     operationType = "update"
@@ -447,7 +447,7 @@ extension CKDatabase {
                 operationType = "create"
             }
 
-            var fieldsDictionary = [String: Any]()
+            var fieldsDictionary = [String: Sendable]()
             for key in fields {
                 if let value = record.object(forKey: key) {
                     fieldsDictionary[key] = value.recordFieldDictionary
@@ -475,7 +475,7 @@ extension CKDatabase {
 
             if let shareRecord = record as? CKShare {
                 if let forRecord = shareRecord.forRecord {
-                    var dictionary = [String: Any]()
+                    var dictionary = [String: Sendable]()
                     dictionary["recordName"] = forRecord.recordID.recordName
                     dictionary["recordChangeTag"] = forRecord.recordChangeTag
                     recordDictionary["forRecord"] = dictionary
@@ -484,18 +484,18 @@ extension CKDatabase {
                 recordDictionary["participants"] = shareRecord.participants.map({ $0.dictionary })
             }
 
-            let operationDictionary: [String: Any] = ["operationType": operationType, "record": recordDictionary]
+            let operationDictionary: [String: Sendable] = ["operationType": operationType, "record": recordDictionary]
             return operationDictionary
         })
         operationsDictionaryArray += saveOperations
 
-        let deleteOperations = recordIDsToDelete.map({ (recordID) -> [String: Any] in
-            let operationDictionary: [String: Any] = [
+        let deleteOperations = recordIDsToDelete.map({ (recordID) -> [String: Sendable] in
+            let operationDictionary: [String: Sendable] = [
                 "operationType": "forceDelete",
                 "record": [
                     "recordName": recordID.recordName,
                     "zoneID": recordID.zoneID.dictionary
-                ]
+                ] as [String: Sendable]
             ]
 
             return operationDictionary

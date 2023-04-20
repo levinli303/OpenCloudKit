@@ -106,7 +106,7 @@ public class CKLocation: NSObject {
 #endif
 
 extension CKLocation {
-    var dictionary: [String: Any] {
+    var dictionary: [String: Sendable] {
         return [
             "latitude": coordinate.latitude,
             "longitude": coordinate.longitude,
@@ -120,7 +120,7 @@ extension CKLocation {
         ]
     }
 
-    convenience init(dictionary: [String: Any]) {
+    convenience init(dictionary: [String: Sendable]) {
         let latitude = (dictionary["latitude"] as? Double) ?? -1
         let longitude = (dictionary["longitude"] as? Double) ?? -1
         let horizontalAccuracy = (dictionary["horizontalAccuracy"] as? Double) ?? -1

@@ -9,5 +9,5 @@
 import Foundation
 
 protocol CKCodable {
-    var dictionary: [String: Any] { get }
+    var dictionary: [String: Sendable] { get }
 }

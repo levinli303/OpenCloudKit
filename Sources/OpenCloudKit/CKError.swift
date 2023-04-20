@@ -16,13 +16,13 @@ public struct CKRequestError: Decodable, Sendable {
     public let redirectURL: URL?
 }
 
-public enum CKError: Error, @unchecked Sendable {
+public enum CKError: Error, Sendable {
     case operationCancelled
     case networkError(error: Error)
     case jsonError(error: Error)
     case ioError(error: Error)
     case keyMissing(key: String)
-    case formatError(userInfo: [String: Any])
+    case formatError(userInfo: [String: Sendable])
     case assetFileNotFound(url: URL)
     case conversionError(data: Data)
 
