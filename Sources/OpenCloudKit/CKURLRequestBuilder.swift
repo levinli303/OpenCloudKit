@@ -162,7 +162,7 @@ class CKURLRequestHelper {
         }
 
         guard let dictionary = jsonObject as? [String: Any] else {
-            throw CKError.conversionError(data: jsonObject)
+            throw CKError.conversionError(data: data)
         }
 
         return dictionary
