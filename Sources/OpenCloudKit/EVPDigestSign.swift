@@ -84,15 +84,27 @@ public final class MessageDigestContext {
 
 public class KeyData: Equatable {
     fileprivate var bio: UnsafeMutablePointer<BIO>
+    #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
+    fileprivate var key: UnsafeMutablePointer<EVP_PKEY>
+    #else
     fileprivate var key: OpaquePointer
+    #endif
 
     init(filePath: String) throws {
         let data = try Data(contentsOf: URL(fileURLWithPath: filePath))
         var mem: UnsafeMutablePointer<BIO>?
+        #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
+        var pkey: UnsafeMutablePointer<EVP_PKEY>?
+        #else
         var pkey: OpaquePointer?
+        #endif
         data.withUnsafeBytes { dataBytes in
             let buffer: UnsafePointer<UInt8> = dataBytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
+            mem = CCryptoBoringSSL_BIO_new_mem_buf(buffer, Int32(data.count))
+            #else
             mem = CCryptoBoringSSL_BIO_new_mem_buf(buffer, ossl_ssize_t(data.count))
+            #endif
             if mem != nil {
                 pkey = CCryptoBoringSSL_PEM_read_bio_PrivateKey(mem, nil, nil, nil)
             }
