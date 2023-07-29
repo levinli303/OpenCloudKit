@@ -36,7 +36,7 @@ public struct CKContainerConfig {
     public var requestTimeout: TimeInterval?
     public var httpClient: HTTPClient?
 
-    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, webAuthToken: String? = nil, requestTimeout: TimeInterval?, httpClient: HTTPClient?) {
+    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, webAuthToken: String? = nil, requestTimeout: TimeInterval? = nil, httpClient: HTTPClient? = nil) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
         self.apiTokenAuth = apiTokenAuth
@@ -46,7 +46,7 @@ public struct CKContainerConfig {
         self.httpClient = httpClient
     }
 
-    public init(containerIdentifier: String, environment: CKEnvironment, serverToServerKeyAuth: CKServerToServerKeyAuth, requestTimeout: TimeInterval?, httpClient: HTTPClient?) {
+    public init(containerIdentifier: String, environment: CKEnvironment, serverToServerKeyAuth: CKServerToServerKeyAuth, requestTimeout: TimeInterval? = nil, httpClient: HTTPClient? = nil) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
         self.apiTokenAuth = nil

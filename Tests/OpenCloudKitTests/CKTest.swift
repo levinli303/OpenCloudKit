@@ -49,7 +49,7 @@ class CKTest: XCTestCase {
         super.setUp()
 
         FileManager.default.changeCurrentDirectoryPath(Bundle.module.resourcePath!)
-        CloudKitHelper.configure(containerID: Constant.containerID, token: Constant.token, environment: Constant.environment, requestTimeout: nil, httpClient: nil)
+        CloudKitHelper.configure(containerID: Constant.containerID, token: Constant.token, environment: Constant.environment)
     }
 
     func requestURL(_ url: URL) -> Data? {
