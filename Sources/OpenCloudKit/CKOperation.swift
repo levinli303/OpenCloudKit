@@ -9,10 +9,6 @@
 import Foundation
 import Dispatch
 
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
-
 public class CKOperation: Operation, @unchecked Sendable {
     public var container: CKContainer?
     public var requestUUIDs: [String] = []

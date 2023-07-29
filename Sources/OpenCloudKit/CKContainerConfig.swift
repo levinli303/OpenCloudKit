@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import NIO
 
 enum CKConfigError: Error {
     case failedInit
@@ -32,23 +33,26 @@ public struct CKContainerConfig {
     public let webAuthToken: String?
     public var serverToServerKeyAuth: CKServerToServerKeyAuth?
     public var requestTimeOut: TimeInterval?
+    public var eventLoopGroup: EventLoopGroup?
 
-    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, webAuthToken: String? = nil, requestTimeOut: TimeInterval? = nil) {
+    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, webAuthToken: String? = nil, requestTimeOut: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
         self.apiTokenAuth = apiTokenAuth
         self.webAuthToken = webAuthToken
         self.serverToServerKeyAuth = nil
         self.requestTimeOut = requestTimeOut
+        self.eventLoopGroup = eventLoopGroup
     }
 
-    public init(containerIdentifier: String, environment: CKEnvironment, serverToServerKeyAuth: CKServerToServerKeyAuth, requestTimeOut: TimeInterval? = nil) {
+    public init(containerIdentifier: String, environment: CKEnvironment, serverToServerKeyAuth: CKServerToServerKeyAuth, requestTimeOut: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
         self.apiTokenAuth = nil
         self.webAuthToken = nil
         self.serverToServerKeyAuth = serverToServerKeyAuth
         self.requestTimeOut = requestTimeOut
+        self.eventLoopGroup = eventLoopGroup
     }
 }
 

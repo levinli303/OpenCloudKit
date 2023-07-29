@@ -5,6 +5,8 @@ import XCTest
 import FoundationNetworking
 #endif
 
+import NIO
+
 #if canImport(CoreLocation)
 import CoreLocation
 
@@ -34,8 +36,8 @@ class CKTest: XCTestCase {
     }
 
     private class CloudKitHelper {
-        class func configure(containerID: String, token: String, environment: CKEnvironment) {
-            let defaultContainerConfig = CKContainerConfig(containerIdentifier: containerID, environment: environment, apiTokenAuth: token)
+        class func configure(containerID: String, token: String, environment: CKEnvironment, requestTimeout: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
+            let defaultContainerConfig = CKContainerConfig(containerIdentifier: containerID, environment: environment, apiTokenAuth: token, requestTimeOut: requestTimeout, eventLoopGroup: eventLoopGroup)
             let config = CKConfig(containers: [defaultContainerConfig])
 
             CloudKit.shared.configure(with: config)
@@ -46,7 +48,7 @@ class CKTest: XCTestCase {
         super.setUp()
 
         FileManager.default.changeCurrentDirectoryPath(Bundle.module.resourcePath!)
-        CloudKitHelper.configure(containerID: Constant.containerID, token: Constant.token, environment: Constant.environment)
+        CloudKitHelper.configure(containerID: Constant.containerID, token: Constant.token, environment: Constant.environment, requestTimeout: nil, eventLoopGroup: nil)
     }
 
     func requestURL(_ url: URL) -> Data? {

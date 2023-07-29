@@ -8,10 +8,6 @@
 
 import Foundation
 
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
-
 struct CKServerRequestAuth {
     static let ISO8601DateFormatter: DateFormatter = {
         let dateFormatter = DateFormatter()
@@ -72,22 +68,20 @@ struct CKServerRequestAuth {
         return signedData?.base64EncodedString(options: [])
     }
 
-    static func authenicateServer(forRequest request: URLRequest, withServerToServerKeyAuth auth: CKServerToServerKeyAuth) -> URLRequest? {
-        return authenticateServer(forRequest: request, serverKeyID: auth.keyID, privateKey: auth.privateKey)
+    static func authenticateServer(for data: Data, path: String, withServerToServerKeyAuth auth: CKServerToServerKeyAuth) -> [(String, String)]? {
+        return authenticateServer(for: data, path: path, serverKeyID: auth.keyID, privateKey: auth.privateKey)
     }
 
-    static func authenticateServer(forRequest request: URLRequest, serverKeyID: String, privateKey: KeyData) -> URLRequest? {
-        var request = request
-        let requestBody = request.httpBody ?? Data()
-        guard let path = request.url?.path, let auth = CKServerRequestAuth(requestBody: requestBody, urlPath: path, privateKey: privateKey) else {
+    static func authenticateServer(for data: Data, path: String, serverKeyID: String, privateKey: KeyData) -> [(String, String)]? {
+        guard let auth = CKServerRequestAuth(requestBody: data, urlPath: path, privateKey: privateKey) else {
             return nil
         }
 
-        request.setValue(serverKeyID, forHTTPHeaderField: CKRequestKeyIDHeaderKey)
-        request.setValue(auth.requestDate, forHTTPHeaderField: CKRequestDateHeaderKey)
-        request.setValue(auth.signature, forHTTPHeaderField: CKRequestSignatureHeaderKey)
-
-        return request
+        var headers = [(String, String)]()
+        headers.append((CKRequestKeyIDHeaderKey, serverKeyID))
+        headers.append((CKRequestDateHeaderKey, auth.requestDate))
+        headers.append((CKRequestSignatureHeaderKey, auth.signature))
+        return headers
     }
 }
 

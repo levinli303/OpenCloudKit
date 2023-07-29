@@ -5,11 +5,10 @@
 //  Created by Levin Li on 2022/1/30.
 //
 
+import AsyncHTTPClient
 import Foundation
-
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
+import NIO
+import NIOHTTP1
 
 enum CKOperationRequestType: String {
     case records
@@ -27,16 +26,29 @@ struct CKServerInfo {
     static let version = "1"
 }
 
+class Request {
+    let request: HTTPClientRequest
+    let timeout: TimeInterval?
+    let eventLoopGroup: EventLoopGroup?
+
+    init(request: HTTPClientRequest, timeout: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
+        self.request = request
+        self.timeout = timeout
+        self.eventLoopGroup = eventLoopGroup
+    }
+}
+
 class CKURLRequestBuilder {
     let account: CKAccount
     let url: URL
     var requestProperties: [String: Sendable] = [:]
     var requestContentType: String = "application/json; charset=utf-8"
-    var requestHTTPMethod: String = "POST"
+    var requestHTTPMethod: HTTPMethod = .POST
     var requestData: Data?
     let requestTimeout: TimeInterval?
+    let eventLoopGroup: EventLoopGroup?
 
-    init(account: CKAccount, serverType: CKServerType, scope: CKDatabase.Scope?, operationType: CKOperationRequestType, path: String, requestTimeout: TimeInterval?) {
+    init(account: CKAccount, serverType: CKServerType, scope: CKDatabase.Scope?, operationType: CKOperationRequestType, path: String, requestTimeout: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
         var baseURL = URL(string: CKServerInfo.path)!
         baseURL.appendPathComponent(serverType.urlComponent)
         baseURL.appendPathComponent(CKServerInfo.version)
@@ -65,16 +77,28 @@ class CKURLRequestBuilder {
         self.account = account
         self.url = baseURL
         self.requestTimeout = requestTimeout
+        self.eventLoopGroup = eventLoopGroup
     }
 
     convenience init(database: CKDatabase, operationType: CKOperationRequestType, path: String) {
-        self.init(account: CloudKit.shared.account(forContainer: database.container)!, serverType: .database, scope: database.scope, operationType: operationType, path: path, requestTimeout: CloudKit.shared.containerConfig(forContainer: database.container)?.requestTimeOut)
+        let config = CloudKit.shared.containerConfig(forContainer: database.container)
+        self.init(
+            account: CloudKit.shared.account(forContainer: database.container)!,
+            serverType: .database,
+            scope: database.scope,
+            operationType: operationType,
+            path: path,
+            requestTimeout: config?.requestTimeOut,
+            eventLoopGroup: config?.eventLoopGroup
+        )
     }
 
     init(url: URL, database: CKDatabase) {
         self.url = url
         self.account = CloudKit.shared.account(forContainer: database.container)!
-        self.requestTimeout = CloudKit.shared.containerConfig(forContainer: database.container)?.requestTimeOut
+        let config = CloudKit.shared.containerConfig(forContainer: database.container)
+        self.requestTimeout = config?.requestTimeOut
+        self.eventLoopGroup = config?.eventLoopGroup
     }
 
     func setZone(_ zoneID: CKRecordZoneID?) -> CKURLRequestBuilder {
@@ -92,7 +116,7 @@ class CKURLRequestBuilder {
         return self
     }
 
-    func setHTTPMethod(_ httpMethod: String) -> CKURLRequestBuilder {
+    func setHTTPMethod(_ httpMethod: HTTPMethod) -> CKURLRequestBuilder {
         requestHTTPMethod = httpMethod
         return self
     }
@@ -102,35 +126,59 @@ class CKURLRequestBuilder {
         return self
     }
 
-    func build() -> URLRequest {
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = requestHTTPMethod
-        urlRequest.addValue(requestContentType, forHTTPHeaderField: "Content-Type")
-        if let data = requestData {
-            urlRequest.httpBody = data
+    func build() -> Request {
+        var urlRequest = HTTPClientRequest(url: url.absoluteString)
+        urlRequest.method = requestHTTPMethod
+        var requestHeaders = [(String, String)]()
+        requestHeaders.append(("Content-Type", requestContentType))
+        let data: Data
+        if let requestData {
+            data = requestData
         }  else if !requestProperties.isEmpty {
-            let jsonData = try! JSONSerialization.data(withJSONObject: requestProperties, options: [])
-            urlRequest.httpBody = jsonData
+            data = try! JSONSerialization.data(withJSONObject: requestProperties, options: [])
+        } else {
+            data = Data()
         }
-        if let serverAccount = account as? CKServerAccount {
-            if let signedRequest = CKServerRequestAuth.authenicateServer(forRequest: urlRequest, withServerToServerKeyAuth: serverAccount.serverToServerAuth) {
-                urlRequest = signedRequest
-            }
+        if let serverAccount = account as? CKServerAccount, let authHeaders = CKServerRequestAuth.authenticateServer(for: data, path: url.path, withServerToServerKeyAuth: serverAccount.serverToServerAuth) {
+            requestHeaders.append(contentsOf: authHeaders)
         }
-        if let requestTimeout = requestTimeout {
-            urlRequest.timeoutInterval = requestTimeout
-        }
-        return urlRequest
+        urlRequest.headers = HTTPHeaders(requestHeaders)
+        urlRequest.body = .bytes(data)
+        return Request(request: urlRequest, timeout: requestTimeout, eventLoopGroup: eventLoopGroup)
     }
 }
 
 class CKURLRequestHelper {
-    private static let shareURLSession = URLSession(configuration: .default)
-
-    private static func _performURLRequest(_ request: URLRequest) async throws -> Data {
-        var dataResponseTuple: (data: Data, response: URLResponse)!
+    private static func _performURLRequest(_ request: Request) async throws -> Data {
+        let eventLoopGroupProvider: HTTPClient.EventLoopGroupProvider
+        if let eventLoopGroup = request.eventLoopGroup {
+            eventLoopGroupProvider = .shared(eventLoopGroup)
+        } else {
+            eventLoopGroupProvider = .createNew
+        }
+        let client = HTTPClient(eventLoopGroupProvider: eventLoopGroupProvider)
+        let result: Result<Data, Error>
         do {
-            dataResponseTuple = try await shareURLSession.data(for: request, delegate: nil)
+            result = .success(try await _performURLRequest(request, client: client))
+        } catch {
+            result = .failure(error)
+        }
+
+        try? await client.shutdown()
+
+        switch result {
+        case .success(let data):
+            return data
+        case .failure(let error):
+            throw error
+        }
+    }
+
+    private static func _performURLRequest(_ request: Request, client: HTTPClient) async throws -> Data {
+        let seconds = request.timeout ?? 60
+        var response: HTTPClientResponse!
+        do {
+            response = try await client.execute(request.request, timeout: .seconds(Int64(seconds)))
         } catch {
             if Task.isCancelled {
                 throw CKError.operationCancelled
@@ -138,20 +186,30 @@ class CKURLRequestHelper {
             throw CKError.networkError(error: error)
         }
 
-        let httpResponse = dataResponseTuple.response as! HTTPURLResponse
-        if httpResponse.statusCode >= 400 {
-            if let requestError = try? JSONDecoder().decode(CKRequestError.self, from: dataResponseTuple.data) {
+        var data = Data()
+        do {
+            for try await buffer in response.body {
+                data.append(contentsOf: buffer.readableBytesView)
+            }
+        } catch {
+            if Task.isCancelled {
+                throw CKError.operationCancelled
+            }
+            throw CKError.networkError(error: error)
+        }
+
+        if response.status.code >= 400 {
+            if let requestError = try? JSONDecoder().decode(CKRequestError.self, from: data) {
                 throw CKError.requestError(error: requestError)
             }
             // Indicates an error, but we do not know how to parse the error
             // throw generic error instead
-            throw CKError.genericHTTPError(status: httpResponse.statusCode)
+            throw CKError.genericHTTPError(status: response.status.code)
         }
-        let data = dataResponseTuple.data
         return data
     }
 
-    static func performURLRequest(_ request: URLRequest) async throws -> [String: Sendable] {
+    static func performURLRequest(_ request: Request) async throws -> [String: Sendable] {
         let data = try await _performURLRequest(request)
         var jsonObject: Any!
         do {
@@ -168,7 +226,7 @@ class CKURLRequestHelper {
         return dictionary
     }
 
-    static func performURLRequest<Response: Decodable>(_ request: URLRequest) async throws -> Response {
+    static func performURLRequest<Response: Decodable>(_ request: Request) async throws -> Response {
         let data = try await _performURLRequest(request)
         do {
             return try JSONDecoder().decode(Response.self, from: data)
@@ -178,20 +236,3 @@ class CKURLRequestHelper {
         }
     }
 }
-
-#if canImport(FoundationNetworking)
-// swift-corelibs-foundation still has not integrated concurrency support for Linux yet...
-extension URLSession {
-    func data(for request: URLRequest, delegate: URLSessionDelegate?) async throws -> (data: Data, response: URLResponse) {
-        return try await withCheckedThrowingContinuation { continuation in
-            dataTask(with: request, completionHandler: { data, response, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume(returning: (data!, response!))
-                }
-            }).resume()
-        }
-    }
-}
-#endif

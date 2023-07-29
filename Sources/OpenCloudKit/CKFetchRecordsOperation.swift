@@ -8,10 +8,6 @@
 
 import Foundation
 
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
-
 private class FetchOperation {
     var recordIDs: [CKRecord.ID] = []
 }

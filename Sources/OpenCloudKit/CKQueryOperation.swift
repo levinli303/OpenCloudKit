@@ -8,10 +8,6 @@
 
 import Foundation
 
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
-
 public class CKQueryOperation: CKDatabaseOperation, @unchecked Sendable {
     public class var maximumResults: Int {
         return 0

@@ -7,10 +7,7 @@
 //
 
 import Foundation
-
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
+import NIOHTTP1
 
 struct CKSubscriptionFetchErrorDictionary {
     static let subscriptionIDKey = "subscriptionID"
@@ -396,7 +393,7 @@ extension CKDatabase {
 
         let (body, contentType) = createUploaHTTPBody(data)
         let request = CKURLRequestBuilder(url: uploadURL.url, database: self)
-            .setHTTPMethod("POST")
+            .setHTTPMethod(.POST)
             .setContentType(contentType)
             .setData(body)
             .build()

@@ -7,10 +7,7 @@
 //
 
 import Foundation
-
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
+import NIOHTTP1
 
 public class CKFetchRecordZonesOperation : CKDatabaseOperation, @unchecked Sendable {
     public static func fetchAllRecordZonesOperation() -> CKFetchRecordZonesOperation {
@@ -130,7 +127,7 @@ extension CKDatabase {
 
     public func allRecordZones() async throws -> [CKRecordZone] {
         let request = CKURLRequestBuilder(database: self, operationType: .zones, path: "list")
-            .setHTTPMethod("GET")
+            .setHTTPMethod(.GET)
             .build()
 
         let dictionary = try await CKURLRequestHelper.performURLRequest(request)

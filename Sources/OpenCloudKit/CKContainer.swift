@@ -7,10 +7,7 @@
 //
 
 import Foundation
-
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
+import NIOHTTP1
 
 public var CKCurrentUserDefaultName: String {
     return "__defaultOwner__"
@@ -128,7 +125,7 @@ extension CKContainer {
 
     public func userRecordID() async throws -> CKRecord.ID {
         let request = CKURLRequestBuilder(database: publicCloudDatabase, operationType: .users, path: "caller")
-            .setHTTPMethod("GET")
+            .setHTTPMethod(.GET)
             .build()
 
         let dictionary = try await CKURLRequestHelper.performURLRequest(request)

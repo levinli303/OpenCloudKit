@@ -8,10 +8,6 @@
 
 import Foundation
 
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
-
 public struct CKSubscriptionFetchError: Sendable {
     static let subscriptionIDKey = "subscriptionID"
     static let reasonKey = "reason"

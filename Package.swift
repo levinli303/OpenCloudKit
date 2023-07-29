@@ -20,9 +20,12 @@ let package = Package(
         .library(name: "OpenCloudKit", targets: ["OpenCloudKit"]),
         .library(name: "CloudKitCodable", targets: ["CloudKitCodable"]),
     ],
-    dependencies: dependencies,
+    dependencies: dependencies + [
+        .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.9.0")
+    ],
     targets: [
         .target(name: "OpenCloudKit", dependencies: [
+            .product(name: "AsyncHTTPClient", package: "async-http-client"),
             .product(name: "Crypto", package: "swift-crypto"),
         ]),
         .target(name: "CloudKitCodable", dependencies: [

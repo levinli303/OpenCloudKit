@@ -30,7 +30,7 @@ public enum CKError: Error, Sendable {
     case recordFetchError(error: CKRecordFetchError)
     case recordZoneFetchError(error: CKRecordZoneFetchError)
     case subscriptionFetchError(error: CKSubscriptionFetchError)
-    case genericHTTPError(status: Int)
+    case genericHTTPError(status: UInt)
 }
 
 extension CKError: LocalizedError {

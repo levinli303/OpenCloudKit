@@ -474,7 +474,7 @@ class CKRecordTests: CKTest {
         XCTAssertEqual(records.count, 1)
     }
 
-    func testFetchDefaultRecordZone() async {
+    func testFetchDefaultRecordZone() {
         let db = CKContainer.default().publicCloudDatabase
         // Zone lookup is not allowed on anonymous account too
         if db.account.isAnonymousAccount { return }

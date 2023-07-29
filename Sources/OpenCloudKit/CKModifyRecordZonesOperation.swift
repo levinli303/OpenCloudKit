@@ -8,10 +8,6 @@
 
 import Foundation
 
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
-
 public struct CKRecordZoneFetchError: Sendable {
     static let zoneIDKey = "zoneID"
     static let reasonKey = "reason"

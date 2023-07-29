@@ -7,10 +7,7 @@
 //
 
 import Foundation
-
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
+import NIOHTTP1
 
 public class CKFetchSubscriptionsOperation : CKDatabaseOperation, @unchecked Sendable {
     public override required init() {
@@ -121,7 +118,7 @@ extension CKDatabase {
 
     public func allSubscriptions() async throws -> [CKSubscription] {
         let request = CKURLRequestBuilder(database: self, operationType: .subscriptions, path: "list")
-            .setHTTPMethod("GET")
+            .setHTTPMethod(.GET)
             .build()
 
         let dictionary = try await CKURLRequestHelper.performURLRequest(request)

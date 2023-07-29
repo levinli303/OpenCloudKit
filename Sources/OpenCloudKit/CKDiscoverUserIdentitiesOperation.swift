@@ -6,10 +6,7 @@
 //
 
 import Foundation
-
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
+import NIOHTTP1
 
 public class CKDiscoverUserIdentitiesOperation: CKOperation, @unchecked Sendable {
     public var userIdentityDiscoveredBlock: ((CKUserIdentity, CKUserIdentity.LookupInfo) -> Void)?
@@ -108,7 +105,7 @@ extension CKContainer {
     func userIdentities(forLookupInfos lookupInfos: [CKUserIdentity.LookupInfo]) async throws -> [(lookupInfo: CKUserIdentity.LookupInfo, userIdentity: CKUserIdentity)] {
         let request = CKURLRequestBuilder(database: publicCloudDatabase, operationType: .users, path: "discover")
             .setParameter(key: "lookupInfos", value: lookupInfos.map({ $0.dictionary }))
-            .setHTTPMethod("POST")
+            .setHTTPMethod(.POST)
             .build()
 
         let dictionary = try await CKURLRequestHelper.performURLRequest(request)
