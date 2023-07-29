@@ -1,4 +1,3 @@
-import AsyncHTTPClient
 import XCTest
 @testable import OpenCloudKit
 
@@ -37,8 +36,8 @@ class CKTest: XCTestCase {
     }
 
     private class CloudKitHelper {
-        class func configure(containerID: String, token: String, environment: CKEnvironment, requestTimeout: TimeInterval?, httpClient: HTTPClient?) {
-            let defaultContainerConfig = CKContainerConfig(containerIdentifier: containerID, environment: environment, apiTokenAuth: token, requestTimeout: requestTimeout, httpClient: httpClient)
+        class func configure(containerID: String, token: String, environment: CKEnvironment, requestTimeout: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
+            let defaultContainerConfig = CKContainerConfig(containerIdentifier: containerID, environment: environment, apiTokenAuth: token, requestTimeout: requestTimeout, httpClient: nil)
             let config = CKConfig(containers: [defaultContainerConfig])
 
             CloudKit.shared.configure(with: config)
@@ -49,7 +48,7 @@ class CKTest: XCTestCase {
         super.setUp()
 
         FileManager.default.changeCurrentDirectoryPath(Bundle.module.resourcePath!)
-        CloudKitHelper.configure(containerID: Constant.containerID, token: Constant.token, environment: Constant.environment, requestTimeout: nil, httpClient: nil)
+        CloudKitHelper.configure(containerID: Constant.containerID, token: Constant.token, environment: Constant.environment, requestTimeout: nil, eventLoopGroup: nil)
     }
 
     func requestURL(_ url: URL) -> Data? {
