@@ -23,12 +23,6 @@ public class CloudKit {
         self.containers = configuration.containers
     }
 
-    public func cleanup() {
-        if CKURLRequestHelper.fallbackClientCreated {
-            try? CKURLRequestHelper.fallbackClient.syncShutdown()
-        }
-    }
-
     func containerConfig(forContainer container: CKContainer) -> CKContainerConfig? {
         return containers.first(where: { (config) -> Bool in
             return config.containerIdentifier == container.containerIdentifier
