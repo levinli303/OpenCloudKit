@@ -148,15 +148,33 @@ class CKURLRequestBuilder {
 }
 
 class CKURLRequestHelper {
-    static var fallbackClientCreated = false
-    static let fallbackClient: HTTPClient = {
-        fallbackClientCreated = true
-        return HTTPClient(eventLoopGroupProvider: .createNew)
-    }()
-
     private static func _performURLRequest(_ request: Request) async throws -> Data {
-        let client = request.httpClient ?? fallbackClient
-        return try await _performURLRequest(request, client: client)
+        let client: HTTPClient
+        let needsShutDown: Bool
+        if let httpClient = request.httpClient {
+            client = httpClient
+            needsShutDown = false
+        } else {
+            client = HTTPClient(eventLoopGroupProvider: .createNew)
+            needsShutDown = true
+        }
+        let result: Result<Data, Error>
+        do {
+            result = .success(try await _performURLRequest(request, client: client))
+        } catch {
+            result = .failure(error)
+        }
+
+        if needsShutDown {
+            try? await client.shutdown()
+        }
+
+        switch result {
+        case .success(let data):
+            return data
+        case .failure(let error):
+            throw error
+        }
     }
 
     private static func _performURLRequest(_ request: Request, client: HTTPClient) async throws -> Data {
