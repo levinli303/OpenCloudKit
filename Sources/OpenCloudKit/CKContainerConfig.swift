@@ -32,26 +32,26 @@ public struct CKContainerConfig {
     public let apiTokenAuth: String?
     public let webAuthToken: String?
     public var serverToServerKeyAuth: CKServerToServerKeyAuth?
-    public var requestTimeOut: TimeInterval?
+    public var requestTimeout: TimeInterval?
     public var eventLoopGroup: EventLoopGroup?
 
-    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, webAuthToken: String? = nil, requestTimeOut: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
+    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, webAuthToken: String? = nil, requestTimeout: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
         self.apiTokenAuth = apiTokenAuth
         self.webAuthToken = webAuthToken
         self.serverToServerKeyAuth = nil
-        self.requestTimeOut = requestTimeOut
+        self.requestTimeout = requestTimeout
         self.eventLoopGroup = eventLoopGroup
     }
 
-    public init(containerIdentifier: String, environment: CKEnvironment, serverToServerKeyAuth: CKServerToServerKeyAuth, requestTimeOut: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
+    public init(containerIdentifier: String, environment: CKEnvironment, serverToServerKeyAuth: CKServerToServerKeyAuth, requestTimeout: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
         self.apiTokenAuth = nil
         self.webAuthToken = nil
         self.serverToServerKeyAuth = serverToServerKeyAuth
-        self.requestTimeOut = requestTimeOut
+        self.requestTimeout = requestTimeout
         self.eventLoopGroup = eventLoopGroup
     }
 }

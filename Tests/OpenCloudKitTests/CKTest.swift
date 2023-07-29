@@ -37,7 +37,7 @@ class CKTest: XCTestCase {
 
     private class CloudKitHelper {
         class func configure(containerID: String, token: String, environment: CKEnvironment, requestTimeout: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
-            let defaultContainerConfig = CKContainerConfig(containerIdentifier: containerID, environment: environment, apiTokenAuth: token, requestTimeOut: requestTimeout, eventLoopGroup: eventLoopGroup)
+            let defaultContainerConfig = CKContainerConfig(containerIdentifier: containerID, environment: environment, apiTokenAuth: token, requestTimeout: requestTimeout, eventLoopGroup: eventLoopGroup)
             let config = CKConfig(containers: [defaultContainerConfig])
 
             CloudKit.shared.configure(with: config)

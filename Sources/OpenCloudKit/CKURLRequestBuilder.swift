@@ -88,7 +88,7 @@ class CKURLRequestBuilder {
             scope: database.scope,
             operationType: operationType,
             path: path,
-            requestTimeout: config?.requestTimeOut,
+            requestTimeout: config?.requestTimeout,
             eventLoopGroup: config?.eventLoopGroup
         )
     }
@@ -97,7 +97,7 @@ class CKURLRequestBuilder {
         self.url = url
         self.account = CloudKit.shared.account(forContainer: database.container)!
         let config = CloudKit.shared.containerConfig(forContainer: database.container)
-        self.requestTimeout = config?.requestTimeOut
+        self.requestTimeout = config?.requestTimeout
         self.eventLoopGroup = config?.eventLoopGroup
     }
 
