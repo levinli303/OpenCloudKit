@@ -7,6 +7,7 @@
 
 import AsyncHTTPClient
 import Foundation
+import NIO
 import NIOHTTP1
 
 enum CKOperationRequestType: String {
@@ -28,12 +29,12 @@ struct CKServerInfo {
 class Request {
     let request: HTTPClientRequest
     let timeout: TimeInterval?
-    let httpClient: HTTPClient?
+    let eventLoopGroup: EventLoopGroup?
 
-    init(request: HTTPClientRequest, timeout: TimeInterval?, httpClient: HTTPClient?) {
+    init(request: HTTPClientRequest, timeout: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
         self.request = request
         self.timeout = timeout
-        self.httpClient = httpClient
+        self.eventLoopGroup = eventLoopGroup
     }
 }
 
@@ -45,9 +46,9 @@ class CKURLRequestBuilder {
     var requestHTTPMethod: HTTPMethod = .POST
     var requestData: Data?
     let requestTimeout: TimeInterval?
-    let httpClient: HTTPClient?
+    let eventLoopGroup: EventLoopGroup?
 
-    init(account: CKAccount, serverType: CKServerType, scope: CKDatabase.Scope?, operationType: CKOperationRequestType, path: String, requestTimeout: TimeInterval?, httpClient: HTTPClient?) {
+    init(account: CKAccount, serverType: CKServerType, scope: CKDatabase.Scope?, operationType: CKOperationRequestType, path: String, requestTimeout: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
         var baseURL = URL(string: CKServerInfo.path)!
         baseURL.appendPathComponent(serverType.urlComponent)
         baseURL.appendPathComponent(CKServerInfo.version)
@@ -76,7 +77,7 @@ class CKURLRequestBuilder {
         self.account = account
         self.url = baseURL
         self.requestTimeout = requestTimeout
-        self.httpClient = httpClient
+        self.eventLoopGroup = eventLoopGroup
     }
 
     convenience init(database: CKDatabase, operationType: CKOperationRequestType, path: String) {
@@ -88,7 +89,7 @@ class CKURLRequestBuilder {
             operationType: operationType,
             path: path,
             requestTimeout: config?.requestTimeout,
-            httpClient: config?.httpClient
+            eventLoopGroup: config?.eventLoopGroup
         )
     }
 
@@ -97,7 +98,7 @@ class CKURLRequestBuilder {
         self.account = CloudKit.shared.account(forContainer: database.container)!
         let config = CloudKit.shared.containerConfig(forContainer: database.container)
         self.requestTimeout = config?.requestTimeout
-        self.httpClient = config?.httpClient
+        self.eventLoopGroup = config?.eventLoopGroup
     }
 
     func setZone(_ zoneID: CKRecordZoneID?) -> CKURLRequestBuilder {
@@ -143,20 +144,34 @@ class CKURLRequestBuilder {
         }
         urlRequest.headers = HTTPHeaders(requestHeaders)
         urlRequest.body = .bytes(data)
-        return Request(request: urlRequest, timeout: requestTimeout, httpClient: httpClient)
+        return Request(request: urlRequest, timeout: requestTimeout, eventLoopGroup: eventLoopGroup)
     }
 }
 
 class CKURLRequestHelper {
-    static var fallbackClientCreated = false
-    static let fallbackClient: HTTPClient = {
-        fallbackClientCreated = true
-        return HTTPClient(eventLoopGroupProvider: .createNew)
-    }()
-
     private static func _performURLRequest(_ request: Request) async throws -> Data {
-        let client = request.httpClient ?? fallbackClient
-        return try await _performURLRequest(request, client: client)
+        let eventLoopGroupProvider: HTTPClient.EventLoopGroupProvider
+        if let eventLoopGroup = request.eventLoopGroup {
+            eventLoopGroupProvider = .shared(eventLoopGroup)
+        } else {
+            eventLoopGroupProvider = .createNew
+        }
+        let client = HTTPClient(eventLoopGroupProvider: eventLoopGroupProvider)
+        let result: Result<Data, Error>
+        do {
+            result = .success(try await _performURLRequest(request, client: client))
+        } catch {
+            result = .failure(error)
+        }
+
+        try? await client.shutdown()
+
+        switch result {
+        case .success(let data):
+            return data
+        case .failure(let error):
+            throw error
+        }
     }
 
     private static func _performURLRequest(_ request: Request, client: HTTPClient) async throws -> Data {

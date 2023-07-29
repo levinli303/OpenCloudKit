@@ -6,7 +6,6 @@
 //
 //
 
-import AsyncHTTPClient
 import Foundation
 import NIO
 
@@ -34,26 +33,26 @@ public struct CKContainerConfig {
     public let webAuthToken: String?
     public var serverToServerKeyAuth: CKServerToServerKeyAuth?
     public var requestTimeout: TimeInterval?
-    public var httpClient: HTTPClient?
+    public var eventLoopGroup: EventLoopGroup?
 
-    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, webAuthToken: String? = nil, requestTimeout: TimeInterval?, httpClient: HTTPClient?) {
+    public init(containerIdentifier: String, environment: CKEnvironment, apiTokenAuth: String, webAuthToken: String? = nil, requestTimeout: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
         self.apiTokenAuth = apiTokenAuth
         self.webAuthToken = webAuthToken
         self.serverToServerKeyAuth = nil
         self.requestTimeout = requestTimeout
-        self.httpClient = httpClient
+        self.eventLoopGroup = eventLoopGroup
     }
 
-    public init(containerIdentifier: String, environment: CKEnvironment, serverToServerKeyAuth: CKServerToServerKeyAuth, requestTimeout: TimeInterval?, httpClient: HTTPClient?) {
+    public init(containerIdentifier: String, environment: CKEnvironment, serverToServerKeyAuth: CKServerToServerKeyAuth, requestTimeout: TimeInterval?, eventLoopGroup: EventLoopGroup?) {
         self.containerIdentifier = containerIdentifier
         self.environment = environment
         self.apiTokenAuth = nil
         self.webAuthToken = nil
         self.serverToServerKeyAuth = serverToServerKeyAuth
         self.requestTimeout = requestTimeout
-        self.httpClient = httpClient
+        self.eventLoopGroup = eventLoopGroup
     }
 }
 
