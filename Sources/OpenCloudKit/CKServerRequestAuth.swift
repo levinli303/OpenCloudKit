@@ -40,12 +40,7 @@ struct CKServerRequestAuth {
         var finalData: Data?
         globalLock.lock()
         do {
-            let ecsda = try MessageDigest("sha256WithRSAEncryption")
-            let digestContext =  try MessageDigestContext(ecsda)
-
-            try digestContext.update(data)
-
-            finalData = try digestContext.sign(keyData: privateKey)
+            finalData = try privateKey.signature(for: data)
         } catch {
             print("Error signing request: \(error)")
         }

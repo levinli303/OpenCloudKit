@@ -84,8 +84,3 @@ public struct CKServerToServerKeyAuth {
         self.privateKeyPassPhrase = privateKeyPassPhrase
     }
 }
-extension CKServerToServerKeyAuth:Equatable {}
-
-public func ==(lhs: CKServerToServerKeyAuth, rhs: CKServerToServerKeyAuth) -> Bool {
-    return lhs.keyID == rhs.keyID && lhs.privateKey == rhs.privateKey && lhs.privateKeyPassPhrase == rhs.privateKeyPassPhrase
-}
