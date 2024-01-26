@@ -15,6 +15,7 @@ public var CKCurrentUserDefaultName: String {
 
 public class CKContainer: @unchecked Sendable {
     static var containerFactories = [String: CKContainer]()
+    private static let containerLock = NSLock()
 
     private let convenienceOperationQueue = OperationQueue()
     public let containerIdentifier: String
@@ -24,11 +25,14 @@ public class CKContainer: @unchecked Sendable {
     }
 
     public class func get(_ containerIdentifier: String) -> CKContainer {
+        containerLock.lock()
         if let existing = containerFactories[containerIdentifier] {
+            containerLock.unlock()
             return existing
         }
         let container = CKContainer(containerIdentifier: containerIdentifier)
         containerFactories[containerIdentifier] = container
+        containerLock.unlock()
         return container
     }
 
