@@ -20,9 +20,9 @@ struct CKSortDescriptorDictionary {
     static let relativeLocation = "relativeLocation"
 }
 
-public class CKQuery: CKCodable {
-    public var recordType: String
-    
+public class CKQuery: CKCodable, @unchecked Sendable {
+    public let recordType: String
+
     let filters: [CKQueryFilter]
     
     public init(recordType: String, filters: [CKQueryFilter]) {

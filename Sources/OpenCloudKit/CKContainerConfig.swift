@@ -63,7 +63,7 @@ extension CKContainerConfig {
     }
 }
 
-public struct CKServerToServerKeyAuth {
+public struct CKServerToServerKeyAuth: Sendable {
     // A unique identifier for the key generated using CloudKit Dashboard. To create this key, read
     public let keyID: String
 
@@ -71,7 +71,7 @@ public struct CKServerToServerKeyAuth {
     public let privateKeyPassPhrase: String?
 
     // DER data from the pem key
-    public var privateKey: KeyData
+    public let privateKey: KeyData
 
     public init(keyID: String, privateKeyFile: String, privateKeyPassPhrase: String? = nil) throws {
         let privateKey = try KeyData(filePath: privateKeyFile)

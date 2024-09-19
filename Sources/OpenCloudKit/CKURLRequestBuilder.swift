@@ -155,7 +155,7 @@ class CKURLRequestHelper {
             client = httpClient
             needsShutDown = false
         } else {
-            client = HTTPClient(eventLoopGroupProvider: .createNew)
+            client = HTTPClient(eventLoopGroupProvider: .singleton)
             needsShutDown = true
         }
         let result: Result<Data, Error>

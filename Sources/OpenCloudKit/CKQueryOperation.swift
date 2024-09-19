@@ -8,72 +8,8 @@
 
 import Foundation
 
-public class CKQueryOperation: CKDatabaseOperation, @unchecked Sendable {
-    public class var maximumResults: Int {
-        return 0
-    }
-
-    public override init() {
-        super.init()
-    }
-
-    public convenience init(query: CKQuery) {
-        self.init()
-        self.query = query
-    }
-
-    public convenience init(cursor: Cursor) {
-        self.init()
-        self.cursor = cursor
-    }
-
-    public var query: CKQuery?
-    public var cursor: Cursor?
-
-    public var zoneID: CKRecordZone.ID?
-    public var resultsLimit: Int = CKQueryOperation.maximumResults
-    public var desiredKeys: [CKRecord.FieldKey]?
-
-    public var queryResultBlock: ((_ operationResult: Result<CKQueryOperation.Cursor?, Error>) -> Void)?
-    public var recordMatchedBlock: ((_ recordID: CKRecord.ID, _ recordResult: Result<CKRecord, Error>) -> Void)?
-
-    override func performCKOperation() {
-        let db = database ?? CKContainer.default().publicCloudDatabase
-        task = Task {
-            weak var weakSelf = self
-            do {
-                let result: (matchResults: [(CKRecord.ID, Result<CKRecord, Error>)], queryCursor: CKQueryOperation.Cursor?)
-                if let queryCursor = cursor {
-                    result = try await db.records(continuingMatchFrom: queryCursor, desiredKeys: desiredKeys, resultsLimit: resultsLimit)
-                } else {
-                    result = try await db.records(matching: query!, inZoneWith: zoneID, desiredKeys: desiredKeys, resultsLimit: resultsLimit)
-                }
-
-                guard let self = weakSelf, !self.isCancelled else {
-                    throw CKError.operationCancelled
-                }
-
-                for (recordID, recordResult) in result.matchResults {
-                    self.callbackQueue.async {
-                        self.recordMatchedBlock?(recordID, recordResult)
-                    }
-                }
-
-                self.callbackQueue.async {
-                    self.queryResultBlock?(.success(result.queryCursor))
-                    self.finishOnCallbackQueue()
-                }
-            }
-            catch {
-                guard let self = weakSelf else { return }
-
-                self.callbackQueue.async {
-                    self.queryResultBlock?(.failure(error))
-                    self.finishOnCallbackQueue()
-                }
-            }
-        }
-    }
+public final class CKQueryOperation {
+    public static let maximumResults: Int = 0
 }
 
 extension CKDatabase {
@@ -140,15 +76,5 @@ extension CKDatabase {
             }
         }
         return (records, cursor)
-    }
-
-    public func perform(_ query: CKQuery, inZoneWith zoneID: CKRecordZone.ID?, completionHandler: @escaping ([CKRecord]?, Error?) -> Void) {
-        Task {
-            do {
-                completionHandler(try await perform(query, inZoneWith: zoneID), nil)
-            } catch {
-                completionHandler(nil, error)
-            }
-        }
     }
 }

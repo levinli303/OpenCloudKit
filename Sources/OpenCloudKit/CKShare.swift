@@ -10,7 +10,7 @@ import Foundation
 
 public let CKShareRecordType = "cloudkit.share"
 
-public class CKShare : CKRecord {
+public class CKShare : CKRecord, @unchecked Sendable {
     var forRecord: CKRecord?
 
     /* When saving a newly created CKShare, you must save the share and its rootRecord in the same CKModifyRecordsOperation batch. */

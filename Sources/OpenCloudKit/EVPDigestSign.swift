@@ -9,7 +9,7 @@
 import Foundation
 import Crypto
 
-public class KeyData {
+public class KeyData: @unchecked Sendable {
     private let key: P256.Signing.PrivateKey
 
     func signature(for data: Data) throws -> Data {

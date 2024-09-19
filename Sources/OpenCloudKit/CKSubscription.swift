@@ -12,7 +12,7 @@ public protocol CustomDictionaryConvertible {
     var dictionary: [String: Sendable] { get }
 }
 
-public class CKSubscription: NSObject {
+public class CKSubscription: NSObject, @unchecked Sendable {
     public enum SubscriptionType : Int, CustomStringConvertible, Sendable {
         case query
         case recordZone
@@ -105,7 +105,7 @@ extension CKQuerySubscription {
 }
 
 
-public class CKQuerySubscription : CKSubscription {
+public class CKQuerySubscription : CKSubscription, @unchecked Sendable {
     public convenience init(recordType: String, filters: [CKQueryFilter], options querySubscriptionOptions: Options) {
         let subscriptionID = UUID().uuidString
         self.init(recordType: recordType, filters: filters, subscriptionID: subscriptionID, options: querySubscriptionOptions)
@@ -144,7 +144,7 @@ extension CKQuerySubscription {
     }
 }
 
-public class CKRecordZoneSubscription : CKSubscription {
+public class CKRecordZoneSubscription : CKSubscription, @unchecked Sendable {
     public convenience init(zoneID: CKRecordZone.ID) {
         let subscriptionID = UUID().uuidString
         self.init(zoneID: zoneID, subscriptionID: subscriptionID)

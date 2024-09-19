@@ -8,7 +8,7 @@
 
 import Foundation
 
-public final class CKUserIdentity : NSObject, NSSecureCoding {
+public final class CKUserIdentity : NSObject, NSSecureCoding, @unchecked Sendable {
     // This is the lookupInfo you passed in to CKDiscoverUserIdentitiesOperation or CKFetchShareParticipantsOperation
     public let lookupInfo: CKUserIdentity.LookupInfo?
     public let nameComponents: CKPersonNameComponents?

@@ -8,7 +8,7 @@
 
 import Foundation
 
-public class CKAsset: NSObject {
+public class CKAsset: NSObject, @unchecked Sendable {
     struct UploadInfo: Decodable {
         let size: Int64
         let receipt: String

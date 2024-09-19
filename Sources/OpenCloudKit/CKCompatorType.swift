@@ -8,7 +8,7 @@
 
 import Foundation
 
-public enum CKCompatorType: String {
+public enum CKCompatorType: String, Sendable {
     case equals = "EQUALS"
     case notEquals = "NOT_EQUALS"
     case lessThan = "LESS_THAN"

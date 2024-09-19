@@ -1,19 +1,19 @@
 import NIO
 import Foundation
 
-public enum CKEnvironment: String {
+public enum CKEnvironment: String, Sendable {
     case development
     case production
 }
 
-enum CKOperationType {
+enum CKOperationType: Sendable {
     case create
     case update
     case replace
     case forceReplace
 }
 
-public class CloudKit {
+public class CloudKit: @unchecked Sendable {
     public private(set) var containers: [CKContainerConfig] = []
     public static let shared = CloudKit()
 

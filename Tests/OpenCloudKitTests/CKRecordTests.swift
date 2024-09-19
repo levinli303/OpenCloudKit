@@ -9,8 +9,8 @@ import XCTest
 import Foundation
 @testable import OpenCloudKit
 
-class CKRecordTests: CKTest {
-    static var recordType = "TestData"
+class CKRecordTests: CKTest, @unchecked Sendable {
+    static let recordType = "TestData"
 
     enum Constant {
         static let bytesValue = Data(repeating: 0, count: 10)
@@ -40,7 +40,7 @@ class CKRecordTests: CKTest {
         ]
     }
 
-    func testCreateRecord() {
+    func testCreateRecord() async throws {
         let db = CKContainer.default().publicCloudDatabase
         if db.account.isAnonymousAccount { return }
         let id = UUID().uuidString
@@ -58,74 +58,62 @@ class CKRecordTests: CKTest {
         record["dateList"] = Constant.dateListValue
         record["location"] = Constant.locationValue
         record["locationList"] = Constant.locationListValue
-        let expectation = XCTestExpectation(description: "Wait for response")
-        db.save(record) { record, error in
-            XCTAssertNil(error)
-            XCTAssertNotNil(record)
+        let (saveResults, deleteResults) = try await db.modifyRecords(saving: [record], deleting: [])
+        XCTAssertEqual(saveResults.count, 1)
+        XCTAssertEqual(deleteResults.count, 0)
+        let saveResult = saveResults.first!.value
+        let newRecord = try saveResult.get()
 
-            let newRecord = record!
-            XCTAssertEqual(newRecord["bytes"] as! Data, Constant.bytesValue)
-            XCTAssertEqual(newRecord["bytesList"] as! [Data], Constant.bytesListValue)
-            XCTAssertEqual(newRecord["string"] as! String, Constant.stringValue)
-            XCTAssertEqual(newRecord["stringList"] as! [String], Constant.stringListValue)
-            XCTAssertEqual(newRecord["int64"] as! Int64, Constant.int64Value)
-            XCTAssertEqual(newRecord["int64List"] as! [Int64], Constant.int64ListValue)
-            XCTAssertEqual(newRecord["double"] as! Double, Constant.doubleValue)
-            XCTAssertEqual(newRecord["doubleList"] as! [Double], Constant.doubleListValue)
-            XCTAssertEqual(newRecord["date"] as! Date, Constant.dateValue)
-            XCTAssertEqual(newRecord["dateList"] as! [Date], Constant.dateListValue)
-            XCTAssertEqual((newRecord["location"] as! CKLocation).coordinate, Constant.locationValue.coordinate)
-            XCTAssertEqual((newRecord["locationList"] as! [CKLocation]).map { $0.coordinate }, Constant.locationListValue.map { $0.coordinate })
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 10)
+        XCTAssertEqual(newRecord["bytes"] as! Data, Constant.bytesValue)
+        XCTAssertEqual(newRecord["bytesList"] as! [Data], Constant.bytesListValue)
+        XCTAssertEqual(newRecord["string"] as! String, Constant.stringValue)
+        XCTAssertEqual(newRecord["stringList"] as! [String], Constant.stringListValue)
+        XCTAssertEqual(newRecord["int64"] as! Int64, Constant.int64Value)
+        XCTAssertEqual(newRecord["int64List"] as! [Int64], Constant.int64ListValue)
+        XCTAssertEqual(newRecord["double"] as! Double, Constant.doubleValue)
+        XCTAssertEqual(newRecord["doubleList"] as! [Double], Constant.doubleListValue)
+        XCTAssertEqual(newRecord["date"] as! Date, Constant.dateValue)
+        XCTAssertEqual(newRecord["dateList"] as! [Date], Constant.dateListValue)
+        XCTAssertEqual((newRecord["location"] as! CKLocation).coordinate, Constant.locationValue.coordinate)
+        XCTAssertEqual((newRecord["locationList"] as! [CKLocation]).map { $0.coordinate }, Constant.locationListValue.map { $0.coordinate })
     }
 
-    func testFetchRecord() {
+    func testFetchRecord() async throws {
         let db = CKContainer.default().publicCloudDatabase
-        let expectation = XCTestExpectation(description: "Wait for response")
         let recordID = CKRecord.ID(recordName: "E2F5C6D8-31F6-4A6D-B018-4C629DCB3FF3")
-        db.fetch(withRecordID: recordID) { record, error in
-            XCTAssertNil(error)
-            XCTAssertNotNil(record)
-
-            let newRecord = record!
-            XCTAssertEqual(newRecord["string"] as! String, Constant.stringValue)
-            XCTAssertEqual(newRecord["stringList"] as! [String], Constant.stringListValue)
-            XCTAssertEqual(newRecord["int64"] as! Int64, Constant.int64Value)
-            XCTAssertEqual(newRecord["int64List"] as! [Int64], Constant.int64ListValue)
-            XCTAssertEqual(newRecord["double"] as! Double, Constant.doubleValue)
-            XCTAssertEqual(newRecord["doubleList"] as! [Double], Constant.doubleListValue)
-            XCTAssertEqual(newRecord["date"] as! Date, Constant.dateValue)
-            XCTAssertEqual(newRecord["dateList"] as! [Date], Constant.dateListValue)
-            XCTAssertEqual((newRecord["location"] as! CKLocation).coordinate, Constant.locationValue.coordinate)
-            XCTAssertEqual((newRecord["locationList"] as! [CKLocation]).map { $0.coordinate }, Constant.locationListValue.map { $0.coordinate })
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 10)
+        let recordResults = try await db.records(for: [recordID])
+        XCTAssertEqual(recordResults.count, 1)
+        let recordResult = recordResults.first!.value
+        let newRecord = try recordResult.get()
+        XCTAssertEqual(newRecord["string"] as! String, Constant.stringValue)
+        XCTAssertEqual(newRecord["stringList"] as! [String], Constant.stringListValue)
+        XCTAssertEqual(newRecord["int64"] as! Int64, Constant.int64Value)
+        XCTAssertEqual(newRecord["int64List"] as! [Int64], Constant.int64ListValue)
+        XCTAssertEqual(newRecord["double"] as! Double, Constant.doubleValue)
+        XCTAssertEqual(newRecord["doubleList"] as! [Double], Constant.doubleListValue)
+        XCTAssertEqual(newRecord["date"] as! Date, Constant.dateValue)
+        XCTAssertEqual(newRecord["dateList"] as! [Date], Constant.dateListValue)
+        XCTAssertEqual((newRecord["location"] as! CKLocation).coordinate, Constant.locationValue.coordinate)
+        XCTAssertEqual((newRecord["locationList"] as! [CKLocation]).map { $0.coordinate }, Constant.locationListValue.map { $0.coordinate })
     }
 
-    func testFetchRecordWithAsset() {
+    func testFetchRecordWithAsset() async throws {
         let db = CKContainer.default().publicCloudDatabase
-        let expectation = XCTestExpectation(description: "Wait for response")
         let recordID = CKRecord.ID(recordName: "7301F079-0298-4DED-8948-8A1286C84653")
-        db.fetch(withRecordID: recordID) { record, error in
-            XCTAssertNil(error)
-            XCTAssertNotNil(record)
+        let recordResults = try await db.records(for: [recordID])
+        XCTAssertEqual(recordResults.count, 1)
+        let recordResult = recordResults.first!.value
+        let newRecord = try recordResult.get()
 
-            let newRecord = record!
-            let asset = newRecord["asset"] as! CKAsset
-            let assetContent = String(data: self.requestURL(asset.downloadURL!)!, encoding: .utf8)
-            XCTAssertEqual(assetContent, "1\n")
+        let asset = newRecord["asset"] as! CKAsset
+        let assetContent = try await String(data: self.requestURL(asset.downloadURL!)!, encoding: .utf8)
+        XCTAssertEqual(assetContent, "1\n")
 
-            let assetList = newRecord["assetList"] as! [CKAsset]
-            XCTAssertEqual(assetList.count, 4)
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 10)
+        let assetList = newRecord["assetList"] as! [CKAsset]
+        XCTAssertEqual(assetList.count, 4)
     }
 
-    func testCreateRecordWithAsset() {
+    func testCreateRecordWithAsset() async throws {
         let db = CKContainer.default().publicCloudDatabase
         if db.account.isAnonymousAccount { return }
         let id = UUID().uuidString
@@ -133,35 +121,30 @@ class CKRecordTests: CKTest {
         let record = CKRecord(recordType: Self.recordType, recordID: recordID)
         record["asset"] = CKAsset(fileURL: URL(fileURLWithPath: "asset1.txt"))
         record["assetList"] = [CKAsset(fileURL: URL(fileURLWithPath: "asset1.txt")), CKAsset(fileURL: URL(fileURLWithPath: "asset2.txt"))]
-        let expectation = XCTestExpectation(description: "Wait for response")
-        db.save(record) { record, error in
-            XCTAssertNil(error)
-            XCTAssertNotNil(record)
+        let (saveResults, deleteResults) = try await db.modifyRecords(saving: [record], deleting: [])
+        XCTAssertEqual(saveResults.count, 1)
+        XCTAssertEqual(deleteResults.count, 0)
+        let saveResult = saveResults.first!.value
+        let newRecord = try saveResult.get()
+        let asset = newRecord["asset"] as! CKAsset
+        let assetContent = try await String(data: self.requestURL(asset.downloadURL!)!, encoding: .utf8)
+        XCTAssertEqual(assetContent, "1\n")
 
-            let newRecord = record!
-            let asset = newRecord["asset"] as! CKAsset
-            let assetContent = String(data: self.requestURL(asset.downloadURL!)!, encoding: .utf8)
-            XCTAssertEqual(assetContent, "1\n")
-
-            let assetList = newRecord["assetList"] as! [CKAsset]
-            XCTAssertEqual(assetList.count, 2)
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 10)
+        let assetList = newRecord["assetList"] as! [CKAsset]
+        XCTAssertEqual(assetList.count, 2)
     }
 
-    func testCreateRecordAnonymous() {
+    func testCreateRecordAnonymous() async throws {
         let db = CKContainer.default().publicCloudDatabase
         if !db.account.isAnonymousAccount { return }
         let id = UUID().uuidString
         let recordID = CKRecord.ID(recordName: id)
         let record = CKRecord(recordType: Self.recordType, recordID: recordID)
         record["string"] = Constant.stringValue
-        let expectation = XCTestExpectation(description: "Wait for response")
-        db.save(record) { record, error in
-            XCTAssertNil(record)
-            XCTAssertNotNil(error)
-
+        do {
+            let (_, _) = try await db.modifyRecords(saving: [record], deleting: [])
+            XCTFail("This operation should fail")
+        } catch {
             guard let error = error as? CKError else {
                 XCTFail("An unknown type of error is returned, expected CKError")
                 return
@@ -173,87 +156,50 @@ class CKRecordTests: CKTest {
             default:
                 XCTFail("Incorrect CKError is returned, expected requestError")
             }
-            expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 10)
     }
 
-    func testFetchLimit() {
+    func testFetchLimit() async throws {
         let resultLimit = 1
         let db = CKContainer.default().publicCloudDatabase
-        let query = CKQuery(recordType: Self.recordType, filters: [])
-        let op = CKQueryOperation(query: query)
-        op.resultsLimit = resultLimit
-        var records: [CKRecord] = []
-        op.recordMatchedBlock = { _, result in
-            switch result {
-            case .success(let record):
-                records.append(record)
-            case .failure(let error):
-                XCTFail("Error occured on record match \(error)")
-            }
-        }
-        let expectation = XCTestExpectation(description: "Wait for response")
-        op.queryResultBlock = { result in
-            switch result {
-            case .success:
-                expectation.fulfill()
-            case .failure(let error):
-                XCTFail("Error occured on completion \(error)")
-            }
-        }
-        db.add(op)
-        wait(for: [expectation], timeout: 10)
-        XCTAssertEqual(records.count, resultLimit)
+        let query = CKQuery(recordType: Self.recordType, filters: [
+            CKQueryFilter(fieldName: "queryableString", comparator: .equals, fieldValue: "DO-NOT-DELETE")
+        ])
+        let (matchedResults, _) = try await db.records(matching: query, resultsLimit: resultLimit)
+        XCTAssertEqual(matchedResults.count, resultLimit)
+        let (_, recordResult) = matchedResults[0]
+        XCTAssertNoThrow(try recordResult.get())
     }
 
-    func testDesiredKeys() {
+    func testDesiredKeys() async throws {
         let db = CKContainer.default().publicCloudDatabase
         let recordID = CKRecord.ID(recordName: "043BB555-EA0D-487E-BCC4-257184A5078C")
         let reference = CKRecord.Reference(recordID: recordID, action: .none)
         let query = CKQuery(recordType: Self.recordType, filters: [
             CKQueryFilter(fieldName: "___recordID", comparator: .equals, fieldValue: reference)
         ])
-        let op = CKQueryOperation(query: query)
-        op.resultsLimit = 1
-        op.desiredKeys = ["string", "int64", "double"]
-        var records: [CKRecord] = []
-        op.recordMatchedBlock = { _, result in
-            switch result {
-            case .success(let record):
-                records.append(record)
-            case .failure(let error):
-                XCTFail("Error occured on record match \(error)")
-            }
-        }
-        let expectation = XCTestExpectation(description: "Wait for response")
-        op.queryResultBlock = { result in
-            switch result {
-            case .success:
-                expectation.fulfill()
-            case .failure(let error):
-                XCTFail("Error occured on completion \(error)")
-            }
-        }
-        db.add(op)
-        wait(for: [expectation], timeout: 10)
-        for record in records {
-            XCTAssertNotNil(record["string"])
-            XCTAssertNotNil(record["int64"])
-            XCTAssertNotNil(record["double"])
-            XCTAssertNil(record["stringList"])
-            XCTAssertNil(record["int64List"])
-            XCTAssertNil(record["doubleList"])
-        }
+        let (matchedResults, _) = try await db.records(matching: query, desiredKeys: ["string", "int64", "double"], resultsLimit: 1)
+        XCTAssertEqual(matchedResults.count, 1)
+        let (_, recordResult) = matchedResults[0]
+        let record = try recordResult.get()
+        XCTAssertNotNil(record["string"])
+        XCTAssertNotNil(record["int64"])
+        XCTAssertNotNil(record["double"])
+        XCTAssertNil(record["stringList"])
+        XCTAssertNil(record["int64List"])
+        XCTAssertNil(record["doubleList"])
     }
 
-    func testFetchUnknownRecord() {
+    func testFetchUnknownRecord() async throws {
         let db = CKContainer.default().publicCloudDatabase
-        let expectation = XCTestExpectation(description: "Wait for response")
         let recordID = CKRecord.ID(recordName: "DO-NOT-CREATE")
-        db.fetch(withRecordID: recordID) { record, error in
-            XCTAssertNil(record)
-            XCTAssertNotNil(error)
+        let recordResults = try await db.records(for: [recordID])
+        XCTAssertEqual(recordResults.count, 1)
+        let recordResult = recordResults.first!.value
+        switch recordResult {
+        case .success:
+            XCTFail("This operation should fail")
+        case .failure(let error):
             guard let error = error as? CKError else {
                 XCTFail("An unknown type of error is returned, expected CKError")
                 return
@@ -265,38 +211,29 @@ class CKRecordTests: CKTest {
             default:
                 XCTFail("Incorrect CKError is returned, expected recordFetchError")
             }
-            expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 10)
     }
 
-    func testDeleteUnknownRecord() {
+    func testDeleteUnknownRecord() async throws {
         // This should succeed as the record never exists
         let db = CKContainer.default().publicCloudDatabase
         if db.account.isAnonymousAccount { return }
-        let expectation = XCTestExpectation(description: "Wait for response")
         let recordID = CKRecord.ID(recordName: "DO-NOT-CREATE")
-        db.delete(withRecordID: recordID) { record, error in
-            XCTAssertNil(error)
-            XCTAssertNotNil(record)
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 10)
+        let (saveResults, deleteResults) = try await db.modifyRecords(saving: [], deleting: [recordID])
+        XCTAssertEqual(saveResults.count, 0)
+        XCTAssertEqual(deleteResults.count, 1)
+        let deleteResult = deleteResults.first!.value
+        XCTAssertNoThrow(try deleteResult.get())
     }
 
-    func testModifyAndDeleteUnknownRecord() {
+    func testModifyAndDeleteUnknownRecord() async throws {
         let db = CKContainer.default().publicCloudDatabase
         if db.account.isAnonymousAccount { return }
-        let expectation1 = XCTestExpectation(description: "Wait for record fetch to finish")
-        var existing: CKRecord?
-        db.fetch(withRecordID: CKRecord.ID(recordName: "8BDA40C6-DB7C-BA3D-33AA-FF4C9B9D077A")) { record, error in
-            XCTAssertNil(error)
-            XCTAssertNotNil(record)
-            existing = record
-            expectation1.fulfill()
-        }
-        wait(for: [expectation1], timeout: 10)
-        let recordToSave = existing!
+        let recordResults = try await db.records(for: [CKRecord.ID(recordName: "8BDA40C6-DB7C-BA3D-33AA-FF4C9B9D077A")])
+        XCTAssertEqual(recordResults.count, 1)
+        let recordResult = recordResults.first!.value
+        let existing = try recordResult.get()
+        let recordToSave = existing
         guard let recordIntValue = recordToSave["int64"] as? Int64 else {
             XCTFail("int64 field is missing on the record")
             return
@@ -304,52 +241,41 @@ class CKRecordTests: CKTest {
         let newValue = recordIntValue == .max ? Int64.min : recordIntValue + 1
         recordToSave["int64"] = newValue
         let nonExistingRecordID = CKRecord.ID(recordName: "DO-NOT-CREATE")
-        let operation = CKModifyRecordsOperation(recordsToSave: [recordToSave], recordIDsToDelete: [nonExistingRecordID])
-        operation.savePolicy = .ifServerRecordUnchanged
-        var savedRecord: CKRecord?
-        var deletedRecordID: CKRecord.ID?
-        let expectation2 = XCTestExpectation(description: "Wait for record modify to finish")
-        operation.perRecordSaveBlock = { recordID, result in
-            XCTAssertEqual(recordID.recordName, recordToSave.recordID.recordName)
-            switch result {
-            case .success(let record):
-                savedRecord = record
-            case .failure(let error):
-                XCTFail("Record modify failed with error \(error)")
-            }
+        let (saveResults, deleteResults) = try await db.modifyRecords(saving: [recordToSave], deleting: [nonExistingRecordID])
+        XCTAssertEqual(saveResults.count, 1)
+        XCTAssertEqual(deleteResults.count, 1)
+        let saveResult = saveResults.first!.value
+        let (deletedRecordID, deleteResult) = deleteResults.first!
+
+        switch saveResult {
+        case .success(let record):
+            XCTAssertEqual(record["int64"] as? Int64, newValue)
+        case .failure(let error):
+            XCTFail("Record modify failed with error \(error)")
         }
-        operation.perRecordDeleteBlock = { recordID, result in
-            XCTAssertEqual(recordID.recordName, nonExistingRecordID.recordName)
-            switch result {
-            case .success:
-                deletedRecordID = recordID
-            case .failure(let error):
-                XCTFail("Record delete failed with error \(error)")
-            }
+
+        switch deleteResult {
+        case .success:
+            XCTAssertEqual(deletedRecordID.recordName, nonExistingRecordID.recordName)
+        case .failure(let error):
+            XCTFail("Record delete failed with error \(error)")
         }
-        operation.modifyRecordsResultBlock = { result in
-            switch result {
-            case .success:
-                break
-            case .failure(let error):
-                XCTFail("Overall operation failed with error \(error)")
-            }
-            expectation2.fulfill()
-        }
-        db.add(operation)
-        wait(for: [expectation2], timeout: 10)
-        XCTAssertEqual(savedRecord?["int64"] as? Int64, newValue)
-        XCTAssertEqual(deletedRecordID?.recordName, nonExistingRecordID.recordName)
     }
 
-    func testCreateRecordUnknownType() {
+    func testCreateRecordUnknownType() async throws {
         let db = CKContainer.default().publicCloudDatabase
         if db.account.isAnonymousAccount { return }
-        let expectation = XCTestExpectation(description: "Wait for response")
         let recordID = CKRecord.ID(recordName: "qrqwsnjjfsfsdf")
-        db.save(CKRecord(recordType: "blah blah", recordID: recordID)) { record, error in
-            XCTAssertNil(record)
-            XCTAssertNotNil(error)
+        let record = CKRecord(recordType: "blah blah", recordID: recordID)
+        let (saveResults, deleteResults) = try await db.modifyRecords(saving: [record], deleting: [])
+        XCTAssertEqual(saveResults.count, 1)
+        XCTAssertEqual(deleteResults.count, 0)
+        let saveResult = saveResults.first!.value
+
+        switch saveResult {
+        case .success:
+            XCTFail("A cancelled task should fail")
+        case .failure(let error):
             guard let error = error as? CKError else {
                 XCTFail("An unknown type of error is returned, expected CKError")
                 return
@@ -361,19 +287,23 @@ class CKRecordTests: CKTest {
             default:
                 XCTFail("Incorrect CKError is returned, expected recordFetchError")
             }
-            expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 10)
     }
 
-    func testCreateExistingRecord() {
+    func testCreateExistingRecord() async throws {
         let db = CKContainer.default().publicCloudDatabase
         if db.account.isAnonymousAccount { return }
-        let expectation = XCTestExpectation(description: "Wait for response")
         let recordID = CKRecord.ID(recordName: "08099BD9-ED8C-4175-B528-3CFD363ECA2E")
-        db.save(CKRecord(recordType: Self.recordType, recordID: recordID)) { record, error in
-            XCTAssertNil(record)
-            XCTAssertNotNil(error)
+        let record = CKRecord(recordType: Self.recordType, recordID: recordID)
+        let (saveResults, deleteResults) = try await db.modifyRecords(saving: [record], deleting: [])
+        XCTAssertEqual(saveResults.count, 1)
+        XCTAssertEqual(deleteResults.count, 0)
+        let saveResult = saveResults.first!.value
+
+        switch saveResult {
+        case .success:
+            XCTFail("A cancelled task should fail")
+        case .failure(let error):
             guard let error = error as? CKError else {
                 XCTFail("An unknown type of error is returned, expected CKError")
                 return
@@ -385,138 +315,43 @@ class CKRecordTests: CKTest {
             default:
                 XCTFail("Incorrect CKError is returned, expected recordFetchError")
             }
-            expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 10)
     }
 
-    func testCurosr() {
+    func testCurosr() async throws {
         let resultLimit = 1
         let db = CKContainer.default().publicCloudDatabase
-        let query = CKQuery(recordType: Self.recordType, filters: [])
-        let op = CKQueryOperation(query: query)
-        op.resultsLimit = resultLimit
-        var records: [CKRecord] = []
-        op.recordMatchedBlock = { _, result in
-            switch result {
-            case .success(let record):
-                records.append(record)
-            case .failure(let error):
-                XCTFail("Error occured on record match \(error)")
-            }
-        }
-        let expectation = XCTestExpectation(description: "Wait for response")
-        op.queryResultBlock = { result in
-            switch result {
-            case .success(let cursor):
-                guard let c = cursor else {
-                    XCTFail("Cursor should be returned for this operation")
-                    return
-                }
-                let continuedOperation = CKQueryOperation(cursor: c)
-                continuedOperation.resultsLimit = resultLimit
-                continuedOperation.recordMatchedBlock = { _, result in
-                    switch result {
-                    case .success(let record):
-                        records.append(record)
-                    case .failure(let error):
-                        XCTFail("Error occured on record match \(error)")
-                    }
-                }
-                continuedOperation.queryResultBlock = { result in
-                    switch result {
-                    case .success:
-                        expectation.fulfill()
-                    case .failure(let error):
-                        XCTFail("Error occured on completion \(error)")
-                    }
-                }
-                db.add(continuedOperation)
-            case .failure(let error):
-                XCTFail("Error occured on completion \(error)")
-            }
-        }
-        db.add(op)
-        wait(for: [expectation], timeout: 10)
-        XCTAssertEqual(records.count, resultLimit * 2)
+        let query = CKQuery(recordType: Self.recordType, filters: [
+            CKQueryFilter(fieldName: "queryableString", comparator: .equals, fieldValue: "DO-NOT-DELETE")
+        ])
+        let (recordResults, optionalCursor) = try await db.records(matching: query, resultsLimit: resultLimit)
+        XCTAssertEqual(recordResults.count, 1)
+        let (_, recordResult) = recordResults[0]
+        XCTAssertNoThrow(try recordResult.get())
+
+        let cursor = try XCTUnwrap(optionalCursor)
+        let (moreRecordResults, _) = try await db.records(continuingMatchFrom: cursor, resultsLimit: resultLimit)
+        XCTAssertEqual(moreRecordResults.count, 1)
+        let (_, moreRecordResult) = moreRecordResults[0]
+        XCTAssertNoThrow(try moreRecordResult.get())
     }
 
-    func testNoCurosr() {
+    func testNoCurosr() async throws {
         let resultLimit = 1
         let db = CKContainer.default().publicCloudDatabase
         let reference = CKRecord.Reference(recordID: CKRecord.ID(recordName: "043BB555-EA0D-487E-BCC4-257184A5078C"), action: .none)
         let query = CKQuery(recordType: Self.recordType, filters: [
             CKQueryFilter(fieldName: "___recordID", comparator: .equals, fieldValue: reference)
         ])
-        let op = CKQueryOperation(query: query)
-        op.resultsLimit = resultLimit
-        var records: [CKRecord] = []
-        op.recordMatchedBlock = { _, result in
-            switch result {
-            case .success(let record):
-                records.append(record)
-            case .failure(let error):
-                XCTFail("Error occured on record match \(error)")
-            }
-        }
-        let expectation = XCTestExpectation(description: "Wait for response")
-        op.queryResultBlock = { result in
-            switch result {
-            case .success(let cursor):
-                XCTAssertNil(cursor, "Cursor should not be returned for this operation")
-                expectation.fulfill()
-            case .failure(let error):
-                XCTFail("Error occured on completion \(error)")
-            }
-        }
-        db.add(op)
-        wait(for: [expectation], timeout: 10)
-        XCTAssertEqual(records.count, 1)
+        let (recordResults, optionalCursor) = try await db.records(matching: query, resultsLimit: resultLimit)
+        XCTAssertEqual(recordResults.count, 1)
+        let (_, recordResult) = recordResults[0]
+        XCTAssertNoThrow(try recordResult.get())
+
+        XCTAssertNil(optionalCursor)
     }
 
-    func testFetchDefaultRecordZone() {
-        let db = CKContainer.default().publicCloudDatabase
-        // Zone lookup is not allowed on anonymous account too
-        if db.account.isAnonymousAccount { return }
-        let expectation = XCTestExpectation(description: "Wait for response")
-        db.fetch(withRecordZoneID: .default) { zone, error in
-            XCTAssertNotNil(zone)
-            XCTAssertNil(error)
-            XCTAssertEqual(zone?.zoneID.zoneName, CKRecordZone.ID.defaultZoneName)
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 10)
-    }
-
-    func testOperationCancellation() {
-        let db = CKContainer.default().publicCloudDatabase
-        let query = CKQuery(recordType: Self.recordType, filters: [])
-        let op = CKQueryOperation(query: query)
-        let expectation = XCTestExpectation(description: "Wait for response")
-        op.queryResultBlock = { result in
-            switch result {
-            case .success:
-                XCTFail("A cancelled task should fail")
-            case .failure(let error):
-                do {
-                    throw error
-                }
-                catch CKError.operationCancelled {
-                    expectation.fulfill()
-                }
-                catch {
-                    XCTFail("A cancelled task should have error CKError.operationCancelled")
-                }
-            }
-        }
-        db.add(op)
-        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1)) {
-            op.cancel()
-        }
-        wait(for: [expectation], timeout: 10)
-    }
-
-    static var allTests = [
+    static let allTests = [
         ("testCreateRecord", testCreateRecord),
         ("testFetchRecord", testFetchRecord),
         ("testFetchRecordWithAsset", testFetchRecordWithAsset),
@@ -531,6 +366,5 @@ class CKRecordTests: CKTest {
         ("testCreateExistingRecord", testCreateExistingRecord),
         ("testCurosr", testCurosr),
         ("testNoCurosr", testNoCurosr),
-        ("testOperationCancellation", testOperationCancellation),
     ]
 }

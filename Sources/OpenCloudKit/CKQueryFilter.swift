@@ -8,11 +8,11 @@
 
 import Foundation
 
-public struct CKLocationBound {
+public struct CKLocationBound: Sendable {
     let radius: CKLocationDistance
 }
 
-public struct CKQueryFilter: Equatable {
+public struct CKQueryFilter: Equatable, Sendable {
     let fieldName: String
     let type: CKCompatorType
     let fieldValue: CKRecordValue

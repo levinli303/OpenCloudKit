@@ -47,64 +47,6 @@ public struct CKRecordZoneFetchError: Sendable {
     }
 }
 
-public class CKModifyRecordZonesOperation : CKDatabaseOperation, @unchecked Sendable {
-    public override init() {
-        super.init()
-    }
-
-    public convenience init(recordZonesToSave: [CKRecordZone]?, recordZoneIDsToDelete: [CKRecordZone.ID]?) {
-        self.init()
-        self.recordZonesToSave = recordZonesToSave
-        self.recordZoneIDsToDelete = recordZoneIDsToDelete
-    }
-
-    public var recordZonesToSave: [CKRecordZone]?
-    public var recordZoneIDsToDelete: [CKRecordZone.ID]?
-
-    public var modifyRecordZonesResultBlock: ((_ operationResult: Result<Void, Error>) -> Void)?
-    public var perRecordZoneDeleteBlock: ((_ recordZoneID: CKRecordZone.ID, _ deleteResult: Result<Void, Error>) -> Void)?
-    public var perRecordZoneSaveBlock: ((_ recordZoneID: CKRecordZone.ID, _ saveResult: Result<CKRecordZone, Error>) -> Void)?
-
-    override func performCKOperation() {
-        let db = database ?? CKContainer.default().publicCloudDatabase
-        task = Task {
-            weak var weakSelf = self
-            do {
-                let (saveResults, deleteResults) = try await db.modifyRecordZones(saving: recordZonesToSave ?? [], deleting: recordZoneIDsToDelete ?? [])
-
-                guard let self = weakSelf, !self.isCancelled else {
-                    throw CKError.operationCancelled
-                }
-
-                for (zoneID, result) in saveResults {
-                    self.callbackQueue.async {
-                        self.perRecordZoneSaveBlock?(zoneID, result)
-                    }
-                }
-
-                for (zoneID, result) in deleteResults {
-                    self.callbackQueue.async {
-                        self.perRecordZoneDeleteBlock?(zoneID, result)
-                    }
-                }
-
-                self.callbackQueue.async {
-                    self.modifyRecordZonesResultBlock?(.success(()))
-                    self.finishOnCallbackQueue()
-                }
-            }
-            catch {
-                guard let self = weakSelf else { return }
-
-                self.callbackQueue.async {
-                    self.modifyRecordZonesResultBlock?(.failure(error))
-                    self.finishOnCallbackQueue()
-                }
-            }
-        }
-    }
-}
-
 extension CKDatabase {
     private struct RecordZoneDeleteResponse {
         let zoneID: CKRecordZone.ID

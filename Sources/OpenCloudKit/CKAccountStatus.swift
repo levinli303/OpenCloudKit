@@ -6,7 +6,7 @@
 //
 //
 
-public enum CKAccountStatus : Int {
+public enum CKAccountStatus : Int, Sendable {
     case couldNotDetermine
     case available
     case restricted

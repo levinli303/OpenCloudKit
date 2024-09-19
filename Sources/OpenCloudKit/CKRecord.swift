@@ -19,7 +19,7 @@ extension CKRecordFieldProvider where Self: CustomDictionaryConvertible {
 }
 */
 
-public class CKRecord: NSObject, NSSecureCoding {
+public class CKRecord: NSObject, NSSecureCoding, @unchecked Sendable {
     public typealias RecordType = String
     public typealias FieldKey = String
 
@@ -337,7 +337,7 @@ extension CKRecord {
     }
 }
 
-public protocol CKRecordValue : CKRecordFieldProvider {
+public protocol CKRecordValue : CKRecordFieldProvider, Sendable {
     static var typeName: String? { get }
     var dictionaryValue: Sendable { get }
 }
@@ -353,7 +353,7 @@ extension CKRecordValue {
 
 private protocol CKRecordValueType: CKRecordValue {
     associatedtype MappedType
-    associatedtype TransformedType
+    associatedtype TransformedType: Sendable
 
     var valueProvider: MappedType { get }
     func transform(_ value: MappedType) -> TransformedType
@@ -445,7 +445,7 @@ extension CKRecordValueLocation {
     }
 }
 
-extension NSString: CKRecordValueString {
+extension NSString: CKRecordValueString, @unchecked Sendable {
     public var valueProvider: String { return self as String }
 }
 
@@ -512,7 +512,7 @@ extension Date: CKRecordValueDate {
     public var valueProvider: Date { return self }
 }
 
-extension NSData : CKRecordValueData {
+extension NSData : CKRecordValueData, @unchecked Sendable {
     public var valueProvider: Data { return self as Data }
 }
 

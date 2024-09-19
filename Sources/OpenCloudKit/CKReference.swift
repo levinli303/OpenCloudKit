@@ -9,7 +9,7 @@
 import Foundation
 
 extension CKRecord {
-    public enum ReferenceAction : UInt {
+    public enum ReferenceAction : UInt, Sendable {
         case none
         case deleteSelf
 
@@ -37,7 +37,7 @@ extension CKRecord.ReferenceAction: CustomStringConvertible {
     }
 }
 
-public class CKReference: NSObject, NSSecureCoding {
+public final class CKReference: NSObject, NSSecureCoding, Sendable {
     /* It is acceptable to relate two records that have not yet been uploaded to the server, but those records must be uploaded to the server in the same operation.
      If a record references a record that does not exist on the server and is not in the current save operation it will result in an error. */
     public init(recordID: CKRecord.ID, action: CKRecord.ReferenceAction) {

@@ -28,7 +28,7 @@ public typealias CKLocationAccuracy = Double
 public typealias CKLocationSpeed = Double
 public typealias CKLocationDirection = Double
 
-public struct CKLocationCoordinate2D: Equatable {
+public struct CKLocationCoordinate2D: Equatable, Sendable {
     public var latitude: CKLocationDegrees
 
     public var longitude: CKLocationDegrees
@@ -48,7 +48,7 @@ public func ==(lhs: CKLocationCoordinate2D, rhs: CKLocationCoordinate2D) -> Bool
     return lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude
 }
 
-public class CKLocation: NSObject {
+public class CKLocation: NSObject, Sendable {
     public init(latitude: CKLocationDegrees, longitude: CKLocationDegrees) {
         self.coordinate = CKLocationCoordinate2D(latitude: latitude, longitude: longitude)
         self.altitude = 0

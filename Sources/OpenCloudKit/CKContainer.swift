@@ -14,10 +14,9 @@ public var CKCurrentUserDefaultName: String {
 }
 
 public class CKContainer: @unchecked Sendable {
-    static var containerFactories = [String: CKContainer]()
+    static nonisolated(unsafe) var containerFactories = [String: CKContainer]()
     private static let containerLock = NSLock()
 
-    private let convenienceOperationQueue = OperationQueue()
     public let containerIdentifier: String
 
     private init(containerIdentifier: String) {
@@ -78,16 +77,6 @@ public class CKContainer: @unchecked Sendable {
         return .available
     }
 
-    public func accountStatus(completionHandler: @Sendable @escaping (CKAccountStatus, Error?) -> Void) {
-        Task {
-            do {
-                completionHandler(try await accountStatus(), nil)
-            } catch {
-                completionHandler(.couldNotDetermine, error)
-            }
-        }
-    }
-
     public func database(with databaseScope: CKDatabase.Scope) -> CKDatabase {
         switch databaseScope {
         case .public:
@@ -98,35 +87,9 @@ public class CKContainer: @unchecked Sendable {
             return sharedCloudDatabase
         }
     }
-
-    private func schedule(convenienceOperation: CKOperation) {
-        convenienceOperation.queuePriority = .veryHigh
-        convenienceOperation.qualityOfService = .userInitiated
-
-        add(convenienceOperation)
-    }
-
-    public func add(_ operation: CKOperation) {
-        if operation is CKDatabaseOperation {
-            fatalError("CKDatabaseOperations must be submitted to a CKDatabase")
-        } else {
-            operation.container = self
-            convenienceOperationQueue.addOperation(operation)
-        }
-    }
 }
 
 extension CKContainer {
-    public func fetchUserRecordID(completionHandler: @Sendable @escaping (CKRecord.ID?, Error?) -> Void) {
-        Task {
-            do {
-                completionHandler(try await userRecordID(), nil)
-            } catch {
-                completionHandler(nil, error)
-            }
-        }
-    }
-
     public func userRecordID() async throws -> CKRecord.ID {
         let request = CKURLRequestBuilder(database: publicCloudDatabase, operationType: .users, path: "caller")
             .setHTTPMethod(.GET)

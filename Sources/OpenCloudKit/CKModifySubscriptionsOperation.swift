@@ -46,62 +46,6 @@ public struct CKSubscriptionFetchError: Sendable {
     }
 }
 
-public class CKModifySubscriptionsOperation : CKDatabaseOperation, @unchecked Sendable {
-    public init(subscriptionsToSave: [CKSubscription]?, subscriptionIDsToDelete: [String]?) {
-        super.init()
-
-        self.subscriptionsToSave = subscriptionsToSave
-        self.subscriptionIDsToDelete = subscriptionIDsToDelete
-    }
-
-    public var subscriptionsToSave: [CKSubscription]?
-    public var subscriptionIDsToDelete: [String]?
-
-    public var modifySubscriptionsResultBlock: ((_ operationResult: Result<Void, Error>) -> Void)?
-    public var perSubscriptionDeleteBlock: ((_ subscriptionID: CKSubscription.ID, _ deleteResult: Result<Void, Error>) -> Void)?
-    public var perSubscriptionSaveBlock: ((_ subscriptionID: CKSubscription.ID, _ saveResult: Result<CKSubscription, Error>) -> Void)?
-
-    override func performCKOperation() {
-        let db = database ?? CKContainer.default().publicCloudDatabase
-        task = Task {
-            weak var weakSelf = self
-            do {
-                let (saveResults, deleteResults) = try await db.modifySubscriptions(saving: subscriptionsToSave ?? [], deleting: subscriptionIDsToDelete ?? [])
-
-                guard let self = weakSelf, !self.isCancelled else {
-                    throw CKError.operationCancelled
-                }
-
-                for (subscriptionID, result) in saveResults {
-                    self.callbackQueue.async {
-                        self.perSubscriptionSaveBlock?(subscriptionID, result)
-                    }
-                }
-
-
-                for (subscriptionID, result) in deleteResults {
-                    self.callbackQueue.async {
-                        self.perSubscriptionDeleteBlock?(subscriptionID, result)
-                    }
-                }
-
-                self.callbackQueue.async {
-                    self.modifySubscriptionsResultBlock?(.success(()))
-                    self.finishOnCallbackQueue()
-                }
-            }
-            catch {
-                guard let self = weakSelf else { return }
-
-                self.callbackQueue.async {
-                    self.modifySubscriptionsResultBlock?(.failure(error))
-                    self.finishOnCallbackQueue()
-                }
-            }
-        }
-    }
-}
-
 extension CKDatabase {
     private struct SubscriptionDeleteResponse {
         let subscriptionID: CKSubscription.ID

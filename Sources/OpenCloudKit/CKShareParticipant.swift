@@ -125,7 +125,7 @@ extension CKShare {
     public typealias ParticipantAcceptanceStatus = CKShareParticipantAcceptanceStatus
 }
 
-public class CKShareParticipant: NSObject, NSSecureCoding {
+public class CKShareParticipant: NSObject, NSSecureCoding, @unchecked Sendable {
     public var userIdentity: CKUserIdentity
     
     /* The default participant type is CKShareParticipantTypePrivateUser. */

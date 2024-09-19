@@ -82,103 +82,13 @@ private class ModifyOperation {
     var recordIDsToDelete: [CKRecord.ID] = []
 }
 
-public class CKModifyRecordsOperation: CKDatabaseOperation, @unchecked Sendable {
-    public enum RecordSavePolicy : Int {
+public final class CKModifyRecordsOperation {
+    public enum RecordSavePolicy: Int {
         case ifServerRecordUnchanged
         case changedKeys
         case allKeys
     }
-
-    public override init() {
-        super.init()
-    }
-
-    public convenience init(recordsToSave records: [CKRecord]?, recordIDsToDelete recordIDs: [CKRecord.ID]?) {
-        self.init()
-
-        recordsToSave = records
-        recordIDsToDelete = recordIDs
-    }
-
-    public var savePolicy: RecordSavePolicy = .ifServerRecordUnchanged
-
-    public var recordsToSave: [CKRecord]?
-    public var recordIDsToDelete: [CKRecord.ID]?
-
-    /* Determines whether the batch should fail atomically or not. YES by default.
-     This only applies to zones that support CKRecordZoneCapabilityAtomic. */
-    public var isAtomic: Bool = false
-
-    public var modifyRecordsResultBlock: ((_ operationResult: Result<Void, Error>) -> Void)?
-    public var perRecordSaveBlock: ((_ recordID: CKRecord.ID, _ saveResult: Result<CKRecord, Error>) -> Void)?
-    public var perRecordDeleteBlock: ((_ recordID: CKRecord.ID, _ deleteResult: Result<Void, Error>) -> Void)?
-
-    override func performCKOperation() {
-        let db = database ?? CKContainer.default().publicCloudDatabase
-        task = Task {
-            weak var weakSelf = self
-            let isAtomic = self.isAtomic
-            let savePolicy = self.savePolicy
-            do {
-                var sorted = [CKRecordZone.ID: ModifyOperation]()
-                for recordToSave in recordsToSave ?? [] {
-                    let zoneID = recordToSave.recordID.zoneID
-                    if let existing = sorted[zoneID] {
-                        existing.recordsToSave.append(recordToSave)
-                    } else {
-                        let operation = ModifyOperation()
-                        operation.recordsToSave = [recordToSave]
-                        sorted[zoneID] = operation
-                    }
-                }
-
-                for recordIDToDelete in recordIDsToDelete ?? [] {
-                    let zoneID = recordIDToDelete.zoneID
-                    if let existing = sorted[zoneID] {
-                        existing.recordIDsToDelete.append(recordIDToDelete)
-                    } else {
-                        let operation = ModifyOperation()
-                        operation.recordIDsToDelete = [recordIDToDelete]
-                        sorted[zoneID] = operation
-                    }
-                }
-
-                for (zoneID, operation) in sorted {
-                    let (saveResults, deleteResults) = try await db.modifyRecords(saving: operation.recordsToSave, deleting: operation.recordIDsToDelete, savePolicy: savePolicy, atomically: isAtomic, inZoneWith: zoneID)
-
-                    guard let self = weakSelf, !self.isCancelled else {
-                        throw CKError.operationCancelled
-                    }
-
-                    for (recordID, result) in saveResults {
-                        self.callbackQueue.async {
-                            self.perRecordSaveBlock?(recordID, result)
-                        }
-                    }
-                    for (recordID, result) in deleteResults {
-                        self.callbackQueue.async {
-                            self.perRecordDeleteBlock?(recordID, result)
-                        }
-                    }
-                }
-
-                self.callbackQueue.async {
-                    self.modifyRecordsResultBlock?(.success(()))
-                    self.finishOnCallbackQueue()
-                }
-            }
-            catch {
-                guard let self = weakSelf else { return }
-
-                self.callbackQueue.async {
-                    self.modifyRecordsResultBlock?(.failure(error))
-                    self.finishOnCallbackQueue()
-                }
-            }
-        }
-    }
 }
-
 
 extension CKDatabase {
     private struct AssetUploadTokenResponse: Decodable {

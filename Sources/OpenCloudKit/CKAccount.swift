@@ -8,13 +8,13 @@
 
 import Foundation
 
-public enum CKAccountType {
+public enum CKAccountType: Sendable {
     case primary
     case anoymous
     case server
 }
 
-public class CKAccount {
+public class CKAccount: @unchecked Sendable {
     let accountType: CKAccountType
 
     var isAnonymousAccount: Bool {
@@ -25,9 +25,9 @@ public class CKAccount {
         return accountType == .server
     }
 
-    var containerInfo: CKContainerInfo
+    let containerInfo: CKContainerInfo
 
-    var webAuthToken: String?
+    let webAuthToken: String?
 
     let cloudKitAuthToken: String?
 
@@ -39,7 +39,7 @@ public class CKAccount {
     }
 }
 
-public class CKServerAccount: CKAccount {
+public class CKServerAccount: CKAccount, @unchecked Sendable {
     let serverToServerAuth: CKServerToServerKeyAuth
 
     init(containerInfo: CKContainerInfo, serverToServerAuth: CKServerToServerKeyAuth) {

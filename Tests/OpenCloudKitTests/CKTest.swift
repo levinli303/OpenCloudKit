@@ -52,15 +52,8 @@ class CKTest: XCTestCase {
         CloudKitHelper.configure(containerID: Constant.containerID, token: Constant.token, environment: Constant.environment)
     }
 
-    func requestURL(_ url: URL) -> Data? {
-        let expectation = XCTestExpectation(description: "Waiting for download to finish")
-        var resultData: Data?
-        let task = URLSession.shared.dataTask(with: url) { data, response, error in
-            resultData = data
-            expectation.fulfill()
-        }
-        task.resume()
-        wait(for: [expectation], timeout: 10.0)
-        return resultData
+    func requestURL(_ url: URL) async throws -> Data? {
+        let (data, _) = try await URLSession.shared.data(from: url)
+        return data
     }
 }
