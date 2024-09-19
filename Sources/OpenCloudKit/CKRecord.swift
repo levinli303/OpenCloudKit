@@ -210,17 +210,17 @@ struct CKRecordDictionary {
     static let created = "created"
 }
 
-struct CKRecordFieldDictionary {
+private struct CKRecordFieldDictionary {
     static let value = "value"
     static let type = "type"
 }
 
-struct CKValueType {
+private struct CKValueType {
     static let string = "STRING"
     static let data = "BYTES"
 }
 
-struct CKRecordLog {
+private struct CKRecordLog: Sendable {
     let timestamp: UInt64 // milliseconds
     let userRecordName: String
     let deviceID: String

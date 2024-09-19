@@ -8,13 +8,13 @@
 
 import Foundation
 
-struct CKQueryDictionary {
+private struct CKQueryDictionary {
     static let recordType = "recordType"
     static let filterBy = "filterBy"
     static let sortBy = "sortBy"
 }
 
-struct CKSortDescriptorDictionary {
+private struct CKSortDescriptorDictionary {
     static let fieldName = "fieldName"
     static let ascending = "ascending"
     static let relativeLocation = "relativeLocation"

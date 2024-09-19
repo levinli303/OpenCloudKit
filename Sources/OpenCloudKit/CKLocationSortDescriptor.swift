@@ -20,5 +20,5 @@ public class CKLocationSortDescriptor: NSSortDescriptor {
     }
     #endif
 
-    public var relativeLocation: CKLocation
+    public let relativeLocation: CKLocation
 }
