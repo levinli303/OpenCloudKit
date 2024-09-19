@@ -22,8 +22,6 @@ struct CKServerRequestAuth {
     static let CKRequestDateHeaderKey =  "X-Apple-CloudKit-Request-ISO8601Date"
     static let CKRequestSignatureHeaderKey = "X-Apple-CloudKit-Request-SignatureV1"
 
-    static let globalLock = NSLock()
-
     let requestDate: String
     let signature: String
 
@@ -38,13 +36,11 @@ struct CKServerRequestAuth {
 
     static func sign(data: Data, privateKey: KeyData) -> Data? {
         var finalData: Data?
-        globalLock.lock()
         do {
             finalData = try privateKey.signature(for: data)
         } catch {
             print("Error signing request: \(error)")
         }
-        globalLock.unlock()
         return finalData
     }
 
