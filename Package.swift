@@ -24,7 +24,10 @@ let package = Package(
         ]),
         .testTarget(
             name: "OpenCloudKitTests",
-            dependencies: ["OpenCloudKit"],
+            dependencies: [
+                .target(name: "OpenCloudKit"),
+                .product(name: "AsyncHTTPClient", package: "async-http-client"),
+            ],
             resources: [.copy("asset1.txt"), .copy("asset2.txt")]
         ),
     ]

@@ -2,10 +2,6 @@ import AsyncHTTPClient
 import XCTest
 @testable import OpenCloudKit
 
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
-
 import NIO
 
 #if canImport(CoreLocation)
@@ -34,6 +30,7 @@ class CKTest: XCTestCase {
         static let containerID = "iCloud.bilgisayar.CKDemo"
         static let token = "6e6d25238b580815a6be02c46803b53f86e7c065a97290726a5cbc8f0ee62917"
         static let environment = CKEnvironment.development
+        static let requestTimeout = TimeAmount.seconds(10)
     }
 
     private class CloudKitHelper {
@@ -53,7 +50,40 @@ class CKTest: XCTestCase {
     }
 
     func requestURL(_ url: URL) async throws -> Data? {
-        let (data, _) = try await URLSession.shared.data(from: url)
+        let client: HTTPClient = .shared
+        var urlRequest = HTTPClientRequest(url: url.absoluteString)
+        urlRequest.method = .GET
+
+        var response: HTTPClientResponse!
+        do {
+            response = try await client.execute(urlRequest, timeout: Constant.requestTimeout)
+        } catch {
+            if Task.isCancelled {
+                throw CKError.operationCancelled
+            }
+            throw CKError.networkError(error: error)
+        }
+
+        var data = Data()
+        do {
+            for try await buffer in response.body {
+                data.append(contentsOf: buffer.readableBytesView)
+            }
+        } catch {
+            if Task.isCancelled {
+                throw CKError.operationCancelled
+            }
+            throw CKError.networkError(error: error)
+        }
+
+        if response.status.code >= 400 {
+            if let requestError = try? JSONDecoder().decode(CKRequestError.self, from: data) {
+                throw CKError.requestError(error: requestError)
+            }
+            // Indicates an error, but we do not know how to parse the error
+            // throw generic error instead
+            throw CKError.genericHTTPError(status: response.status.code)
+        }
         return data
     }
 }
