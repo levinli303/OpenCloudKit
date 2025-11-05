@@ -47,24 +47,21 @@ public class CKAsset: NSObject, @unchecked Sendable {
         return nil
     }
 
-    var size: UInt?
-
-    var hasSize: Bool {
-        return size != nil
-    }
+    public var size: UInt
+    public var fileChecksum: String
 
     var uploadInfo: UploadInfo?
 
     public init(fileURL: URL) {
         self.fileURL = fileURL
+        self.size = 0
+        self.fileChecksum = ""
     }
 
     init?(dictionary: [String: Sendable]) {
-
-        guard
-            let downloadURL = dictionary["downloadURL"] as? String,
-            let size = dictionary["size"] as? NSNumber
-        else  {
+        guard let downloadURL = dictionary["downloadURL"] as? String,
+              let size = dictionary["size"] as? NSNumber,
+              let fileChecksum = dictionary["fileChecksum"] as? String else {
             return nil
         }
 
@@ -73,6 +70,7 @@ public class CKAsset: NSObject, @unchecked Sendable {
         fileURL = URL(string: downloadURLString)!
         self.downloadBaseURL = downloadURLString
         self.size = size.uintValue
+        self.fileChecksum = fileChecksum
         downloaded = false
     }
 }
