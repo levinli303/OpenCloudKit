@@ -18,6 +18,12 @@ public protocol CloudKitRecordRepresentable {
     var cloudKitIdentifier: String { get }
 }
 
+public struct CKAssetDownloadInfo: Decodable, Sendable {
+    public let url: URL
+    public let size: UInt
+    public let fileChecksum: String
+}
+
 extension CloudKitRecordRepresentable {
     public var cloudKitRecordType: String {
         return String(describing: type(of: self))

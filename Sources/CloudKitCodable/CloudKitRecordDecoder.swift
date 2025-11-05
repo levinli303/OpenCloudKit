@@ -145,6 +145,14 @@ extension _CloudKitRecordDecoder.KeyedContainer: KeyedDecodingContainerProtocol 
             return try decodeURLs(forKey: key) as! T
         }
 
+        if type == CKAssetDownloadInfo.self {
+            return try decodeDownloadInfo(forKey: key) as! T
+        }
+
+        if type == [CKAssetDownloadInfo].self {
+            return try decodeDownloadInfos(forKey: key) as! T
+        }
+
         guard let value = record[key.stringValue] as? T else {
             let context = DecodingError.Context(codingPath: codingPath, debugDescription: "CKRecordValue couldn't be converted to \(String(describing: type))'")
             throw DecodingError.typeMismatch(type, context)
@@ -196,6 +204,27 @@ extension _CloudKitRecordDecoder.KeyedContainer: KeyedDecodingContainerProtocol 
 
     private func decodeURL(from asset: CKAsset) -> URL {
         return asset.fileURL
+    }
+
+    private func decodeDownloadInfo(forKey key: Key) throws -> CKAssetDownloadInfo {
+        guard let asset = record[key.stringValue] as? CKAsset else {
+            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "CKAssetDownloadInfo should have been encoded as CKAsset in CKRecord")
+            throw DecodingError.typeMismatch(CKAssetDownloadInfo.self, context)
+        }
+
+        return decodeDownloadInfo(from: asset)
+    }
+
+    private func decodeDownloadInfos(forKey key: Key) throws -> [CKAssetDownloadInfo] {
+        guard let assets = record[key.stringValue] as? [CKAsset] else {
+            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "[CKAssetDownloadInfo] should have been encoded as [CKAsset] in CKRecord")
+            throw DecodingError.typeMismatch([CKAssetDownloadInfo].self, context)
+        }
+        return assets.map { decodeDownloadInfo(from: $0) }
+    }
+
+    private func decodeDownloadInfo(from asset: CKAsset) -> CKAssetDownloadInfo {
+        return CKAssetDownloadInfo(url: asset.fileURL, size: asset.size, fileChecksum: asset.fileChecksum)
     }
 
     private func decodeBool(forKey key: Key) throws -> Bool {

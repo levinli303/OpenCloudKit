@@ -445,7 +445,7 @@ extension CKRecordValueLocation {
     }
 }
 
-extension NSString: CKRecordValueString, @unchecked Sendable {
+extension NSString: CKRecordValueString, @unchecked @retroactive Sendable {
     public var valueProvider: String { return self as String }
 }
 
@@ -512,7 +512,7 @@ extension Date: CKRecordValueDate {
     public var valueProvider: Date { return self }
 }
 
-extension NSData : CKRecordValueData, @unchecked Sendable {
+extension NSData : CKRecordValueData, @unchecked @retroactive Sendable {
     public var valueProvider: Data { return self as Data }
 }
 
