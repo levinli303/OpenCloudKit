@@ -153,6 +153,24 @@ extension _CloudKitRecordDecoder.KeyedContainer: KeyedDecodingContainerProtocol 
             return try decodeDownloadInfos(forKey: key) as! T
         }
 
+        if type == CKReferenceInfo.self {
+            guard let reference = record[key.stringValue] as? CKReference else {
+                let context = DecodingError.Context(codingPath: codingPath, debugDescription: "CKReferenceInfo should have been encoded as CKReference in CKRecord")
+                throw DecodingError.typeMismatch(CKAssetDownloadInfo.self, context)
+            }
+
+            return CKReferenceInfo(recordName: reference.recordID.recordName) as! T
+        }
+
+        if type == [CKReferenceInfo].self {
+            guard let references = record[key.stringValue] as? [CKReference] else {
+                let context = DecodingError.Context(codingPath: codingPath, debugDescription: "[CKReferenceInfo] should have been encoded as [CKReference] in CKRecord")
+                throw DecodingError.typeMismatch(CKAssetDownloadInfo.self, context)
+            }
+
+            return references.map { CKReferenceInfo(recordName: $0.recordID.recordName) } as! T
+        }
+
         guard let value = record[key.stringValue] as? T else {
             let context = DecodingError.Context(codingPath: codingPath, debugDescription: "CKRecordValue couldn't be converted to \(String(describing: type))'")
             throw DecodingError.typeMismatch(type, context)

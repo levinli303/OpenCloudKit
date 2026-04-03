@@ -24,6 +24,10 @@ public struct CKAssetDownloadInfo: Decodable, Sendable {
     public let fileChecksum: String
 }
 
+public struct CKReferenceInfo: Decodable, Sendable {
+    public let recordName: String
+}
+
 extension CloudKitRecordRepresentable {
     public var cloudKitRecordType: String {
         return String(describing: type(of: self))
