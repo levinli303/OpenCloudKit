@@ -11,6 +11,11 @@ OpenCloudKit is backed by CloudKit Web Services and is designed to allow easy Cl
 
 # Installation
 
+## Requirements
+
+- Swift 6 or later (Swift 6.1 for swift-crypto 4.5.2).
+- swift-crypto 4.x, resolved automatically by Swift Package Manager.
+
 ## Swift Package Manager
 Add the following to dependencies in your `Package.swift`.
 ```swift
