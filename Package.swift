@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "CloudKitCodable", targets: ["CloudKitCodable"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-crypto.git", from: "4.0.0"),
+        .package(url: "https://github.com/apple/swift-crypto.git", "4.0.0"..<"6.0.0"),
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.22.1")
     ],
     targets: [
